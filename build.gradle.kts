@@ -7,13 +7,9 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://su5ed.jfrog.io/artifactory/maven/")
-    mavenLocal() // Golfer
 }
 
 dependencies {
-    implementation(group = "wtf.gofancy.log", name = "api", version = "1.1.0")
-    implementation(group = "wtf.gofancy.log", name = "golfer", version = "1.1.0")
-    
     implementation(kotlin("compiler-embeddable"))
     implementation(kotlin("scripting-jvm"))
     implementation(kotlin("scripting-jvm-host"))
@@ -38,6 +34,6 @@ tasks {
     }
     
     withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "16"
+        kotlinOptions.jvmTarget = "1.8"
     }
 }

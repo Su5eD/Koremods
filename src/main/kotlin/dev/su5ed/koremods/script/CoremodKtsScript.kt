@@ -1,5 +1,7 @@
 package dev.su5ed.koremods.script
 
+import dev.su5ed.koremods.dsl.TransformerBuilder
+import dev.su5ed.koremods.dsl.TransformerHandler
 import kotlin.script.experimental.annotations.KotlinScript
 
 @Suppress("UNUSED_PARAMETER")
@@ -8,4 +10,12 @@ import kotlin.script.experimental.annotations.KotlinScript
     compilationConfiguration = CoremodScriptCompilationConfiguration::class,
     evaluationConfiguration = CoremodScriptEvaluationConfiguration::class
 )
-abstract class CoremodKtsScript(args: Array<String>)
+abstract class CoremodKtsScript(args: Array<String>) {
+    private val transformerHandler = TransformerHandler()
+    
+    fun transformers(configuration: TransformerBuilder.() -> Unit) {
+        transformerHandler.transformers(configuration)
+    }
+    
+    fun getTransformers() = transformerHandler.getTransformers()
+}

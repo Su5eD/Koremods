@@ -32,7 +32,8 @@ class FilteredClassLoader : ClassLoader() {
         "dev.su5ed.koremods.dsl.",
         "java.lang",
         "java.util",
-        "kotlin."
+        "kotlin.",
+        "org.objectweb.asm."
     )
     
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {

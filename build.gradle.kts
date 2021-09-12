@@ -14,6 +14,8 @@ dependencies {
     implementation(kotlin("scripting-jvm-host"))
     implementation(kotlin("scripting-jsr223"))
     
+    implementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
+
     testImplementation(kotlin("test"))
 }
 

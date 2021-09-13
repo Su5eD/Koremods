@@ -54,7 +54,7 @@ class KoremodTransformationTests {
 @Suppress("UNCHECKED_CAST")
 private fun getFirstTransformer(fileName: String): Transformer {
     val engine = ScriptEngineManager().getEngineByExtension("core.kts")!!
-    val script = File("src/test/resources/$fileName.core.kts")
+    val script = File("src/test/resources/scripts/$fileName.core.kts")
     engine.eval(script.reader())
 
     val transformers: List<Transformer> = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>

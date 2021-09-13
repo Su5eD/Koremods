@@ -17,6 +17,8 @@ dependencies {
     
     implementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
     implementation(group = "codes.som.anthony", name = "koffee", version = "8.0.2-legacy")
+    
+    implementation(group = "io.github.config4k", name = "config4k", version = "0.4.2")
 
     testImplementation(kotlin("test"))
 }

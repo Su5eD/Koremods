@@ -18,8 +18,8 @@ val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.k
 class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     jvm {
         dependenciesFromClassloader(
-            "Koremods", "kotlin-stdlib", "kotlin-reflect", "asm-debug-all", "koffee",
-            classLoader = CoremodKtsScript::class.java.classLoader
+            classLoader = CoremodKtsScript::class.java.classLoader,
+            wholeClasspath = true
         )
         defaultImports(listOf(
             "org.objectweb.asm.Opcodes.*",

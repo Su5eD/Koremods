@@ -2,6 +2,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
+    
+    id("com.github.johnrengelman.shadow") version "7.0.0"
+}
+
+val shade: Configuration by configurations.creating
+
+configurations {
+    implementation {
+        extendsFrom(shade)
+    }
 }
 
 repositories {
@@ -10,13 +20,22 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("compiler-embeddable"))
-    implementation(kotlin("scripting-jvm"))
-    implementation(kotlin("scripting-jvm-host"))
-    implementation(kotlin("scripting-jsr223"))
+    shade(kotlin("compiler-embeddable"))
+    shade(kotlin("scripting-common"))
+    shade(kotlin("scripting-jvm"))
+    shade(kotlin("scripting-jvm-host"))
+    shade(kotlin("scripting-jsr223"))
+    shade(kotlin("stdlib"))
+    shade(kotlin("stdlib-jdk7"))
+    shade(kotlin("stdlib-jdk8"))
+    shade(kotlin("reflect"))
     
     implementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    implementation(group = "codes.som.anthony", name = "koffee", version = "8.0.2-legacy")
+    shade(group = "codes.som.anthony", name = "koffee", version = "8.0.2-legacy") {
+        exclude(group = "org.ow2.asm")
+    }
+    
+    shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
     implementation(group = "io.github.config4k", name = "config4k", version = "0.4.2")
 
@@ -24,6 +43,14 @@ dependencies {
 }
 
 tasks {
+    shadowJar {
+        dependsOn("classes", "jar")
+        
+        configurations = listOf(shade)
+        exclude("**/module-info.class")
+        archiveClassifier.set("shaded")
+    }
+    
     test {
         useJUnitPlatform()
     }
@@ -31,4 +58,8 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }
+}
+
+artifacts { 
+    archives(tasks.shadowJar.get())
 }

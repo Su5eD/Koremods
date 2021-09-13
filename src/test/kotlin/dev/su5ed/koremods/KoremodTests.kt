@@ -1,6 +1,7 @@
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.internal.assertThrowsWithCause
+import dev.su5ed.koremods.script.ClassNotAvailableInSandboxException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import javax.script.ScriptEngineManager
@@ -17,10 +18,9 @@ class KoremodTests {
             engine.eval("java.lang.String::class")
         }
         
-        val exception = assertThrowsWithCause<ClassNotFoundException>("Class shouldn't be allowed in sandbox") { 
+        assertThrowsWithCause<ClassNotAvailableInSandboxException> { 
             engine.eval("java.io.File::class")
         }
-        assertEquals("Class not allowed in sandbox", exception.message)
     }
     
     @Test

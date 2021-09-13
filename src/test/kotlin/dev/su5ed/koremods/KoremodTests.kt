@@ -24,6 +24,19 @@ class KoremodTests {
     }
     
     @Test
+    fun testAllowClass() {
+        val engine = ScriptEngineManager().getEngineByExtension("core.kts")!!
+        
+        assertDoesNotThrow {
+            engine.eval("""
+                @file:Allow("java.io.File")
+                
+                java.io.File::class
+            """.trimIndent())
+        }
+    }
+    
+    @Test
     fun testSimpleEval() {
         val engine = ScriptEngineManager().getEngineByExtension("core.kts")!!
         val res1 = engine.eval("val x = 3")

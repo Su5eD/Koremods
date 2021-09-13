@@ -18,7 +18,7 @@ class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
             ))
         } catch (ignored: Throwable) {}
         dependenciesFromClassloader(
-            "Koremods", "kotlin-stdlib", "kotlin-reflect", "asm-debug-all",
+            "Koremods", "kotlin-stdlib", "kotlin-reflect",
             classLoader = CoremodKtsScript::class.java.classLoader
         )
     }

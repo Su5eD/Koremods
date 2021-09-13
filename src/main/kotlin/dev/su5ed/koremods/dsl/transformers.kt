@@ -1,5 +1,6 @@
 package dev.su5ed.koremods.dsl
 
+import codes.som.anthony.koffee.ClassAssembly
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode

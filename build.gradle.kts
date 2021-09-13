@@ -6,6 +6,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://su5ed.jfrog.io/artifactory/maven/")
 }
 
 dependencies {
@@ -15,6 +16,7 @@ dependencies {
     implementation(kotlin("scripting-jsr223"))
     
     implementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
+    implementation(group = "codes.som.anthony", name = "koffee", version = "8.0.2-legacy")
 
     testImplementation(kotlin("test"))
 }

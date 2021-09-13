@@ -33,7 +33,8 @@ class FilteredClassLoader : ClassLoader() {
         "java.lang",
         "java.util",
         "kotlin.",
-        "org.objectweb.asm."
+        "org.objectweb.asm.",
+        "codes.som.anthony.koffee."
     )
     
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {

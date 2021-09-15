@@ -24,7 +24,6 @@ dependencies {
     shade(kotlin("scripting-common"))
     shade(kotlin("scripting-jvm"))
     shade(kotlin("scripting-jvm-host"))
-    shade(kotlin("scripting-jsr223"))
     shade(kotlin("stdlib"))
     shade(kotlin("stdlib-jdk7"))
     shade(kotlin("stdlib-jdk8"))
@@ -34,10 +33,11 @@ dependencies {
     shade(group = "codes.som.anthony", name = "koffee", version = "8.0.2-legacy") {
         exclude(group = "org.ow2.asm")
     }
-    
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
-    implementation(group = "io.github.config4k", name = "config4k", version = "0.4.2")
+    // Dependencies shipped by Forge
+    compileOnly(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.14.1")
+    compileOnly(group = "com.google.guava", "guava", "21.0")
 
     testImplementation(kotlin("test"))
 }

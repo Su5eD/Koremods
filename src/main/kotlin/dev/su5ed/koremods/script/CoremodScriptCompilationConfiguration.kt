@@ -15,7 +15,7 @@ annotation class Allow(vararg val paths: String)
 
 val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<MutableList<String>>(mutableListOf())
 
-class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
+object CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     jvm {
         dependenciesFromClassloader(
             classLoader = CoremodKtsScript::class.java.classLoader,
@@ -37,7 +37,7 @@ class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     }
 })
 
-class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+internal class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
     override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         val annotation = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)
             ?.filterByAnnotationType<Allow>()

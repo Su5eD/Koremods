@@ -5,7 +5,7 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.loadDependencies
 
-class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
+object CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     scriptsInstancesSharing(true)
     
     jvm {
@@ -24,9 +24,9 @@ class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     }
 })
 
-class ClassNotAvailableInSandboxException : RuntimeException()
+internal class ClassNotAvailableInSandboxException : RuntimeException()
 
-class FilteredClassLoader : ClassLoader() {
+internal class FilteredClassLoader : ClassLoader() {
     private val restrictions = mutableListOf(
         "dev.su5ed.koremods.script.CoremodKtsScript",
         "dev.su5ed.koremods.dsl.",

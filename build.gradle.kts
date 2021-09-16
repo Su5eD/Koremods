@@ -17,6 +17,7 @@ configurations {
 repositories {
     mavenCentral()
     maven("https://su5ed.jfrog.io/artifactory/maven/")
+    maven("https://libraries.minecraft.net")
 }
 
 dependencies {
@@ -40,6 +41,7 @@ dependencies {
     compileOnly(group = "com.google.guava", "guava", "21.0")
 
     testImplementation(kotlin("test"))
+    testImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
 }
 
 tasks {

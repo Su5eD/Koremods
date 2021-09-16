@@ -1,6 +1,7 @@
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.dsl.Transformer
+import dev.su5ed.koremods.script.getKoremodEngine
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.objectweb.asm.ClassReader
@@ -11,11 +12,10 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
 import javax.script.Invocable
-import javax.script.ScriptEngineManager
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
-class KoremodTransformationTests {
+class KoremodTransformationTests : KoremodTestBase() {
 
     @Test
     fun testClassTransformer() {
@@ -49,31 +49,32 @@ class KoremodTransformationTests {
         assertNotEquals(0, name.modifiers and Opcodes.ACC_FINAL)
         assertEquals(0, name.modifiers and Opcodes.ACC_PRIVATE)
     }
-}
-
-@Suppress("UNCHECKED_CAST")
-private fun getFirstTransformer(fileName: String): Transformer {
-    val engine = ScriptEngineManager().getEngineByExtension("core.kts")!!
-    val script = File("src/test/resources/scripts/$fileName.core.kts")
-    engine.eval(script.reader())
-
-    val transformers: List<Transformer> = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
-    return transformers.first()
-}
-
-private fun transformClass(transformer: Transformer): Class<*> {
-    val reader = ClassReader("dev.su5ed.koremods.transform.Person")
-
-    val node = ClassNode()
-    reader.accept(node, 0)
-    transformer.visitClass(node)
-
-    val writer = ClassWriter(reader, COMPUTE_MAXS or COMPUTE_FRAMES)
-    node.accept(writer)
-
-    val name = transformer.getTargetClassName().replace('/', '.')
-    val cl = RawByteClassLoader(name, writer.toByteArray())
-    return cl.loadClass(name)
+    
+    @Suppress("UNCHECKED_CAST")
+    private fun getFirstTransformer(fileName: String): Transformer {
+        logger.info("Hello")
+        val engine = getKoremodEngine(logger)
+        val script = File("src/test/resources/scripts/$fileName.core.kts")
+        engine.eval(script.reader())
+    
+        val transformers: List<Transformer> = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
+        return transformers.first()
+    }
+    
+    private fun transformClass(transformer: Transformer): Class<*> {
+        val reader = ClassReader("dev.su5ed.koremods.transform.Person")
+    
+        val node = ClassNode()
+        reader.accept(node, 0)
+        transformer.visitClass(node)
+    
+        val writer = ClassWriter(reader, COMPUTE_MAXS or COMPUTE_FRAMES)
+        node.accept(writer)
+    
+        val name = transformer.getTargetClassName().replace('/', '.')
+        val cl = RawByteClassLoader(name, writer.toByteArray())
+        return cl.loadClass(name)
+    }
 }
 
 class RawByteClassLoader(private val name: String, private val data: ByteArray) : ClassLoader() {

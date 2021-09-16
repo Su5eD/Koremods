@@ -2,6 +2,8 @@ package dev.su5ed.koremods
 
 import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
+import dev.su5ed.koremods.script.getKoremodEngine
+import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.nio.file.Files
 import java.nio.file.Path
@@ -11,14 +13,13 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 import javax.script.Invocable
-import javax.script.ScriptEngineManager
 import kotlin.io.path.extension
-
-internal lateinit var transformers: Map<String, List<KoremodScript>>
 
 data class KoremodScript(val name: String, val transformers: List<Transformer>)
 
-class KoremodDiscoverer(private val logger: Logger) {
+object KoremodDiscoverer {
+    internal lateinit var transformers: Map<String, List<KoremodScript>>
+    private val logger = LogManager.getLogger("KoremodDiscoverer")
     
     fun discoverKoremods(modsDir: Path) {
         val modScripts = mutableMapOf<String, Map<String, String>>()
@@ -60,7 +61,7 @@ class KoremodDiscoverer(private val logger: Logger) {
     }
 
     private fun evalScripts(scripts: Map<String, Map<String, String>>): Map<String, List<KoremodScript>> {
-        val executors = Executors.newCachedThreadPool()
+        val executors = Executors.newFixedThreadPool(scripts.values.sumOf(Map<*, *>::size))
 
         val futures: Map<String, Map<String, Future<List<Transformer>>>> = scripts.mapValues { (_, scripts) ->
             scripts.mapValues { (name, source) ->
@@ -89,8 +90,7 @@ class KoremodDiscoverer(private val logger: Logger) {
         logger.debug("Evaluating script $name")
         val stopwatch = Stopwatch.createStarted()
 
-        val engine = ScriptEngineManager().getEngineByExtension("core.kts")
-            ?: throw RuntimeException("Could not initialize KTS script engine")
+        val engine = getKoremodEngine(logger) // TODO Logger
         engine.eval(source)
 
         val transformers = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
@@ -102,14 +102,15 @@ class KoremodDiscoverer(private val logger: Logger) {
 
         return transformers
     }
+    
+    internal fun isInitialized(): Boolean = ::transformers.isInitialized
 }
 
 fun initScriptEngine(logger: Logger) {
     logger.info("Preloading KTS scripting engine")
     val stopwatch = Stopwatch.createStarted()
     
-    val engine = ScriptEngineManager().getEngineByExtension("core.kts")
-        ?: throw RuntimeException("Could not initialize engine")
+    val engine = getKoremodEngine(logger)
     engine.eval("transformers {}")
                 
     stopwatch.stop()

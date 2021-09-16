@@ -5,7 +5,7 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.loadDependencies
 
-object CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
+internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     scriptsInstancesSharing(true)
     
     jvm {
@@ -24,7 +24,7 @@ object CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     }
 })
 
-internal class ClassNotAvailableInSandboxException : RuntimeException()
+class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
 
 internal class FilteredClassLoader : ClassLoader() {
     private val restrictions = mutableListOf(
@@ -34,12 +34,13 @@ internal class FilteredClassLoader : ClassLoader() {
         "java.util",
         "kotlin.",
         "org.objectweb.asm.",
-        "codes.som.anthony.koffee."
+        "codes.som.anthony.koffee.",
+        "org.apache.logging.log4j."
     )
     
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {
         if (name.contains(".") && restrictions.isNotEmpty() && restrictions.none(name::startsWith)) 
-            throw ClassNotAvailableInSandboxException()
+            throw ClassNotAvailableInSandboxException(name)
         
         return super.loadClass(name, resolve)
     }

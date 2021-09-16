@@ -13,18 +13,18 @@ import kotlin.script.experimental.util.filterByAnnotationType
 @Retention(AnnotationRetention.SOURCE)
 annotation class Allow(vararg val paths: String)
 
-val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<MutableList<String>>(mutableListOf())
+internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<MutableList<String>>(mutableListOf())
 
-object CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
+internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     jvm {
         dependenciesFromClassloader(
             classLoader = CoremodKtsScript::class.java.classLoader,
             wholeClasspath = true
         )
-        defaultImports(listOf(
+        defaultImports(
             "org.objectweb.asm.Opcodes.*",
             "dev.su5ed.koremods.script.Allow"
-        ))
+        )
     }
     refineConfiguration {
         onAnnotations(Allow::class, handler = CoremodScriptConfigurator())
@@ -37,7 +37,7 @@ object CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     }
 })
 
-internal class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+private class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
     override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         val annotation = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)
             ?.filterByAnnotationType<Allow>()

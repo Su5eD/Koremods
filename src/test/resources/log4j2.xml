@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%highlight{[%d{HH:mm:ss}] [%t/%level] [%c{-3}]: %msg%n}"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="dev.su5ed.koremods.KoremodTests" level="info" additivity="false">
+            <AppenderRef ref="STDOUT" level="INFO"/>
+        </Logger>
+        
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>

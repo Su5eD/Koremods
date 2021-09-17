@@ -13,10 +13,11 @@ fun transformClass(name: String, node: ClassNode) {
                 script.transformers
                     .filter { transformer -> transformer.getTargetClassName() == name }
                     .forEach { transformer -> 
+                        logger.debug("Transforming class $name with transformer script ${script.name} of mod $modid")
                         try {
                             transformer.visitClass(node)
                         } catch (t: Throwable) {
-                            logger.error("Error transforming class $name with script ${script.name} of mod $modid", t)
+                            logger.error("Error transforming class", t)
                         }
                     }
             }

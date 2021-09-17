@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    
     id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("dev.su5ed.gradle.transform")
 }
 
 val shade: Configuration by configurations.creating
@@ -16,7 +16,7 @@ configurations {
 
 repositories {
     mavenCentral()
-    maven("https://su5ed.jfrog.io/artifactory/maven/")
+    maven("https://su5ed.jfrog.io/artifactory/maven")
     maven("https://libraries.minecraft.net")
 }
 

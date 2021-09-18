@@ -18,7 +18,7 @@ import kotlin.io.path.extension
 data class KoremodScript(val name: String, val transformers: List<Transformer>)
 
 object KoremodDiscoverer {
-    internal lateinit var transformers: Map<String, List<KoremodScript>>
+    lateinit var transformers: Map<String, List<KoremodScript>>
     private val logger = LogManager.getLogger("KoremodDiscoverer")
     
     fun discoverKoremods(modsDir: Path) {
@@ -63,9 +63,11 @@ object KoremodDiscoverer {
     private fun evalScripts(scripts: Map<String, Map<String, String>>): Map<String, List<KoremodScript>> {
         val executors = Executors.newFixedThreadPool(scripts.values.sumOf(Map<*, *>::size))
 
-        val futures: Map<String, Map<String, Future<List<Transformer>>>> = scripts.mapValues { (_, scripts) ->
+        val futures: Map<String, Map<String, Future<List<Transformer>>>> = scripts.mapValues { (modid, scripts) ->
+            if (scripts.isEmpty()) logger.error("Mod $modid provides a koremods config file without defining any scripts")
+            
             scripts.mapValues { (name, source) ->
-                executors.submit(Callable { evalScript(name, source) })
+                executors.submit(Callable { evalScript(modid, name, source) })
             }
         }
 
@@ -86,15 +88,16 @@ object KoremodDiscoverer {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun evalScript(name: String, source: String): List<Transformer> {
+    private fun evalScript(modid: String, name: String, source: String): List<Transformer> {
         logger.debug("Evaluating script $name")
         val stopwatch = Stopwatch.createStarted()
 
-        val engine = getKoremodEngine(logger) // TODO Logger
+        val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
+        val engine = getKoremodEngine(engineLogger)
         engine.eval(source)
 
         val transformers = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
-        if (transformers.isEmpty()) logger.warn("Script $name does not define any transformers")
+        if (transformers.isEmpty()) logger.error("Script $name does not define any transformers")
 
         stopwatch.stop()
         val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)
@@ -103,10 +106,10 @@ object KoremodDiscoverer {
         return transformers
     }
     
-    internal fun isInitialized(): Boolean = ::transformers.isInitialized
+    fun isInitialized(): Boolean = ::transformers.isInitialized
 }
 
-fun initScriptEngine(logger: Logger) {
+fun preloadScriptEngine(logger: Logger) {
     logger.info("Preloading KTS scripting engine")
     val stopwatch = Stopwatch.createStarted()
     
@@ -115,5 +118,5 @@ fun initScriptEngine(logger: Logger) {
                 
     stopwatch.stop()
     val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)
-    logger.debug("Script engine initialized in $time ms")
+    logger.debug("Script engine preloaded in $time ms")
 }

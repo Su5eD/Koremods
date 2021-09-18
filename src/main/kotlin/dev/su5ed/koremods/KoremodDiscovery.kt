@@ -40,7 +40,7 @@ object KoremodDiscoverer {
                 }
             }
                 
-        transformers = evalScripts(modScripts)
+        if (modScripts.isNotEmpty()) transformers = evalScripts(modScripts)
     }
 
     private fun locateScripts(zip: ZipFile, scripts: Map<String, String>): Map<String, String> {

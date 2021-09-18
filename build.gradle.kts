@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "7.0.0"
-    id("dev.su5ed.gradle.transform")
 }
 
 val shade: Configuration by configurations.creating
@@ -49,6 +48,7 @@ tasks {
         dependsOn("classes", "jar")
         
         configurations = listOf(shade)
+        exclude("META-INF/versions/9/**")
         archiveClassifier.set("shaded")
     }
     
@@ -59,8 +59,4 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }
-}
-
-artifacts { 
-    archives(tasks.shadowJar.get())
 }

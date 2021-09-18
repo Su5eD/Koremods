@@ -49,7 +49,6 @@ tasks {
         dependsOn("classes", "jar")
         
         configurations = listOf(shade)
-        exclude("**/module-info.class")
         archiveClassifier.set("shaded")
     }
     

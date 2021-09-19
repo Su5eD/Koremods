@@ -37,14 +37,18 @@ internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfigur
     }
 })
 
-private class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
     override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
+        return processAnnotations(context)
+    }
+    
+    private fun processAnnotations(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         val annotation = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)
             ?.filterByAnnotationType<Allow>()
             ?.map(ScriptSourceAnnotation<Allow>::annotation)
             ?.firstOrNull()
             ?: return context.compilationConfiguration.asSuccess()
-        
+                
         return ScriptCompilationConfiguration(context.compilationConfiguration) {
             jvm.restrictions(annotation.paths.toMutableList())
         }.asSuccess()

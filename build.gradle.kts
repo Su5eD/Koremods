@@ -29,7 +29,7 @@ dependencies {
     shade(kotlin("stdlib-jdk8"))
     shade(kotlin("reflect"))
     
-    shade(group = "codes.som.anthony", name = "koffee", version = "8.0.3-legacy") {
+    shade(group = "codes.som.anthony", name = "koffee", version = "8.0.4-legacy") {
         exclude(group = "org.ow2.asm")
     }
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")

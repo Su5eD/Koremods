@@ -17,7 +17,7 @@ fun transformClass(name: String, node: ClassNode) {
                         try {
                             transformer.visitClass(node)
                         } catch (t: Throwable) {
-                            logger.error("Error transforming class", t)
+                            logger.error("Error transforming class $name with script ${script.name} of mod $modid", t)
                         }
                     }
             }

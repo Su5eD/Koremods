@@ -71,7 +71,7 @@ class KoremodTransformationTests : KoremodTestBase() {
         val writer = ClassWriter(reader, COMPUTE_MAXS or COMPUTE_FRAMES)
         node.accept(writer)
     
-        val name = transformer.getTargetClassName().replace('/', '.')
+        val name = transformer.targetClassName.replace('/', '.')
         val cl = RawByteClassLoader(name, writer.toByteArray())
         return cl.loadClass(name)
     }

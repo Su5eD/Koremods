@@ -5,35 +5,45 @@ import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
 
 interface Transformer {
-    fun getTargetClassName(): String
+    val targetClassName: String
+    
+    val doComputeFrames: Boolean
     
     fun visitClass(node: ClassNode)
 }
 
 class TransformerBuilder(private val transformers: MutableList<Transformer>) {
-    fun `class`(name: String, block: ClassNode.() -> Unit) {
-        transformers.add(ClassTransformer(name, block))
+    fun `class`(name: String, computeFrames: Boolean = false, block: ClassNode.() -> Unit) {
+        transformers.add(ClassTransformer(name, computeFrames, block))
     }
     
-    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
-        transformers.add(MethodTransformer(owner, name, desc, block))
+    fun method(owner: String, name: String, desc: String, computeFrames: Boolean = false, block: MethodNode.() -> Unit) {
+        transformers.add(MethodTransformer(owner, name, desc, computeFrames, block))
     }
     
-    fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
-        transformers.add(FieldTransformer(owner, name, block))
+    fun field(owner: String, name: String, computeFrames: Boolean = false, block: FieldNode.() -> Unit) {
+        transformers.add(FieldTransformer(owner, name, computeFrames, block))
     }
 }
 
-class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit) : Transformer {
-    override fun getTargetClassName(): String = name
+class ClassTransformer(private val name: String, private val computeFrames: Boolean = false, private val block: ClassNode.() -> Unit) : Transformer {
+    override val targetClassName: String
+        get() = name
+    
+    override val doComputeFrames: Boolean
+        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         block(node)
     }
 }
 
-class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit) : Transformer {
-    override fun getTargetClassName(): String = owner
+class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val computeFrames: Boolean = false, private val block: MethodNode.() -> Unit) : Transformer {
+    override val targetClassName: String
+        get() = owner
+
+    override val doComputeFrames: Boolean
+        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         node.methods
@@ -42,8 +52,12 @@ class MethodTransformer(private val owner: String, private val name: String, pri
     }
 }
 
-class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit) : Transformer {
-    override fun getTargetClassName(): String = owner
+class FieldTransformer(private val owner: String, private val name: String, private val computeFrames: Boolean = false, private val block: FieldNode.() -> Unit) : Transformer {
+    override val targetClassName: String
+        get() = owner
+
+    override val doComputeFrames: Boolean
+        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         node.fields

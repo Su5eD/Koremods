@@ -13,20 +13,20 @@ interface Transformer {
 }
 
 class TransformerBuilder(private val transformers: MutableList<Transformer>) {
-    fun `class`(name: String, computeFrames: Boolean = false, block: ClassNode.() -> Unit) {
-        transformers.add(ClassTransformer(name, computeFrames, block))
+    fun `class`(name: String, block: ClassNode.() -> Unit, computeFrames: Boolean = false) {
+        transformers.add(ClassTransformer(name, block, computeFrames))
     }
     
-    fun method(owner: String, name: String, desc: String, computeFrames: Boolean = false, block: MethodNode.() -> Unit) {
-        transformers.add(MethodTransformer(owner, name, desc, computeFrames, block))
+    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit, computeFrames: Boolean = false) {
+        transformers.add(MethodTransformer(owner, name, desc, block, computeFrames))
     }
     
-    fun field(owner: String, name: String, computeFrames: Boolean = false, block: FieldNode.() -> Unit) {
-        transformers.add(FieldTransformer(owner, name, computeFrames, block))
+    fun field(owner: String, name: String, block: FieldNode.() -> Unit, computeFrames: Boolean = false) {
+        transformers.add(FieldTransformer(owner, name, block, computeFrames))
     }
 }
 
-class ClassTransformer(private val name: String, private val computeFrames: Boolean = false, private val block: ClassNode.() -> Unit) : Transformer {
+class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
     override val targetClassName: String
         get() = name
     
@@ -38,7 +38,7 @@ class ClassTransformer(private val name: String, private val computeFrames: Bool
     }
 }
 
-class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val computeFrames: Boolean = false, private val block: MethodNode.() -> Unit) : Transformer {
+class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
     override val targetClassName: String
         get() = owner
 
@@ -52,7 +52,7 @@ class MethodTransformer(private val owner: String, private val name: String, pri
     }
 }
 
-class FieldTransformer(private val owner: String, private val name: String, private val computeFrames: Boolean = false, private val block: FieldNode.() -> Unit) : Transformer {
+class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
     override val targetClassName: String
         get() = owner
 

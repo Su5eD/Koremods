@@ -7,14 +7,14 @@ import org.objectweb.asm.tree.ClassNode
 
 private val logger: Logger = LogManager.getLogger("KoremodsTransformer")
 
-fun transformClass(name: String, node: ClassNode): Int {
+fun transformClass(name: String?, node: ClassNode): Int {
     var computeFrames = false
     if (KoremodDiscoverer.isInitialized()) {
-        KoremodDiscoverer.transformers.forEach { (modid, scripts) -> 
+        KoremodDiscoverer.transformers.forEach { (modid, scripts) ->
             scripts.forEach { script ->
                 script.transformers
-                    .filter { transformer -> transformer.targetClassName == name }
-                    .forEach { transformer -> 
+                    .filter { transformer -> name == null || transformer.targetClassName == name }
+                    .forEach { transformer ->
                         logger.debug("Transforming class $name with transformer script ${script.name} of mod $modid")
                         if (transformer.doComputeFrames) computeFrames = true
                         try {

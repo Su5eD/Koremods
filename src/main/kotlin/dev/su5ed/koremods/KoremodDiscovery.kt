@@ -38,7 +38,7 @@ object KoremodDiscoverer {
             .let { scanPaths(it, modScripts) }
         
         val sum = modScripts.values.sumOf(Map<*, *>::size)
-        if (sum > 0) transformers = evalScripts(modScripts, sum)
+        transformers = if (sum > 0) evalScripts(modScripts, sum) else emptyMap()
     }
     
     private fun scanPaths(paths: Iterable<Path>, modScripts: MutableMap<String, Map<String, String>>) {
@@ -139,9 +139,16 @@ object KoremodDiscoverer {
     }
     
     fun isInitialized(): Boolean = ::transformers.isInitialized
+    
+    fun getFlatTransformers(): List<Transformer> {
+        return transformers
+            .flatMap(Map.Entry<String, List<KoremodScript>>::value)
+            .flatMap(KoremodScript::transformers)
+    }
 }
 
 fun preloadScriptEngine(logger: Logger) {
+    // TODO PRELOAD marker
     logger.info("Preloading KTS scripting engine")
     val stopwatch = Stopwatch.createStarted()
     

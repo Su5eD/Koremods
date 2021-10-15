@@ -7,43 +7,55 @@ import org.objectweb.asm.tree.MethodNode
 interface Transformer {
     val targetClassName: String
     
-    val doComputeFrames: Boolean
+    val ext: TransformerPropertiesExtension
     
     fun visitClass(node: ClassNode)
 }
 
+class TransformerPropertiesExtension internal constructor()
+
 class TransformerBuilder(private val transformers: MutableList<Transformer>) {
-    fun `class`(name: String, block: ClassNode.() -> Unit, computeFrames: Boolean = false) {
-        transformers.add(ClassTransformer(name, block, computeFrames))
+    
+    fun `class`(name: String, block: ClassNode.() -> Unit) {
+        `class`(name, block) {}
     }
     
-    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit, computeFrames: Boolean = false) {
-        transformers.add(MethodTransformer(owner, name, desc, block, computeFrames))
+    fun `class`(name: String, block: ClassNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
+        val props = TransformerPropertiesExtension().apply(ext)
+        transformers.add(ClassTransformer(name, block, props))
     }
     
-    fun field(owner: String, name: String, block: FieldNode.() -> Unit, computeFrames: Boolean = false) {
-        transformers.add(FieldTransformer(owner, name, block, computeFrames))
+    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
+        method(owner, name, desc, block) {}
+    }
+    
+    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
+        val props = TransformerPropertiesExtension().also(ext)
+        transformers.add(MethodTransformer(owner, name, desc, block, props)) 
+    }
+    
+    fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
+        field(owner, name, block) {}
+    }
+    
+    fun field(owner: String, name: String, block: FieldNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
+        val props = TransformerPropertiesExtension().apply(ext)
+        transformers.add(FieldTransformer(owner, name, block, props))
     }
 }
 
-class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
+class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
     override val targetClassName: String
         get() = name
-    
-    override val doComputeFrames: Boolean
-        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         block(node)
     }
 }
 
-class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
+class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
     override val targetClassName: String
         get() = owner
-
-    override val doComputeFrames: Boolean
-        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         node.methods
@@ -52,12 +64,9 @@ class MethodTransformer(private val owner: String, private val name: String, pri
     }
 }
 
-class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit, private val computeFrames: Boolean = false) : Transformer {
+class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
     override val targetClassName: String
         get() = owner
-
-    override val doComputeFrames: Boolean
-        get() = computeFrames
 
     override fun visitClass(node: ClassNode) {
         node.fields

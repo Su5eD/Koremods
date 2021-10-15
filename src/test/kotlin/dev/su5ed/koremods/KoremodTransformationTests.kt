@@ -52,7 +52,6 @@ class KoremodTransformationTests : KoremodTestBase() {
     
     @Suppress("UNCHECKED_CAST")
     private fun getFirstTransformer(fileName: String): Transformer {
-        logger.info("Hello")
         val engine = getKoremodEngine(logger)
         val script = File("src/test/resources/scripts/$fileName.core.kts")
         engine.eval(script.reader())

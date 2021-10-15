@@ -27,15 +27,22 @@ object KoremodDiscoverer {
     lateinit var transformers: Map<String, List<KoremodScript>>
     private val logger = LogManager.getLogger("KoremodDiscoverer")
     
-    fun discoverKoremods(modsDir: Path, classpath: Array<URL>) {
-        val modScripts = mutableMapOf<String, Map<String, String>>()
-        
-        scanPaths(Files.walk(modsDir, 1).filter { it.name != "mods" }.toList(), modScripts)
-        classpath
+    fun discoverKoremods(dir: Path, classpath: Array<URL>) {
+        val paths = Files.walk(dir, 1)
+            .filter { it.name != dir.name }
+            .toList()
+        val classPaths = classpath
             .map(URL::toURI)
             .filter { it.scheme == "file" }
             .map(Paths::get)
-            .let { scanPaths(it, modScripts) }
+        
+        discoverKoremods(paths + classPaths)
+    }
+    
+    fun discoverKoremods(paths: Collection<Path>) {
+        val modScripts = mutableMapOf<String, Map<String, String>>()
+        
+        scanPaths(paths, modScripts)
         
         val sum = modScripts.values.sumOf(Map<*, *>::size)
         transformers = if (sum > 0) evalScripts(modScripts, sum) else emptyMap()

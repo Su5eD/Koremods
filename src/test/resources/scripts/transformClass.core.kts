@@ -1,3 +1,4 @@
+import codes.som.anthony.koffee.util.constructDescriptor
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 
@@ -6,5 +7,5 @@ transformers {
 }
 
 fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", "Ljava/lang/String;", null, null))
+    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
 }

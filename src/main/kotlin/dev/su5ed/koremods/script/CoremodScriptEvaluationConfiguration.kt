@@ -1,13 +1,14 @@
 package dev.su5ed.koremods.script
 
-import kotlin.script.experimental.api.*
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.ScriptEvaluationConfiguration
+import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.refineConfigurationBeforeEvaluate
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.loadDependencies
 
 internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
-    scriptsInstancesSharing(true)
-    
     jvm {
         baseClassLoader(FilteredClassLoader())
         loadDependencies(false)

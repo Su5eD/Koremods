@@ -1,7 +1,9 @@
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.dsl.Transformer
-import dev.su5ed.koremods.script.getKoremodEngine
+import dev.su5ed.koremods.script.evalTransformers
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.objectweb.asm.ClassReader
@@ -11,11 +13,12 @@ import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
-import javax.script.Invocable
+import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
-class KoremodTransformationTests : KoremodTestBase() {
+class KoremodTransformationTests {
+    private val logger: Logger = LogManager.getLogger()
 
     @Test
     fun testClassTransformer() {
@@ -52,11 +55,9 @@ class KoremodTransformationTests : KoremodTestBase() {
     
     @Suppress("UNCHECKED_CAST")
     private fun getFirstTransformer(fileName: String): Transformer {
-        val engine = getKoremodEngine(logger)
         val script = File("src/test/resources/scripts/$fileName.core.kts")
-        engine.eval(script.reader())
     
-        val transformers: List<Transformer> = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
+        val transformers: List<Transformer> = evalTransformers(script.toScriptSource(), logger)!!
         return transformers.first()
     }
     

@@ -2,7 +2,8 @@ package dev.su5ed.koremods
 
 import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
-import dev.su5ed.koremods.script.getKoremodEngine
+import dev.su5ed.koremods.script.evalScript
+import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
@@ -16,9 +17,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
-import javax.script.Invocable
 import kotlin.io.path.extension
 import kotlin.io.path.name
+import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
 
 data class KoremodScript(val name: String, val transformers: List<Transformer>)
@@ -130,12 +131,9 @@ object KoremodDiscoverer {
     private fun evalScript(modid: String, name: String, source: String): List<Transformer> {
         logger.debug("Evaluating script $name")
         val stopwatch = Stopwatch.createStarted()
-
+        
         val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
-        val engine = getKoremodEngine(engineLogger)
-        engine.eval(source)
-
-        val transformers = (engine as Invocable).invokeFunction("getTransformers") as List<Transformer>
+        val transformers = evalTransformers(source.toScriptSource(), engineLogger)!!
         if (transformers.isEmpty()) logger.error("Script $name does not define any transformers")
 
         stopwatch.stop()
@@ -159,8 +157,7 @@ fun preloadScriptEngine(logger: Logger) {
     logger.info("Preloading KTS scripting engine")
     val stopwatch = Stopwatch.createStarted()
     
-    val engine = getKoremodEngine(logger)
-    engine.eval("transformers {}")
+    evalScript("transformers {}".toScriptSource(), logger)
                 
     stopwatch.stop()
     val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)

@@ -3,6 +3,7 @@ package dev.su5ed.koremods.dsl
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
+import kotlin.reflect.KProperty
 
 interface Transformer {
     val targetClassName: String
@@ -13,6 +14,18 @@ interface Transformer {
 }
 
 class TransformerPropertiesExtension internal constructor()
+
+class DefaultProperty<T : Any>(default: T) {
+    private var value: T? = default
+
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        return value ?: throw IllegalStateException("Property ${property.name} should be initialized before get.")
+    }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        this.value = value
+    }
+}
 
 class TransformerBuilder(private val transformers: MutableList<Transformer>) {
     

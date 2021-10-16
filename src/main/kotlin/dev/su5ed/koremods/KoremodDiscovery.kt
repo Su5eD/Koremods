@@ -4,6 +4,7 @@ import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
 import dev.su5ed.koremods.script.evalScript
 import dev.su5ed.koremods.script.evalTransformers
+import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
@@ -24,7 +25,7 @@ import kotlin.streams.toList
 
 data class KoremodScript(val name: String, val transformers: List<Transformer>)
 
-object KoremodDiscoverer {
+object KoremodDiscoverer { // TODO Caching
     lateinit var transformers: Map<String, List<KoremodScript>>
     private val logger = LogManager.getLogger("KoremodDiscoverer")
     
@@ -110,15 +111,11 @@ object KoremodDiscoverer {
                 executors.submit(Callable { evalScript(modid, name, source) })
             }
         }
-
-        val stopwatch = Stopwatch.createStarted()
-
-        executors.shutdown()
-        executors.awaitTermination(10, TimeUnit.SECONDS)
-
-        stopwatch.stop()
-        val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)
-        logger.debug("All scripts evaluated in $time ms")
+        
+        logger.measureTime(Level.DEBUG, "Evaluating all scripts") {
+            executors.shutdown()
+            executors.awaitTermination(10, TimeUnit.SECONDS)
+        }
         
         return futures.mapValues { (_, scripts) ->
             scripts.map { (name, future) -> 
@@ -127,18 +124,14 @@ object KoremodDiscoverer {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun evalScript(modid: String, name: String, source: String): List<Transformer> {
         logger.debug("Evaluating script $name")
-        val stopwatch = Stopwatch.createStarted()
         
-        val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
-        val transformers = evalTransformers(source.toScriptSource(), engineLogger)!!
+        val transformers = logger.measureTime(Level.DEBUG, "Evaluating script $name") {
+            val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
+            evalTransformers(name, source.toScriptSource(), engineLogger)!!
+        }
         if (transformers.isEmpty()) logger.error("Script $name does not define any transformers")
-
-        stopwatch.stop()
-        val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)
-        logger.debug("Script $name evaluated in $time ms")
 
         return transformers
     }
@@ -152,14 +145,22 @@ object KoremodDiscoverer {
     }
 }
 
-fun preloadScriptEngine(logger: Logger) {
+fun preloadScriptHost(logger: Logger) {
     // TODO PRELOAD marker
-    logger.info("Preloading KTS scripting engine")
-    val stopwatch = Stopwatch.createStarted()
+    logger.info("Preloading KTS Scripting Host")
     
-    evalScript("transformers {}".toScriptSource(), logger)
-                
+    logger.measureTime(Level.DEBUG, "Preloading KTS Scripting Host") {
+        evalScript("transformers {}".toScriptSource(), logger)
+    }
+}
+
+internal fun <T> Logger.measureTime(level: Level, message: String, block: () -> T): T {
+    val stopwatch = Stopwatch.createStarted()
+    val result = block()
     stopwatch.stop()
+    
     val time = stopwatch.elapsed(TimeUnit.MILLISECONDS)
-    logger.debug("Script engine preloaded in $time ms")
+    log(level, "$message took $time ms")
+    
+    return result
 }

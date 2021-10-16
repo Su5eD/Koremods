@@ -4,8 +4,6 @@ import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.JvmScriptCompilationConfigurationKeys
 import kotlin.script.experimental.jvm.dependenciesFromClassloader
 import kotlin.script.experimental.jvm.jvm
-import kotlin.script.experimental.jvmhost.jsr223.importAllBindings
-import kotlin.script.experimental.jvmhost.jsr223.jsr223
 import kotlin.script.experimental.util.PropertiesCollection
 import kotlin.script.experimental.util.filterByAnnotationType
 
@@ -21,23 +19,20 @@ internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfigur
             classLoader = CoremodKtsScript::class.java.classLoader,
             wholeClasspath = true
         )
-        defaultImports(
+        defaultImports( // TODO
             "org.objectweb.asm.Opcodes.*",
             "dev.su5ed.koremods.script.Allow"
         )
     }
     refineConfiguration {
-        onAnnotations(Allow::class, handler = CoremodScriptConfigurator())
+        onAnnotations(Allow::class, handler = CoremodScriptConfigurator)
     }
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
-    jsr223 {
-        importAllBindings(true)
-    }
 })
 
-class CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+object CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
     override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         return processAnnotations(context)
     }

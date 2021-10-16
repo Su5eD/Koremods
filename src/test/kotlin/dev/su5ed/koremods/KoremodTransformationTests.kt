@@ -16,6 +16,7 @@ import java.io.File
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 
 class KoremodTransformationTests {
     private val logger: Logger = LogManager.getLogger()
@@ -53,11 +54,10 @@ class KoremodTransformationTests {
         assertEquals(0, name.modifiers and Opcodes.ACC_PRIVATE)
     }
     
-    @Suppress("UNCHECKED_CAST")
     private fun getFirstTransformer(fileName: String): Transformer {
         val script = File("src/test/resources/scripts/$fileName.core.kts")
     
-        val transformers: List<Transformer> = evalTransformers(script.toScriptSource(), logger)!!
+        val transformers: List<Transformer> = assertNotNull(evalTransformers(fileName, script.toScriptSource(), logger))
         return transformers.first()
     }
     

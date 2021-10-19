@@ -57,7 +57,7 @@ class KoremodTransformationTests {
     private fun getFirstTransformer(fileName: String): Transformer {
         val script = File("src/test/resources/scripts/$fileName.core.kts")
     
-        val transformers: List<Transformer> = assertNotNull(evalTransformers(fileName, script.toScriptSource(), logger))
+        val transformers: List<Transformer> = assertNotNull(evalTransformers(fileName, script.toScriptSource(), logger)).getTransformers()
         return transformers.first()
     }
     

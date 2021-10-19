@@ -8,8 +8,6 @@ import kotlin.reflect.KProperty
 interface Transformer {
     val targetClassName: String
     
-    val ext: TransformerPropertiesExtension
-    
     fun visitClass(node: ClassNode)
 }
 
@@ -27,37 +25,25 @@ class DefaultProperty<T : Any>(default: T) {
     }
 }
 
-class TransformerBuilder(private val transformers: MutableList<Transformer>) {
-    
+class TransformerBuilder(private val transformers: MutableList<Transformer>, private val props: TransformerPropertiesExtension) {
     fun `class`(name: String, block: ClassNode.() -> Unit) {
-        `class`(name, block) {}
-    }
-    
-    fun `class`(name: String, block: ClassNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
-        val props = TransformerPropertiesExtension().apply(ext)
-        transformers.add(ClassTransformer(name, block, props))
+        transformers.add(ClassTransformer(name, block))
     }
     
     fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
-        method(owner, name, desc, block) {}
-    }
-    
-    fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
-        val props = TransformerPropertiesExtension().also(ext)
-        transformers.add(MethodTransformer(owner, name, desc, block, props)) 
+        transformers.add(MethodTransformer(owner, name, desc, block)) 
     }
     
     fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
-        field(owner, name, block) {}
+        transformers.add(FieldTransformer(owner, name, block))
     }
     
-    fun field(owner: String, name: String, block: FieldNode.() -> Unit, ext: TransformerPropertiesExtension.() -> Unit) {
-        val props = TransformerPropertiesExtension().apply(ext)
-        transformers.add(FieldTransformer(owner, name, block, props))
+    fun ext(block: TransformerPropertiesExtension.() -> Unit) {
+        block(props)
     }
 }
 
-class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
+class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit) : Transformer {
     override val targetClassName: String
         get() = name
 
@@ -66,7 +52,7 @@ class ClassTransformer(private val name: String, private val block: ClassNode.()
     }
 }
 
-class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
+class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit) : Transformer {
     override val targetClassName: String
         get() = owner
 
@@ -77,7 +63,7 @@ class MethodTransformer(private val owner: String, private val name: String, pri
     }
 }
 
-class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit, override val ext: TransformerPropertiesExtension) : Transformer {
+class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit) : Transformer {
     override val targetClassName: String
         get() = owner
 
@@ -90,10 +76,13 @@ class FieldTransformer(private val owner: String, private val name: String, priv
 
 class TransformerHandler {
     private val transformers = mutableListOf<Transformer>()
+    private val props = TransformerPropertiesExtension()
         
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
-        transformer.invoke(TransformerBuilder(transformers))
+        transformer.invoke(TransformerBuilder(transformers, props))
     }
     
-    fun getTransformers() = transformers
+    fun getTransformers() = transformers.toList()
+    
+    fun getProps() = props
 }

@@ -27,7 +27,7 @@ internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfigurat
 
 class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
 
-internal class FilteredClassLoader : ClassLoader() {
+internal class FilteredClassLoader : ClassLoader(Thread.currentThread().contextClassLoader) {
     private val restrictions = mutableListOf(
         "dev.su5ed.koremods.script.CoremodKtsScript",
         "dev.su5ed.koremods.dsl.",

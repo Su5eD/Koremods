@@ -2,6 +2,7 @@ package dev.su5ed.koremods
 
 import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
+import dev.su5ed.koremods.dsl.TransformerHandler
 import dev.su5ed.koremods.script.evalScript
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
@@ -23,7 +24,7 @@ import kotlin.io.path.name
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
 
-data class KoremodScript(val name: String, val transformers: List<Transformer>)
+data class KoremodScript(val name: String, val handler: TransformerHandler)
 
 object KoremodDiscoverer { // TODO Caching
     lateinit var transformers: Map<String, List<KoremodScript>>
@@ -104,7 +105,7 @@ object KoremodDiscoverer { // TODO Caching
     private fun evalScripts(scripts: Map<String, Map<String, String>>, threads: Int): Map<String, List<KoremodScript>> {
         val executors = Executors.newFixedThreadPool(threads)
 
-        val futures: Map<String, Map<String, Future<List<Transformer>>>> = scripts.mapValues { (modid, scripts) ->
+        val futures: Map<String, Map<String, Future<TransformerHandler>>> = scripts.mapValues { (modid, scripts) ->
             if (scripts.isEmpty()) logger.error("Mod $modid provides a koremods config file without defining any scripts")
             
             scripts.mapValues { (name, source) ->
@@ -124,16 +125,16 @@ object KoremodDiscoverer { // TODO Caching
         }
     }
 
-    private fun evalScript(modid: String, name: String, source: String): List<Transformer> {
+    private fun evalScript(modid: String, name: String, source: String): TransformerHandler {
         logger.debug("Evaluating script $name")
         
-        val transformers = logger.measureTime(Level.DEBUG, "Evaluating script $name") {
+        val handler = logger.measureTime(Level.DEBUG, "Evaluating script $name") {
             val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
-            evalTransformers(name, source.toScriptSource(), engineLogger)!!
+            evalTransformers(name, source.toScriptSource(), engineLogger)!! // TODO Null check
         }
-        if (transformers.isEmpty()) logger.error("Script $name does not define any transformers")
+        if (handler.getTransformers().isEmpty()) logger.error("Script $name does not define any transformers")
 
-        return transformers
+        return handler
     }
     
     fun isInitialized(): Boolean = ::transformers.isInitialized
@@ -141,7 +142,7 @@ object KoremodDiscoverer { // TODO Caching
     fun getFlatTransformers(): List<Transformer> {
         return transformers
             .flatMap(Map.Entry<String, List<KoremodScript>>::value)
-            .flatMap(KoremodScript::transformers)
+            .flatMap { it.handler.getTransformers() }
     }
 }
 

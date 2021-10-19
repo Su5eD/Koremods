@@ -1,5 +1,5 @@
-import java.time.LocalDateTime
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.time.LocalDateTime
 
 plugins {
     kotlin("jvm")
@@ -43,6 +43,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
     testImplementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
+    testImplementation(group = "com.google.guava", "guava", "21.0")
 }
 
 val manifestAttributes = mapOf(

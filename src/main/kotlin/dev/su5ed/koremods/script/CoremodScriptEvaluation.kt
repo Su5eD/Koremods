@@ -1,6 +1,6 @@
 package dev.su5ed.koremods.script
 
-import dev.su5ed.koremods.dsl.Transformer
+import dev.su5ed.koremods.dsl.TransformerHandler
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -12,14 +12,14 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 
 private val evalLogger: Logger = LogManager.getLogger("KoremodEvaluation")
 
-fun evalTransformers(name: String, source: SourceCode, log: Logger): List<Transformer>? {
+fun evalTransformers(name: String, source: SourceCode, log: Logger): TransformerHandler? {
     when (val eval = evalScript(source, log)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
                 is ResultValue.Value-> throw IllegalStateException("Script $name returned a value instead of Unit")
                 is ResultValue.Unit -> return result.scriptInstance
                     .cast<CoremodKtsScript>()
-                    .getTransformers()
+                    .transformerHandler
                 is ResultValue.Error -> evalLogger.error("Evaluation of script $name resulted in an exception", result.error)
             }
         }

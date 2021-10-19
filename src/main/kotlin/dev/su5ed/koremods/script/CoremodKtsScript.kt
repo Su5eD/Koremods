@@ -7,18 +7,15 @@ import dev.su5ed.koremods.dsl.TransformerHandler
 import org.apache.logging.log4j.Logger
 import kotlin.script.experimental.annotations.KotlinScript
 
-@Suppress("UNUSED_PARAMETER")
 @KotlinScript(
     fileExtension = "core.kts",
     compilationConfiguration = CoremodScriptCompilationConfiguration::class,
     evaluationConfiguration = CoremodScriptEvaluationConfiguration::class
 )
 abstract class CoremodKtsScript(val logger: Logger) {
-    private val transformerHandler = TransformerHandler()
+    val transformerHandler = TransformerHandler()
     
     fun transformers(configuration: TransformerBuilder.() -> Unit) {
         transformerHandler.transformers(configuration)
     }
-    
-    fun getTransformers() = transformerHandler.getTransformers()
 }

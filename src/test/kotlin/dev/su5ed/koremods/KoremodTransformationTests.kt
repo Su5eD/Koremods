@@ -1,6 +1,7 @@
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.dsl.Transformer
+import dev.su5ed.koremods.script.evalScript
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -13,13 +14,26 @@ import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
+import kotlin.script.experimental.api.valueOrThrow
 import kotlin.script.experimental.host.toScriptSource
+import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class KoremodTransformationTests {
     private val logger: Logger = LogManager.getLogger()
+    
+    @Test
+    fun testPreloadTime() {
+        val time = measureTimeMillis { 
+            val eval = evalScript("transformers {}".toScriptSource(), logger)
+            val instance = eval.valueOrThrow().returnValue.scriptInstance
+            println(instance)
+        }
+                
+        println("took $time ms")
+    }
 
     @Test
     fun testClassTransformer() {

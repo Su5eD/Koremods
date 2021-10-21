@@ -3,7 +3,6 @@ package dev.su5ed.koremods
 import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
 import dev.su5ed.koremods.dsl.TransformerHandler
-import dev.su5ed.koremods.script.evalScript
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -26,7 +25,7 @@ import kotlin.streams.toList
 
 data class KoremodScript(val name: String, val handler: TransformerHandler)
 
-object KoremodDiscoverer { // TODO Caching
+object KoremodDiscoverer {
     lateinit var transformers: Map<String, List<KoremodScript>>
     private val logger = LogManager.getLogger("KoremodDiscoverer")
     
@@ -143,15 +142,6 @@ object KoremodDiscoverer { // TODO Caching
         return transformers
             .flatMap(Map.Entry<String, List<KoremodScript>>::value)
             .flatMap { it.handler.getTransformers() }
-    }
-}
-
-fun preloadScriptHost(logger: Logger) {
-    // TODO PRELOAD marker
-    logger.info("Preloading KTS Scripting Host")
-    
-    logger.measureTime(Level.DEBUG, "Preloading KTS Scripting Host") {
-        evalScript("transformers {}".toScriptSource(), logger)
     }
 }
 

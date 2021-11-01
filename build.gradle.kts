@@ -3,14 +3,36 @@ import java.time.LocalDateTime
 
 plugins {
     kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
+val lwjglVersion = "3.2.3"
+val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
+val lwjglNatives: String = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem().let { os ->
+	when {
+		os.isWindows -> "natives-windows"
+		os.isLinux -> "natives-linux"
+		os.isMacOsX -> "natives-macos"
+		else -> throw Error("Unrecognized or unsupported Operating system. Please set lwjglNatives manually")
+	}
+}
+
+val splash: SourceSet by sourceSets.creating
+val splashImplementation: Configuration by configurations
 val shade: Configuration by configurations.creating
 
 configurations {
+    compileOnly {
+        splashImplementation.extendsFrom(this)
+    }
+    
     implementation {
         extendsFrom(shade)
+    }
+    
+    testImplementation {
+        extendsFrom(compileOnly.get())
+        extendsFrom(splashImplementation)
     }
 }
 
@@ -35,15 +57,23 @@ dependencies {
     }
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
-    // Dependencies shipped by Forge
+    // Dependencies shipped by Minecraft
     compileOnly(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
     compileOnly(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.14.1")
+    compileOnly(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
     compileOnly(group = "com.google.guava", "guava", "21.0")
-
+    
+    splashImplementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    
+    lwjglComponents.forEach { 
+        splashImplementation("org.lwjgl", it)
+        splashImplementation("org.lwjgl", it, classifier = lwjglNatives)
+    }
+    
+    implementation(splash.output)
+    
+    testImplementation(splash.output)
     testImplementation(kotlin("test"))
-    testImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
-    testImplementation(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    testImplementation(group = "com.google.guava", "guava", "21.0")
 }
 
 val manifestAttributes = mapOf(
@@ -58,6 +88,8 @@ val manifestAttributes = mapOf(
 
 tasks {
     jar {
+        from(splash.output)
+        
         manifest.attributes(manifestAttributes)
     }
     

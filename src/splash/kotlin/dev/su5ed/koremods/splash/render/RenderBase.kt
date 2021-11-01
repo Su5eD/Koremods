@@ -1,0 +1,55 @@
+package dev.su5ed.koremods.splash.render
+
+import dev.su5ed.koremods.splash.Uniform
+import org.lwjgl.opengl.GL30.*
+
+abstract class RenderBase : Render {
+    abstract val vertexShader: String?
+    abstract val fragmentShader: String?
+    
+    abstract val uniforms: List<Uniform>
+
+    protected var VAO: Int = 0
+        private set
+    protected var VBO: Int = 0
+        private set
+    protected var EBO: Int = 0
+        private set
+    protected var shader: Int = 0
+        private set
+
+    override fun bake(VAO: Int, VBO: Int, EBO: Int, shaderFactory: (String?, String?) -> Int) {
+        this.VAO = VAO
+        this.VBO = VBO
+        this.EBO = EBO
+        shader = shaderFactory(vertexShader, fragmentShader)
+        
+        glUseProgram(shader)
+        uniforms.forEach { it.init(shader) }
+        glUseProgram(0)
+    }
+
+    override fun startDrawing() {
+        glBindVertexArray(VAO)
+        
+        glUseProgram(shader)
+        
+        uniforms.forEach(Uniform::tick)
+    }
+
+    override fun endDrawing() {
+        glUseProgram(0)
+        
+        glBindVertexArray(0)
+    }
+
+    override fun windowClosing() {}
+
+    override fun shouldCloseWindow(): Boolean = true
+
+    override fun onWindowClose() {
+        glDeleteVertexArrays(VAO)
+        glDeleteBuffers(VBO)
+        glDeleteBuffers(EBO)
+    }
+}

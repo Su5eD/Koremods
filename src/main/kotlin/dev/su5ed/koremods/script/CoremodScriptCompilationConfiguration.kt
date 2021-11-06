@@ -21,7 +21,10 @@ internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfigur
         )
         defaultImports( // TODO
             "org.objectweb.asm.Opcodes.*",
-            "dev.su5ed.koremods.script.Allow"
+            "dev.su5ed.koremods.script.Allow",
+            "org.objectweb.asm.tree.ClassNode",
+            "org.objectweb.asm.tree.MethodNode",
+            "org.objectweb.asm.tree.FieldNode"
         )
     }
     refineConfiguration {

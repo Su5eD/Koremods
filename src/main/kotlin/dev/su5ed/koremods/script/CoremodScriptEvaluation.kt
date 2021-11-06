@@ -14,7 +14,7 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 
 private val evalLogger: Logger = LogManager.getLogger("KoremodEvaluation")
 
-fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: Collection<File>): TransformerHandler {
+fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: Collection<File> = emptyList()): TransformerHandler {
     when (val eval = evalScript(source, log, classpath)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {

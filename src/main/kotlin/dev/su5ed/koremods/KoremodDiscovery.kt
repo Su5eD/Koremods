@@ -23,10 +23,15 @@ import kotlin.io.path.name
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
 
+private data class SourceScriptPack(val modid: String, val file: File, val scripts: List<RawScript<String>>)
+private data class FutureScriptPack(val modid: String, val scripts: List<RawScript<Future<TransformerHandler>>>)
+private data class RawScript<T>(val name: String, val source: T)
+
+data class KoremodScriptPack(val modid: String, val scripts: List<KoremodScript>)
 data class KoremodScript(val name: String, val handler: TransformerHandler)
 
 object KoremodDiscoverer {
-    lateinit var transformers: Map<String, List<KoremodScript>>
+    lateinit var transformers: List<KoremodScriptPack>
     private val logger = LogManager.getLogger("KoremodDiscoverer")
     
     fun discoverKoremods(dir: Path, classpath: Array<URL>) {
@@ -42,94 +47,100 @@ object KoremodDiscoverer {
     }
     
     fun discoverKoremods(paths: Collection<Path>) {
-        val modScripts = mutableMapOf<String, Map<String, String>>()
+        val modScripts = scanPaths(paths)
         
-        scanPaths(paths, modScripts)
-        
-        val sum = modScripts.values.sumOf(Map<*, *>::size)
-        transformers = if (sum > 0) evalScripts(modScripts, sum) else emptyMap()
+        val sum = modScripts.sumOf { it.scripts.size }
+        transformers = if (sum > 0) evalScripts(modScripts, sum) else emptyList()
     }
     
-    private fun scanPaths(paths: Iterable<Path>, modScripts: MutableMap<String, Map<String, String>>) {
+    private fun scanPaths(paths: Iterable<Path>): List<SourceScriptPack> {
+        val scriptPacks: MutableList<SourceScriptPack> = mutableListOf()
         paths.forEach { path ->
             val file = path.toFile()
             if (file.isDirectory) {
                 val conf = path.resolve("META-INF/koremods.conf").toFile()
-                if (conf.exists()) readConfig(conf.inputStream(), modScripts) {
-                    val scriptFile = File(file, it)
-                    return@readConfig if (scriptFile.exists()) scriptFile.inputStream()
-                    else null
+                if (conf.exists()) {
+                    scriptPacks.add(readConfig(file, conf.inputStream()) {
+                        val scriptFile = File(file, it)
+                        if (scriptFile.exists()) scriptFile.inputStream()
+                        else null
+                    })
                 }
             }
             else if (path.extension == "jar" || path.extension == "zip") {
                 val zip = ZipFile(file)
                 zip.getEntry("META-INF/koremods.conf")?.let { entry ->
                     val istream = zip.getInputStream(entry)
-                    readConfig(istream, modScripts) {
+                    scriptPacks.add(readConfig(file, istream) {
                         zip.getEntry(it)?.let(zip::getInputStream)
-                    }
+                    })
                 }
             }
         }
+        return scriptPacks
     }
     
-    private fun readConfig(istream: InputStream, modScripts: MutableMap<String, Map<String, String>>, locator: (String) -> InputStream?) {
+    private fun readConfig(parent: File, istream: InputStream, locator: (String) -> InputStream?): SourceScriptPack {
         val reader = istream.bufferedReader()
-                            
-        val config = parseConfig(reader)
+        
+        val config: KoremodModConfig = parseConfig(reader)
         reader.close()
         logger.info("Loading scripts for mod ${config.modid}")
                             
         val scripts = locateScripts(locator, config.scripts)
-        modScripts[config.modid] = scripts
+        
+        return SourceScriptPack(config.modid, parent, scripts)
     }
 
-    private fun locateScripts(locator: (String) -> InputStream?, scripts: Map<String, String>): Map<String, String> {
+    private fun locateScripts(locator: (String) -> InputStream?, scripts: Map<String, String>): List<RawScript<String>> {
         return scripts
-            .mapValues { (name, path) ->
+            .mapNotNull { (name, path) ->
                 logger.debug("Reading script $name")
                 
                 locator(path)?.let { ins ->
                     val lines = ins.bufferedReader().readLines()
                     if (lines.isEmpty()) logger.error("Script $name not found")
-                    return@mapValues lines.joinToString(separator = "\n")
+                    return@mapNotNull RawScript(name, lines.joinToString(separator = "\n"))
                 }
                 
                 logger.error("Could not read script $name")
-                return@mapValues ""
+                return@mapNotNull null
             }
-            .filterValues(String::isNotEmpty)
     }
 
-    private fun evalScripts(scripts: Map<String, Map<String, String>>, threads: Int): Map<String, List<KoremodScript>> {
+    private fun evalScripts(sourcePacks: List<SourceScriptPack>, threads: Int): List<KoremodScriptPack> {
         val executors = Executors.newFixedThreadPool(threads)
 
-        val futures: Map<String, Map<String, Future<TransformerHandler>>> = scripts.mapValues { (modid, scripts) ->
-            if (scripts.isEmpty()) logger.error("Mod $modid provides a koremods config file without defining any scripts")
+        val futurePacks: List<FutureScriptPack> = sourcePacks.map { pack ->
+            if (pack.scripts.isEmpty()) logger.error("Mod ${pack.file.name} defines a koremods config without any scripts")
             
-            scripts.mapValues { (name, source) ->
-                executors.submit(Callable { evalScript(modid, name, source) })
+            val futureScripts = pack.scripts.map { src ->
+                val future = executors.submit(Callable { evalScript(pack.modid, pack.file, src.name, src.source) })
+                RawScript(src.name, future)
             }
+            
+            FutureScriptPack(pack.modid, futureScripts)
         }
         
         logger.measureTime(Level.DEBUG, "Evaluating all scripts") {
             executors.shutdown()
-            executors.awaitTermination(10, TimeUnit.SECONDS)
+            executors.awaitTermination(15, TimeUnit.SECONDS)
         }
         
-        return futures.mapValues { (_, scripts) ->
-            scripts.map { (name, future) -> 
+        return futurePacks.map {
+            val processed = it.scripts.map { (name, future) -> 
                 KoremodScript(name, future.get())
             }
+            KoremodScriptPack(it.modid, processed)
         }
     }
 
-    private fun evalScript(modid: String, name: String, source: String): TransformerHandler {
+    private fun evalScript(modid: String, file: File, name: String, source: String): TransformerHandler {
         logger.debug("Evaluating script $name")
         
         val handler = logger.measureTime(Level.DEBUG, "Evaluating script $name") {
             val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
-            evalTransformers(name, source.toScriptSource(), engineLogger)!! // TODO Null check
+            evalTransformers(name, source.toScriptSource(), engineLogger, listOf(file))
         }
         if (handler.getTransformers().isEmpty()) logger.error("Script $name does not define any transformers")
 
@@ -140,7 +151,7 @@ object KoremodDiscoverer {
     
     fun getFlatTransformers(): List<Transformer> {
         return transformers
-            .flatMap(Map.Entry<String, List<KoremodScript>>::value)
+            .flatMap(KoremodScriptPack::scripts)
             .flatMap { it.handler.getTransformers() }
     }
 }

@@ -3,7 +3,6 @@ package dev.su5ed.koremods.splash
 import dev.su5ed.koremods.splash.log.SplashAppender
 import dev.su5ed.koremods.splash.render.*
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
 import org.lwjgl.glfw.GLFW.*
@@ -18,7 +17,6 @@ import kotlin.concurrent.thread
 
 internal val WINDOW_SIZE = Pair(550, 250)
 internal const val WINDOW_ICON = "logo.png"
-internal val LOG: Logger = LogManager.getLogger("KoremodsSplash")
 
 fun initSplashScreen(): KoremodsSplashScreen {
     return KoremodsSplashScreen()
@@ -104,9 +102,9 @@ class KoremodsSplashScreen {
 
     private fun initRender() {
         renders.forEach {
-            var VAO: Int
-            var VBO: Int
-            var EBO: Int
+            val VAO: Int
+            val VBO: Int
+            val EBO: Int
 
             MemoryStack.stackPush().use { stack ->
                 val vao = stack.mallocInt(1)

@@ -19,6 +19,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
@@ -36,7 +37,7 @@ object KoremodDiscoverer {
     
     fun discoverKoremods(dir: Path, classpath: Array<URL>) {
         val paths = Files.walk(dir, 1)
-            .filter { it.name != dir.name }
+            .filter { !it.isDirectory() && it.name != dir.name }
             .toList()
         val classPaths = classpath
             .map(URL::toURI)
@@ -115,7 +116,15 @@ object KoremodDiscoverer {
             if (pack.scripts.isEmpty()) logger.error("Mod ${pack.file.name} defines a koremods config without any scripts")
             
             val futureScripts = pack.scripts.map { src ->
-                val future = executors.submit(Callable { evalScript(pack.modid, pack.file, src.name, src.source) })
+                val future = executors.submit(Callable {
+                    val thread = Thread.currentThread()
+                    val oldCtxCl = thread.contextClassLoader
+                    KoremodBlackboard.scriptContextClassLoader?.let(thread::setContextClassLoader)
+                    
+                    evalScript(pack.modid, pack.file, src.name, src.source).also { 
+                        thread.contextClassLoader = oldCtxCl
+                    }
+                })
                 RawScript(src.name, future)
             }
             

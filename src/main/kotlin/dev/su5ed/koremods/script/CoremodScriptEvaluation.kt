@@ -26,7 +26,11 @@ fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: C
             }
         }
         is ResultWithDiagnostics.Failure -> {
-            eval.reports.forEach { report -> evalLogger.log(report.severity.toLogLevel(), report.message) }
+            eval.reports.forEach { report ->
+                report.exception
+                    ?.let { evalLogger.catching(Level.ERROR, it) }
+                    ?: evalLogger.log(report.severity.toLogLevel(), report.message)
+            }
             throw ScriptEvaluationException("Failed to evaluate script $name. See the log for more information")
         }
     }

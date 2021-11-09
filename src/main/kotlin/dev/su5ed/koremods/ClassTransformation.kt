@@ -1,3 +1,4 @@
+@file:JvmName("ClassTransformation")
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.dsl.TransformerPropertiesExtension

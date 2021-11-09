@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.LocalDateTime
 
@@ -6,33 +7,45 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
+val repackPackagePath: String by project
+val relocatePackages: ((String, String) -> Unit) -> Unit by extra {{ relocate ->
+    sequenceOf("com.typesafe.config", "io.github.config4k", "org.intellij.lang", "org.jetbrains.annotations")
+        .forEach { relocate(it, "$repackPackagePath.$it") }
+}}
+
+val kotlinVersion: String by project
 val lwjglVersion = "3.2.3"
 val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
-val lwjglNatives: String = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem().let { os ->
-	when {
-		os.isWindows -> "natives-windows"
-		os.isLinux -> "natives-linux"
-		os.isMacOsX -> "natives-macos"
-		else -> throw Error("Unrecognized or unsupported Operating system. Please set lwjglNatives manually")
-	}
-}
+val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
 
 val splash: SourceSet by sourceSets.creating
-val splashImplementation: Configuration by configurations
+val splashCompile: Configuration by configurations.creating
+val splashRuntime: Configuration by configurations.creating
 val shade: Configuration by configurations.creating
+val shadeKotlin: Configuration by configurations.creating
 
 configurations {
-    compileOnly {
-        splashImplementation.extendsFrom(this)
+    splash.compileOnlyConfigurationName {
+        extendsFrom(compileOnly.get())
+        extendsFrom(splashCompile)
     }
     
     implementation {
         extendsFrom(shade)
+        extendsFrom(shadeKotlin)
+    }
+    
+    splash.runtimeOnlyConfigurationName {
+        extendsFrom(splashRuntime)
     }
     
     testImplementation {
         extendsFrom(compileOnly.get())
-        extendsFrom(splashImplementation)
+        extendsFrom(splashCompile)
+    }
+    
+    testRuntimeOnly {
+        extendsFrom(splashRuntime)
     }
 }
 
@@ -43,14 +56,14 @@ repositories {
 }
 
 dependencies {
-    shade(kotlin("compiler-embeddable"))
-    shade(kotlin("scripting-common"))
-    shade(kotlin("scripting-jvm"))
-    shade(kotlin("scripting-jvm-host"))
-    shade(kotlin("stdlib"))
-    shade(kotlin("stdlib-jdk7"))
-    shade(kotlin("stdlib-jdk8"))
-    shade(kotlin("reflect"))
+    shadeKotlin(kotlin("compiler-embeddable"))
+    shadeKotlin(kotlin("scripting-common"))
+    shadeKotlin(kotlin("scripting-jvm"))
+    shadeKotlin(kotlin("scripting-jvm-host"))
+    shadeKotlin(kotlin("stdlib"))
+    shadeKotlin(kotlin("stdlib-jdk7"))
+    shadeKotlin(kotlin("stdlib-jdk8"))
+    shadeKotlin(kotlin("reflect"))
     
     shade(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
         exclude(group = "org.ow2.asm")
@@ -63,11 +76,13 @@ dependencies {
     compileOnly(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
     compileOnly(group = "com.google.guava", "guava", "21.0")
     
-    splashImplementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    val platform = platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    splashCompile(platform)
+    splashRuntime(platform)
     
-    lwjglComponents.forEach { 
-        splashImplementation("org.lwjgl", it)
-        splashImplementation("org.lwjgl", it, classifier = lwjglNatives)
+    lwjglComponents.forEach { comp ->
+        splashCompile("org.lwjgl", comp)
+        lwjglNatives.forEach { os -> splashRuntime("org.lwjgl", comp, classifier = os) }
     }
     
     implementation(splash.output)
@@ -96,11 +111,36 @@ tasks {
     shadowJar {
         dependsOn("classes", "jar")
         
+        from(splash.output)
         manifest.attributes(manifestAttributes)
-        
         configurations = listOf(shade)
-        exclude("META-INF/versions/9/**")
+        exclude("META-INF/versions/**")
+        relocatePackages(::relocate)
+        dependencies {
+            exclude(dependency("org.jetbrains.kotlin::"))
+        }
+        
         archiveClassifier.set("shaded")
+    }
+    
+    val lwjglDepsJar = create<ShadowJar>("lwjglDepsJar") {
+        configurations = listOf(splashCompile, splashRuntime)
+        exclude("META-INF/**")
+        
+        archiveBaseName.set("koremods-deps-lwjgl")
+        archiveVersion.set(lwjglVersion)
+    }
+    
+    val depsJar = create<ShadowJar>("kotlinDepsJar") {
+        configurations = listOf(shadeKotlin)
+        exclude("META-INF/versions/**")
+        
+        archiveBaseName.set("koremods-deps-kotlin")
+        archiveVersion.set(kotlinVersion)
+    }
+    
+    build {
+        dependsOn(shadowJar, lwjglDepsJar, depsJar)
     }
     
     test {

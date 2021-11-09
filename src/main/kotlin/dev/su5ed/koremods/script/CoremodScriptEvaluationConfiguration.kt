@@ -1,5 +1,6 @@
 package dev.su5ed.koremods.script
 
+import dev.su5ed.koremods.KoremodBlackboard
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -27,7 +28,7 @@ internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfigurat
 
 class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
 
-internal class FilteredClassLoader : ClassLoader(Thread.currentThread().contextClassLoader) {
+internal class FilteredClassLoader : ClassLoader(KoremodBlackboard.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader) {
     private val restrictions = mutableListOf(
         "dev.su5ed.koremods.script.CoremodKtsScript",
         "dev.su5ed.koremods.dsl.",

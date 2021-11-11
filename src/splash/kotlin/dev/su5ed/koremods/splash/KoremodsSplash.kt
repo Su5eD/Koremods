@@ -1,10 +1,14 @@
 package dev.su5ed.koremods.splash
 
+import dev.su5ed.koremods.KoremodsBlackboard
+import dev.su5ed.koremods.api.SplashScreen
 import dev.su5ed.koremods.splash.log.SplashAppender
 import dev.su5ed.koremods.splash.render.*
-import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
+import org.apache.logging.log4j.core.config.LoggerConfig
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
@@ -13,6 +17,8 @@ import org.lwjgl.opengl.GL30.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.IntBuffer
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 internal val WINDOW_SIZE = Pair(550, 250)
@@ -20,22 +26,16 @@ internal const val WINDOW_ICON = "logo.png"
 
 fun initSplashScreen(): KoremodsSplashScreen {
     return KoremodsSplashScreen()
-        .also { splash -> thread(name = "KoremodSplash", block = splash::run) }
+        .also { splash -> thread(name = "KoremodsRender", block = splash::run) }
 }
 
-fun injectSplashAppender(logger: org.apache.logging.log4j.core.Logger, splash: KoremodsSplashScreen) {
-    val ctx: LoggerContext = LogManager.getContext(false) as LoggerContext
-    val config: Configuration = ctx.configuration
+class KoremodsSplashScreen : SplashScreen {
+    companion object {
+        private const val CLOSE_DELAY_MS = 1000
+        private val LOGGER: Logger = KoremodsBlackboard.createLogger("Splash")
+    }
     
-    val appender = SplashAppender.createAppender("KoremodsSplashAppender", null, splash)
-    appender.start()
-    config.addAppender(appender)
-    
-    logger.addAppender(appender)
-    ctx.updateLoggers()
-}
-
-class KoremodsSplashScreen {
+    private val initLatch = CountDownLatch(1)
     private val renderText = RenderText()
     private val renders = listOf(
         RenderSplash(),
@@ -47,6 +47,8 @@ class KoremodsSplashScreen {
     private var errorCallback: GLFWErrorCallback? = null
     private var window: Long = 0
     private var closeWindow = false
+    private var endWindow = false
+    private var closeDelayMillis: Long = 0
     
     private val cursorX = MemoryStack.stackMallocDouble(1)
     private val cursorY = MemoryStack.stackMallocDouble(1)
@@ -64,11 +66,19 @@ class KoremodsSplashScreen {
             errorCallback?.free()
         }
     }
-    
+
+    override fun awaitInit() {
+        try {
+            initLatch.await(3, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            LOGGER.catching(e)
+        }
+    }
+
     private fun initWindow() {
         errorCallback = glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err))
         if (!glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
-
+        
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API)
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API)
@@ -76,6 +86,7 @@ class KoremodsSplashScreen {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE)
         
         renders.map(Render::getWindowHints).forEach { it.forEach(::glfwWindowHint) }
         
@@ -134,6 +145,7 @@ class KoremodsSplashScreen {
 
     private fun loop() {
         initRender()
+        initLatch.countDown()
         
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents()
@@ -147,7 +159,15 @@ class KoremodsSplashScreen {
             
             glfwSwapBuffers(window)
             
-            if (closeWindow && renders.all(Render::shouldCloseWindow)) break
+            if (closeWindow) {
+                val delta = System.currentTimeMillis() - closeDelayMillis
+                if (delta >= CLOSE_DELAY_MS) {
+                    renders.forEach(Render::windowClosing)
+                    closeWindow = false
+                    endWindow = true
+                }
+            }
+            if (endWindow && renders.all(Render::shouldCloseWindow)) break
         }
         
         renders.forEach(Render::onWindowClose)
@@ -165,16 +185,34 @@ class KoremodsSplashScreen {
             glfwSetWindowIcon(window, glfwImages)
         }
     }
-    
-    fun closeWindow() {
-        renders.forEach(Render::windowClosing)
-        
+
+    override fun close() {
         closeWindow = true
+        closeDelayMillis = System.currentTimeMillis()
     }
-    
+
+    override fun isClosing(): Boolean = closeWindow
+
     @Synchronized
-    fun log(message: String) {
+    override fun log(message: String) {
         renderText.log(message)
+    }
+
+    override fun injectSplashLogger(context: LoggerContext) {
+        val config: Configuration = context.configuration
+        
+        val appender = SplashAppender.createAppender("KoremodsSplashAppender", null, this)
+        appender.start()
+        config.addAppender(appender)
+
+        val loggerConfig: LoggerConfig = LoggerConfig.createLogger(
+            true, Level.ALL, "SplashLogger",
+            "true", emptyArray(), null, config, null
+        )
+        loggerConfig.addAppender(appender, Level.ALL, null)
+        config.addLogger(KoremodsBlackboard.LOGGER_PACKAGE, loggerConfig)
+        
+        context.updateLoggers()
     }
 
     @Suppress("UNUSED_PARAMETER")

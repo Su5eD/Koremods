@@ -1,6 +1,6 @@
 package dev.su5ed.koremods.script.host
 
-import dev.su5ed.koremods.KoremodBlackboard
+import dev.su5ed.koremods.KoremodsBlackboard
 import java.io.File
 import java.nio.ByteBuffer
 import java.security.MessageDigest
@@ -22,7 +22,7 @@ private const val COMPILED_SCRIPTS_CACHE_VERSION = 1
 class CoremodScriptHostConfiguration : ScriptingHostConfiguration(
     {
         jvm {
-            (KoremodBlackboard.cacheDir ?: getDefaultCacheDir())
+            (KoremodsBlackboard.cacheDir ?: getDefaultCacheDir())
                 ?.takeIf { it.exists() && it.isDirectory }
                 ?.let { 
                     compilationCache(

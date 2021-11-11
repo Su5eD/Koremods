@@ -1,19 +1,18 @@
 package dev.su5ed.koremods.splash.log
 
-import dev.su5ed.koremods.splash.KoremodsSplashScreen
+import dev.su5ed.koremods.api.SplashScreen
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.appender.AbstractAppender
-import org.apache.logging.log4j.core.config.Property
 
-class SplashAppender(name: String, filter: Filter?, private val splash: KoremodsSplashScreen) : AbstractAppender(name, filter, null, true, Property.EMPTY_ARRAY) {
+class SplashAppender(name: String, filter: Filter?, private val splash: SplashScreen) : AbstractAppender(name, filter, null, true) {
     companion object {
-        fun createAppender(name: String, filter: Filter?, splash: KoremodsSplashScreen): SplashAppender {
+        fun createAppender(name: String, filter: Filter?, splash: SplashScreen): SplashAppender {
             return SplashAppender(name, filter, splash)
         }
     }
     
     override fun append(event: LogEvent) {
-        splash.log(event.message.formattedMessage)
+        if (!splash.isClosing()) splash.log(event.message.formattedMessage)
     }
 }

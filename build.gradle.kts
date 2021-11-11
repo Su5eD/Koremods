@@ -21,6 +21,8 @@ val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
 val splash: SourceSet by sourceSets.creating
 val splashCompile: Configuration by configurations.creating
 val splashRuntime: Configuration by configurations.creating
+val splashImplementation: Configuration by configurations
+
 val shade: Configuration by configurations.creating
 val shadeKotlin: Configuration by configurations.creating
 
@@ -30,13 +32,13 @@ configurations {
         extendsFrom(splashCompile)
     }
     
+    splash.runtimeOnlyConfigurationName {
+        extendsFrom(splashRuntime)
+    }
+    
     implementation {
         extendsFrom(shade)
         extendsFrom(shadeKotlin)
-    }
-    
-    splash.runtimeOnlyConfigurationName {
-        extendsFrom(splashRuntime)
     }
     
     testImplementation {
@@ -72,8 +74,8 @@ dependencies {
     
     // Dependencies shipped by Minecraft
     compileOnly(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    compileOnly(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.14.1")
-    compileOnly(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.14.1")
+    compileOnly(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.8.1")
+    compileOnly(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.8.1")
     compileOnly(group = "com.google.guava", "guava", "21.0")
     
     val platform = platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
@@ -85,7 +87,7 @@ dependencies {
         lwjglNatives.forEach { os -> splashRuntime("org.lwjgl", comp, classifier = os) }
     }
     
-    implementation(splash.output)
+    splashImplementation(sourceSets.main.get().output)
     
     testImplementation(splash.output)
     testImplementation(kotlin("test"))

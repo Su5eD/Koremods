@@ -5,7 +5,6 @@ import dev.su5ed.koremods.dsl.Transformer
 import dev.su5ed.koremods.dsl.TransformerHandler
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.File
 import java.io.InputStream
@@ -31,9 +30,10 @@ private data class RawScript<T>(val name: String, val source: T)
 data class KoremodScriptPack(val modid: String, val scripts: List<KoremodScript>)
 data class KoremodScript(val name: String, val handler: TransformerHandler)
 
+private val LOGGER = KoremodsBlackboard.createLogger("Discoverer")
+
 object KoremodDiscoverer {
     lateinit var transformers: List<KoremodScriptPack>
-    private val logger = LogManager.getLogger("KoremodDiscoverer")
     
     fun discoverKoremods(dir: Path, classpath: Array<URL>) {
         val paths = Files.walk(dir, 1)
@@ -55,9 +55,11 @@ object KoremodDiscoverer {
     }
     
     private fun scanPaths(paths: Iterable<Path>): List<SourceScriptPack> {
+        LOGGER.debug("Scanning classpath for Koremod Script Packs")
         val scriptPacks: MutableList<SourceScriptPack> = mutableListOf()
         paths.forEach { path ->
             val file = path.toFile()
+            LOGGER.debug("Scanning ${file.name}")
             if (file.isDirectory) {
                 val conf = path.resolve("META-INF/koremods.conf").toFile()
                 if (conf.exists()) {
@@ -86,7 +88,7 @@ object KoremodDiscoverer {
         
         val config: KoremodModConfig = parseConfig(reader)
         reader.close()
-        logger.info("Loading scripts for mod ${config.modid}")
+        LOGGER.info("Loading scripts for mod ${config.modid}")
                             
         val scripts = locateScripts(locator, config.scripts)
         
@@ -96,15 +98,15 @@ object KoremodDiscoverer {
     private fun locateScripts(locator: (String) -> InputStream?, scripts: Map<String, String>): List<RawScript<String>> {
         return scripts
             .mapNotNull { (name, path) ->
-                logger.debug("Reading script $name")
+                LOGGER.debug("Reading script $name")
                 
                 locator(path)?.let { ins ->
                     val lines = ins.bufferedReader().readLines()
-                    if (lines.isEmpty()) logger.error("Script $name not found")
+                    if (lines.isEmpty()) LOGGER.error("Script $name not found")
                     return@mapNotNull RawScript(name, lines.joinToString(separator = "\n"))
                 }
                 
-                logger.error("Could not read script $name")
+                LOGGER.error("Could not read script $name")
                 return@mapNotNull null
             }
     }
@@ -113,13 +115,13 @@ object KoremodDiscoverer {
         val executors = Executors.newFixedThreadPool(threads)
 
         val futurePacks: List<FutureScriptPack> = sourcePacks.map { pack ->
-            if (pack.scripts.isEmpty()) logger.error("Mod ${pack.file.name} defines a koremods config without any scripts")
+            if (pack.scripts.isEmpty()) LOGGER.error("Mod ${pack.file.name} defines a koremods config without any scripts")
             
             val futureScripts = pack.scripts.map { src ->
                 val future = executors.submit(Callable {
                     val thread = Thread.currentThread()
                     val oldCtxCl = thread.contextClassLoader
-                    KoremodBlackboard.scriptContextClassLoader?.let(thread::setContextClassLoader)
+                    KoremodsBlackboard.scriptContextClassLoader?.let(thread::setContextClassLoader)
                     
                     evalScript(pack.modid, pack.file, src.name, src.source).also { 
                         thread.contextClassLoader = oldCtxCl
@@ -131,10 +133,8 @@ object KoremodDiscoverer {
             FutureScriptPack(pack.modid, futureScripts)
         }
         
-        logger.measureTime(Level.DEBUG, "Evaluating all scripts") {
-            executors.shutdown()
-            executors.awaitTermination(15, TimeUnit.SECONDS)
-        }
+        executors.shutdown()
+        executors.awaitTermination(30, TimeUnit.SECONDS)
         
         return futurePacks.map {
             val processed = it.scripts.map { (name, future) -> 
@@ -145,13 +145,13 @@ object KoremodDiscoverer {
     }
 
     private fun evalScript(modid: String, file: File, name: String, source: String): TransformerHandler {
-        logger.debug("Evaluating script $name")
+        LOGGER.debug("Evaluating script $name")
         
-        val handler = logger.measureTime(Level.DEBUG, "Evaluating script $name") {
-            val engineLogger = LogManager.getLogger("Koremods.$modid/$name")
+        val handler = LOGGER.measureTime(Level.DEBUG, "Evaluating script $name") {
+            val engineLogger = KoremodsBlackboard.createLogger("$modid/$name")
             evalTransformers(name, source.toScriptSource(), engineLogger, listOf(file))
         }
-        if (handler.getTransformers().isEmpty()) logger.error("Script $name does not define any transformers")
+        if (handler.getTransformers().isEmpty()) LOGGER.error("Script $name does not define any transformers")
 
         return handler
     }

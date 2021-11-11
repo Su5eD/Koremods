@@ -1,8 +1,8 @@
 package dev.su5ed.koremods.script
 
+import dev.su5ed.koremods.KoremodsBlackboard
 import dev.su5ed.koremods.dsl.TransformerHandler
 import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 import java.io.File
@@ -12,7 +12,7 @@ import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
-private val evalLogger: Logger = LogManager.getLogger("KoremodEvaluation")
+private val LOGGER: Logger = KoremodsBlackboard.createLogger("Evaluation")
 
 fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: Collection<File> = emptyList()): TransformerHandler {
     when (val eval = evalScript(source, log, classpath)) {
@@ -28,8 +28,8 @@ fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: C
         is ResultWithDiagnostics.Failure -> {
             eval.reports.forEach { report ->
                 report.exception
-                    ?.let { evalLogger.catching(Level.ERROR, it) }
-                    ?: evalLogger.log(report.severity.toLogLevel(), report.message)
+                    ?.let { LOGGER.catching(Level.ERROR, it) }
+                    ?: LOGGER.log(report.severity.toLogLevel(), report.message)
             }
             throw ScriptEvaluationException("Failed to evaluate script $name. See the log for more information")
         }

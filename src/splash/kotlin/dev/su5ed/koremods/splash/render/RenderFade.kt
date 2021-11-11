@@ -7,6 +7,11 @@ import dev.su5ed.koremods.splash.bufferVertices
 import org.lwjgl.opengl.GL30.*
 
 class RenderFade : RenderBase() {
+    companion object {
+        private const val FADE_IN_MS = 250f
+        private const val FADE_OUT_MS = 500f
+    }
+    
     private val vertices = floatArrayOf(
          1.0f,   1.0f,    // top right
          1.0f,  -1.0f,    // bottom right
@@ -18,7 +23,7 @@ class RenderFade : RenderBase() {
         1, 2, 3     // second triangle
     )
     private val uniformFade = UniformFade()
-    private var fadeTime: Float = 500f
+    private var fadeTime = FADE_IN_MS
     private var currentFade: Float = 0.0f
     
     override val vertexShader: String = "fade"
@@ -56,9 +61,8 @@ class RenderFade : RenderBase() {
     }
 
     override fun windowClosing() {
-        uniformFade.reset()
         uniformFade.reverse = true
-        fadeTime = 750f
+        fadeTime = FADE_OUT_MS
     }
 
     override fun shouldCloseWindow(): Boolean = uniformFade.reverse && currentFade <= 0f

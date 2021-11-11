@@ -37,34 +37,41 @@ object UniformResolution : UniformBase("resolution") {
 
 class UniformFade : UniformBase("fade") {
     private var startMillis: Long = 0
+    private var currentFade: Float = 0f
+    private var peakFade: Float = 0f
     var reverse: Boolean = false
+        set(value) {
+            field = value
+            reset()
+            peakFade = currentFade
+        }
 
     override fun init(shaderProgram: Int) {
         super.init(shaderProgram)
         reset()
     }
     
-    fun reset() {
+    private fun reset() {
         startMillis = System.currentTimeMillis()
     }
 
     fun update(length: Float): Float { 
         val delta = (System.currentTimeMillis() - startMillis) / length
-        val fade = if (reverse) 1 - delta else delta
-        val actualFade = fade.coerceIn(0f, 1f)
+        val fade = if (reverse) peakFade - delta else delta
+        currentFade = fade.coerceIn(0f, 1f)
         
-        glUniform1f(location, actualFade)
-        return actualFade
+        glUniform1f(location, currentFade)
+        return currentFade
     }
 }
 
 object UniformView : UniformBase("view") {
+    private val buffer = MemoryStack.stackMallocFloat(4 * 4)
+    
     fun update(matrix: Matrix4f) {
-        MemoryStack.stackPush().use { stack ->
-            val buf = stack.mallocFloat(4 * 4)
-            matrix.toBuffer(buf)
-            glUniformMatrix4fv(location, false, buf)
-        }
+        buffer.clear()
+        matrix.toBuffer(buffer)
+        glUniformMatrix4fv(location, false, buffer)
     }
 }
 

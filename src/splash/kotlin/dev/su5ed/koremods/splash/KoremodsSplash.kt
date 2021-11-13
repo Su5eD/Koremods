@@ -191,6 +191,10 @@ class KoremodsSplashScreen : SplashScreen {
         closeDelayMillis = System.currentTimeMillis()
     }
 
+    override fun forceClose() {
+        glfwSetWindowShouldClose(window, true)
+    }
+
     override fun isClosing(): Boolean = closeWindow
 
     @Synchronized

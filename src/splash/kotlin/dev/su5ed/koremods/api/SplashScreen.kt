@@ -11,5 +11,7 @@ interface SplashScreen {
     
     fun close()
     
+    fun forceClose()
+    
     fun isClosing(): Boolean
 }

@@ -93,6 +93,10 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+license {
+    excludes.add("dev/su5ed/koremods/splash/math/Matrix4f.kt")
+}
+
 val manifestAttributes = mapOf(
     "Specification-Title" to "Koremods-Script",
     "Specification-Vendor" to "Su5eD",

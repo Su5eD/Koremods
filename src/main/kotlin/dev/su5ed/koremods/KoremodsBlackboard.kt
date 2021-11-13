@@ -30,6 +30,7 @@ import java.io.File
 
 object KoremodsBlackboard {
     const val LOGGER_PACKAGE = "Koremods"
+    const val CONFIG_FILE = "koremods.conf"
     
     var cacheDir: File? = null
     var scriptContextClassLoader: ClassLoader? = null

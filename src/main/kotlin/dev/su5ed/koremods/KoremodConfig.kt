@@ -25,8 +25,14 @@
 package dev.su5ed.koremods
 
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
 import io.github.config4k.extract
+import io.github.config4k.toConfig
 import java.io.Reader
+import java.nio.file.Path
+import kotlin.io.path.bufferedReader
+import kotlin.io.path.notExists
+import kotlin.io.path.writeText
 
 /**
  * Individual config for each discovered Koremod
@@ -36,8 +42,24 @@ data class KoremodModConfig(val modid: String, val scripts: Map<String, String>)
 /**
  * Configuration of Koremods itself
  */
-data class KoremodConfig(val enableSplashScreen: Boolean)
+data class KoremodConfig(val enableSplashScreen: Boolean = true)
 
 inline fun <reified T> parseConfig(reader: Reader): T {
     return ConfigFactory.parseReader(reader).extract()
+}
+
+fun parseMainConfig(path: Path): KoremodConfig {
+    if (path.notExists()) {
+        val koremodConfig = KoremodConfig()
+        val obj = koremodConfig.toConfig("koremods").getObject("koremods")
+        val options = ConfigRenderOptions.defaults()
+            .setOriginComments(false)
+            .setJson(false)
+        val render = obj.render(options)
+        
+        path.writeText(render)
+        return koremodConfig
+    }
+    
+    return parseConfig(path.bufferedReader())
 }

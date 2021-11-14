@@ -38,10 +38,7 @@ class KoremodConfigTest {
         
         assertEquals("examplemod", config.modid)
         
-        assertContains(config.scripts, "personClassTransformer")
-        assertEquals("scripts/transformClass.core.kts", config.scripts["personClassTransformer"])
-        
-        assertContains(config.scripts, "personMethodTransformer")
-        assertEquals("scripts/transformMethod.core.kts", config.scripts["personMethodTransformer"])
+        assertContains(config.scripts, "scripts/transformClass.core.kts")
+        assertContains(config.scripts, "scripts/transformMethod.core.kts")
     }
 }

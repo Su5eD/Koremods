@@ -26,6 +26,8 @@ val splashImplementation: Configuration by configurations
 val shade: Configuration by configurations.creating
 val shadeKotlin: Configuration by configurations.creating
 
+val mavenDep: (Any?) -> Unit by rootProject.extra
+
 configurations {
     splash.compileOnlyConfigurationName {
         extendsFrom(compileOnly.get())
@@ -61,15 +63,12 @@ dependencies {
     shadeKotlin(kotlin("compiler-embeddable"))
     shadeKotlin(kotlin("scripting-common"))
     shadeKotlin(kotlin("scripting-jvm"))
-    shadeKotlin(kotlin("scripting-jvm-host"))
-    shadeKotlin(kotlin("stdlib"))
-    shadeKotlin(kotlin("stdlib-jdk7"))
-    shadeKotlin(kotlin("stdlib-jdk8"))
+    mavenDep(shadeKotlin(kotlin("scripting-jvm-host")))
+    mavenDep(shadeKotlin(kotlin("stdlib")))
+    mavenDep(shadeKotlin(kotlin("stdlib-jdk8")))
     shadeKotlin(kotlin("reflect"))
     
-    shade(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
-        exclude(group = "org.ow2.asm")
-    }
+    mavenDep(shade(group = "dev.su5ed", name = "koffee", version = "8.1.5"))
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
     // Dependencies shipped by Minecraft

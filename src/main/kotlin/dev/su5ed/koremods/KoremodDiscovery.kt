@@ -58,6 +58,7 @@ private val LOGGER = KoremodsBlackboard.createLogger("Discoverer")
 
 object KoremodDiscoverer {
     lateinit var transformers: List<KoremodScriptPack>
+    private val scriptNameRegex = "^[a-zA-Z0-9]*\$".toRegex()
     
     fun discoverKoremods(dir: Path, classpath: Array<URL>) {
         val paths = Files.walk(dir, 1)
@@ -119,11 +120,23 @@ object KoremodDiscoverer {
         return SourceScriptPack(config.modid, parent, scripts)
     }
 
-    private fun locateScripts(locator: (String) -> InputStream?, scripts: Map<String, String>): List<RawScript<String>> {
+    private fun locateScripts(locator: (String) -> InputStream?, scripts: List<String>): List<RawScript<String>> {
         return scripts
-            .mapNotNull { (name, path) ->
-                LOGGER.debug("Reading script $name")
+            .mapNotNull { path ->
+                val nameWithExt = path.substringAfterLast('/')
+                val index = nameWithExt.indexOf(".core.kts")
+                if (index == -1) {
+                    LOGGER.error("Script $nameWithExt has an invalid extension, expected 'core.kts'")
+                    return@mapNotNull null
+                }
                 
+                val name = nameWithExt.substring(0, index)
+                if (!name.matches(scriptNameRegex)) {
+                    LOGGER.error("Script name '$name' does not match the regex $scriptNameRegex")
+                    return@mapNotNull null
+                }
+                
+                LOGGER.debug("Reading script $name")
                 locator(path)?.let { ins ->
                     val lines = ins.bufferedReader().readLines()
                     if (lines.isEmpty()) LOGGER.error("Script $name not found")

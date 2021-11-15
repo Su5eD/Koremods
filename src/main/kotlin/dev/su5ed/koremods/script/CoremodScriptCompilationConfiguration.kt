@@ -33,9 +33,10 @@ import kotlin.script.experimental.util.filterByAnnotationType
 
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.SOURCE)
+@Deprecated("")
 annotation class Allow(vararg val paths: String)
 
-internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<MutableList<String>>(mutableListOf())
+internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<List<String>>()
 
 internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
     jvm {
@@ -70,9 +71,9 @@ object CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
             ?.map(ScriptSourceAnnotation<Allow>::annotation)
             ?.firstOrNull()
             ?: return context.compilationConfiguration.asSuccess()
-                
-        return ScriptCompilationConfiguration(context.compilationConfiguration) {
-            jvm.restrictions(annotation.paths.toMutableList())
+        
+        return context.compilationConfiguration.with { 
+            jvm.restrictions(annotation.paths.toList())
         }.asSuccess()
     }
 }

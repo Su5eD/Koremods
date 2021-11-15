@@ -47,6 +47,8 @@ fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: C
                     .cast<CoremodKtsScript>()
                     .transformerHandler
                 is ResultValue.Error -> throw RuntimeException("Exception in script $name", result.error)
+                // this shouldn't ever happen
+                ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $name")
             }
         }
         is ResultWithDiagnostics.Failure -> {
@@ -58,8 +60,6 @@ fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: C
             throw ScriptEvaluationException("Failed to evaluate script $name. See the log for more information")
         }
     }
-    
-    throw ScriptEvaluationException("An unknown error has occured while evaluating script $name")
 }
 
 class ScriptEvaluationException(msg: String) : RuntimeException(msg)

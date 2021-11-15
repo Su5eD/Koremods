@@ -39,11 +39,9 @@ internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfigurat
     }
     
     refineConfigurationBeforeEvaluate { context ->
-        val cl = context.evaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
-        if (cl is FilteredClassLoader) {
-            context.compiledScript.compilationConfiguration[ScriptCompilationConfiguration.jvm.restrictions]
-                ?.let(cl::allow)
-        }
+        val cl = context.evaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader] as FilteredClassLoader
+        context.compiledScript.compilationConfiguration[ScriptCompilationConfiguration.jvm.restrictions]
+            ?.let(cl::allow)
         
         context.evaluationConfiguration.asSuccess()
     }

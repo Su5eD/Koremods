@@ -24,7 +24,7 @@
 
 package dev.su5ed.koremods.splash
 
-import dev.su5ed.koremods.KoremodsBlackboard
+import dev.su5ed.koremods.api.SplashBlackboard
 import dev.su5ed.koremods.api.SplashScreen
 import dev.su5ed.koremods.splash.log.SplashAppender
 import dev.su5ed.koremods.splash.render.*
@@ -41,25 +41,17 @@ import org.lwjgl.opengl.GL30.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.IntBuffer
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 internal val WINDOW_SIZE = Pair(550, 250)
 internal const val WINDOW_ICON = "logo.png"
 
-fun initSplashScreen(): KoremodsSplashScreen {
-    return KoremodsSplashScreen()
-        .also { splash -> thread(name = "KoremodsRender", block = splash::run) }
-}
-
 class KoremodsSplashScreen : SplashScreen {
     companion object {
         private const val CLOSE_DELAY_MS = 1000
-        private val LOGGER: Logger = KoremodsBlackboard.createLogger("Splash")
+        private val LOGGER: Logger = SplashBlackboard.loggerFactory("Splash")
     }
     
-    private val initLatch = CountDownLatch(1)
     private val renderText = RenderText()
     private val renders = listOf(
         RenderSplash(),
@@ -68,6 +60,9 @@ class KoremodsSplashScreen : SplashScreen {
         RenderFade()
     )
     
+    private lateinit var renderThread: Thread
+    private var terminateOnClose = false
+
     private var errorCallback: GLFWErrorCallback? = null
     private var window: Long = 0
     private var closeWindow = false
@@ -80,23 +75,23 @@ class KoremodsSplashScreen : SplashScreen {
     private val winY: IntBuffer = MemoryStack.stackMallocInt(1)
     private var mousePress = false
 
-    fun run() {
-        try {
-            initWindow()
+    override fun init() {
+        initWindow()
+        initRender()
+        
+        glfwMakeContextCurrent(NULL)
+        renderThread = thread(name = "KoremodsRender", block = {
+            glfwMakeContextCurrent(window)
+            GL.createCapabilities()
+            
             loop()
-            glfwDestroyWindow(window)
-        } finally {
-            glfwTerminate()
-            errorCallback?.free()
-        }
+            
+            glfwMakeContextCurrent(NULL)
+        })
     }
-
-    override fun awaitInit() {
-        try {
-            initLatch.await(3, TimeUnit.SECONDS)
-        } catch (e: InterruptedException) {
-            LOGGER.catching(e)
-        }
+    
+    override fun setTerminateOnClose(terminate: Boolean) {
+        terminateOnClose = terminate
     }
 
     private fun initWindow() {
@@ -168,9 +163,6 @@ class KoremodsSplashScreen : SplashScreen {
     }
 
     private fun loop() {
-        initRender()
-        initLatch.countDown()
-        
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -209,14 +201,21 @@ class KoremodsSplashScreen : SplashScreen {
             glfwSetWindowIcon(window, glfwImages)
         }
     }
-
-    override fun close() {
-        closeWindow = true
-        closeDelayMillis = System.currentTimeMillis()
-    }
-
-    override fun forceClose() {
-        glfwSetWindowShouldClose(window, true)
+    
+    override fun close(delay: Boolean) {
+        try {
+            closeWindow = true
+            if (delay) closeDelayMillis = System.currentTimeMillis()
+            
+            renderThread.join()
+            
+            glfwDestroyWindow(window)
+        } catch (t: Throwable) {
+            LOGGER.catching(t)
+        } finally {
+            if (terminateOnClose) glfwTerminate()
+            errorCallback?.free()
+        }
     }
 
     override fun isClosing(): Boolean = closeWindow
@@ -238,7 +237,7 @@ class KoremodsSplashScreen : SplashScreen {
             "true", emptyArray(), null, config, null
         )
         loggerConfig.addAppender(appender, Level.ALL, null)
-        config.addLogger(KoremodsBlackboard.LOGGER_PACKAGE, loggerConfig)
+        config.addLogger(SplashBlackboard.LOGGER_PACKAGE, loggerConfig)
         
         context.updateLoggers()
     }

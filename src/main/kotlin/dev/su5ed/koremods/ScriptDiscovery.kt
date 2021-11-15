@@ -56,7 +56,7 @@ data class KoremodScript(val name: String, val handler: TransformerHandler)
 
 private val LOGGER = KoremodsBlackboard.createLogger("Discoverer")
 
-object KoremodDiscoverer {
+object KoremodsDiscoverer {
     lateinit var transformers: List<KoremodScriptPack>
     private val scriptNameRegex = "^[a-zA-Z0-9]*\$".toRegex()
     

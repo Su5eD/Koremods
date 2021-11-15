@@ -27,10 +27,15 @@ val shade: Configuration by configurations.creating
 val shadeKotlin: Configuration by configurations.creating
 
 val mavenDep: (Any?) -> Unit by rootProject.extra
+val compileOnlyShared: Configuration by configurations.creating
 
 configurations {
+    compileOnly {
+        extendsFrom(compileOnlyShared)
+    }
+    
     splash.compileOnlyConfigurationName {
-        extendsFrom(compileOnly.get())
+        extendsFrom(compileOnlyShared)
         extendsFrom(splashCompile)
     }
     
@@ -72,10 +77,11 @@ dependencies {
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
     // Dependencies shipped by Minecraft
-    compileOnly(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    compileOnly(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.8.1")
-    compileOnly(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.8.1")
-    compileOnly(group = "com.google.guava", "guava", "21.0")
+    compileOnlyShared(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.8.1")
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.8.1")
+    compileOnlyShared(group = "com.google.guava", name = "guava", version = "21.0")
+    compileOnlyShared(group = "commons-io", name = "commons-io", version = "2.5")
     
     val platform = platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
     splashCompile(platform)
@@ -86,13 +92,14 @@ dependencies {
         lwjglNatives.forEach { os -> splashRuntime("org.lwjgl", comp, classifier = os) }
     }
     
-    splashImplementation(sourceSets.main.get().output)
+    compileOnly(splash.output)
     
-    testImplementation(splash.output)
     testImplementation(kotlin("test"))
 }
 
 license {
+    excludes.add("dev/su5ed/koremods/script/host/CoremodScriptHostConfiguration.kt")
+    excludes.add("dev/su5ed/koremods/script/host/Directories.kt")
     excludes.add("dev/su5ed/koremods/splash/math/Matrix4f.kt")
 }
 

@@ -34,8 +34,8 @@ private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 fun transformClass(name: String, node: ClassNode): List<TransformerPropertiesExtension> {
     val props = mutableListOf<TransformerPropertiesExtension>()
     
-    if (KoremodDiscoverer.isInitialized()) {
-        KoremodDiscoverer.transformers.forEach { (modid, scripts) ->
+    if (KoremodsDiscoverer.isInitialized()) {
+        KoremodsDiscoverer.transformers.forEach { (modid, scripts) ->
             scripts.forEach { script ->
                 val used = script.handler.getTransformers()
                     .filter { transformer ->

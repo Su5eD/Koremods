@@ -25,7 +25,7 @@
 package dev.su5ed.koremods.splash
 
 import org.lwjgl.opengl.GL30.*
-import org.lwjgl.stb.STBImage
+import org.lwjgl.stb.STBImage.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import java.io.InputStream
@@ -79,12 +79,13 @@ internal fun <T> loadImage(name: String, flip: Boolean, block: (MemoryStack, Int
         val width = stack.mallocInt(1)
         val height = stack.mallocInt(1)
         val nrChannels = stack.mallocInt(1)
-        STBImage.stbi_set_flip_vertically_on_load(flip)
-        val image = STBImage.stbi_load_from_memory(resourceBuf, width, height, nrChannels, STBImage.STBI_rgb_alpha) ?: throw RuntimeException("Failed to load image $name")
-
+        stbi_set_flip_vertically_on_load(flip)
+        val image = stbi_load_from_memory(resourceBuf, width, height, nrChannels, STBI_rgb_alpha) ?: throw RuntimeException("Failed to load image $name")
+        stbi_set_flip_vertically_on_load(false)
+        
         val ret = block(stack, width, height, image)
 
-        STBImage.stbi_image_free(image)
+        stbi_image_free(image)
         
         return ret
     }

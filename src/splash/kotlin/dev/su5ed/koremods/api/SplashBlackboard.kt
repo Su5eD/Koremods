@@ -24,18 +24,10 @@
 
 package dev.su5ed.koremods.api
 
-import org.apache.logging.log4j.core.LoggerContext
+import org.apache.logging.log4j.Logger
 
-interface SplashScreen {
-    fun awaitInit()
+object SplashBlackboard {
+    lateinit var LOGGER_PACKAGE: String
     
-    fun injectSplashLogger(context: LoggerContext)
-    
-    fun log(message: String)
-    
-    fun close()
-    
-    fun forceClose()
-    
-    fun isClosing(): Boolean
+    lateinit var loggerFactory: (String) -> Logger
 }

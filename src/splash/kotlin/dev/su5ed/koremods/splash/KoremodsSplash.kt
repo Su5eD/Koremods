@@ -41,6 +41,8 @@ import org.lwjgl.opengl.GL30.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
 import java.nio.IntBuffer
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 internal val WINDOW_SIZE = Pair(550, 250)
@@ -60,7 +62,7 @@ class KoremodsSplashScreen : SplashScreen {
         RenderFade()
     )
     
-    private lateinit var renderThread: Thread
+    private val initLatch = CountDownLatch(1)
     private var terminateOnClose = false
 
     private var errorCallback: GLFWErrorCallback? = null
@@ -75,19 +77,25 @@ class KoremodsSplashScreen : SplashScreen {
     private val winY: IntBuffer = MemoryStack.stackMallocInt(1)
     private var mousePress = false
 
-    override fun init() {
-        initWindow()
-        initRender()
-        
-        glfwMakeContextCurrent(NULL)
-        renderThread = thread(name = "KoremodsRender", block = {
-            glfwMakeContextCurrent(window)
-            GL.createCapabilities()
-            
-            loop()
-            
-            glfwMakeContextCurrent(NULL)
+    override fun startThread() {
+        thread(name = "SplashRender", block = {
+            try {
+                initWindow()
+                loop()
+                glfwDestroyWindow(window)
+            } finally {
+                if (terminateOnClose) glfwTerminate()
+                errorCallback?.free()
+            }
         })
+    }
+
+    override fun awaitInit() {
+        try {
+            initLatch.await(3, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            LOGGER.catching(e)
+        }
     }
     
     override fun setTerminateOnClose(terminate: Boolean) {
@@ -163,6 +171,9 @@ class KoremodsSplashScreen : SplashScreen {
     }
 
     private fun loop() {
+        initRender()
+        initLatch.countDown()
+        
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents()
             glClear(GL_COLOR_BUFFER_BIT)
@@ -203,18 +214,11 @@ class KoremodsSplashScreen : SplashScreen {
     }
     
     override fun close(delay: Boolean) {
-        try {
+        if (delay) {
             closeWindow = true
-            if (delay) closeDelayMillis = System.currentTimeMillis()
-            
-            renderThread.join()
-            
-            glfwDestroyWindow(window)
-        } catch (t: Throwable) {
-            LOGGER.catching(t)
-        } finally {
-            if (terminateOnClose) glfwTerminate()
-            errorCallback?.free()
+            closeDelayMillis = System.currentTimeMillis()
+        } else {
+            glfwSetWindowShouldClose(window, true)
         }
     }
 

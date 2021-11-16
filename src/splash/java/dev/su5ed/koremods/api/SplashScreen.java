@@ -3,7 +3,9 @@ package dev.su5ed.koremods.api;
 import org.apache.logging.log4j.core.LoggerContext;
 
 public interface SplashScreen {
-    void init();
+    void startThread();
+    
+    void awaitInit();
     
     void setTerminateOnClose(boolean terminate);
     

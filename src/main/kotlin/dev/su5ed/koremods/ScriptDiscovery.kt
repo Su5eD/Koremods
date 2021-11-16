@@ -30,6 +30,8 @@ import dev.su5ed.koremods.dsl.TransformerHandler
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.Marker
+import org.apache.logging.log4j.MarkerManager
 import java.io.File
 import java.io.InputStream
 import java.net.URL
@@ -54,7 +56,8 @@ private data class RawScript<T>(val name: String, val source: T)
 data class KoremodScriptPack(val modid: String, val scripts: List<KoremodScript>)
 data class KoremodScript(val name: String, val handler: TransformerHandler)
 
-private val LOGGER = KoremodsBlackboard.createLogger("Discoverer")
+private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
+private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
 object KoremodsDiscoverer {
     lateinit var transformers: List<KoremodScriptPack>
@@ -84,8 +87,8 @@ object KoremodsDiscoverer {
         val scriptPacks: MutableList<SourceScriptPack> = mutableListOf()
         paths.forEach { path ->
             val file = path.toFile()
-            LOGGER.debug("Scanning ${file.name}")
             if (file.isDirectory) {
+                LOGGER.debug(SCRIPT_SCAN, "Scanning ${file.relativeTo(file.parentFile.parentFile.parentFile).path}")
                 val conf = path.resolve("META-INF/koremods.conf").toFile()
                 if (conf.exists()) {
                     scriptPacks.add(readConfig(file, conf.inputStream()) {
@@ -96,6 +99,7 @@ object KoremodsDiscoverer {
                 }
             }
             else if (path.extension == "jar" || path.extension == "zip") {
+                LOGGER.debug(SCRIPT_SCAN, "Scanning ${file.name}")
                 val zip = ZipFile(file)
                 zip.getEntry("META-INF/koremods.conf")?.let { entry ->
                     val istream = zip.getInputStream(entry)

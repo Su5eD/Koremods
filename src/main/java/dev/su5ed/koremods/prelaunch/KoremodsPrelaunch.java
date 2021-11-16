@@ -33,12 +33,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -62,7 +65,6 @@ public class KoremodsPrelaunch {
     
     private final Path gameDir;
     private final URL[] discoveryUrls;
-    
     private final Path modsDir;
     private final File cacheDir;
     private final Path depsPath;
@@ -70,10 +72,9 @@ public class KoremodsPrelaunch {
     private final JarFile modJar;
     private final Attributes modJarAttributes;
 
-    public KoremodsPrelaunch(Path gameDir, URL[] discoveryUrls, String mcVersion) throws Exception {
+    public KoremodsPrelaunch(Path gameDir, String mcVersion) throws Exception {
         this.gameDir = gameDir;
-        this.discoveryUrls = discoveryUrls;
-        
+        this.discoveryUrls = getModClasses();
         this.modsDir = gameDir.resolve("mods");
         Path koremodsDir = this.modsDir.resolve(mcVersion).resolve("koremods");
         this.cacheDir = koremodsDir.resolve("cache").toFile();
@@ -121,5 +122,26 @@ public class KoremodsPrelaunch {
         } catch (IOException e) {
             throw new RuntimeException("Can't extract required dependency " + name, e);
         }
+    }
+
+    private URL[] getModClasses() {
+        String modClasses = System.getenv("MOD_CLASSES");
+        return modClasses != null ? Arrays.stream(modClasses.split(File.pathSeparator))
+                .map(s -> {
+                    String[] parts = s.split("%%");
+                    return parts[parts.length - 1];
+                })
+                .map(Paths::get)
+                .map(path -> {
+                    try {
+                        return path.toUri().toURL();
+                    } catch (MalformedURLException e) {
+                        LOGGER.catching(e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toArray(URL[]::new)
+                : new URL[0];
     }
 }

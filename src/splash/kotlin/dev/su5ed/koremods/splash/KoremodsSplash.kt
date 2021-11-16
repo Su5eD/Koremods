@@ -83,6 +83,8 @@ class KoremodsSplashScreen : SplashScreen {
                 initWindow()
                 loop()
                 glfwDestroyWindow(window)
+            } catch(t: Throwable) {
+                LOGGER.catching(t)  
             } finally {
                 if (terminateOnClose) glfwTerminate()
                 errorCallback?.free()

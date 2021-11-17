@@ -51,7 +51,7 @@ internal const val WINDOW_ICON = "logo.png"
 class KoremodsSplashScreen : SplashScreen {
     companion object {
         private const val CLOSE_DELAY_MS = 1000
-        private val LOGGER: Logger = SplashBlackboard.loggerFactory("Splash")
+        private val LOGGER: Logger = SplashBlackboard.loggerFactory.apply("Splash")
     }
     
     private val renderText = RenderText()
@@ -77,7 +77,7 @@ class KoremodsSplashScreen : SplashScreen {
     private val winY: IntBuffer = MemoryStack.stackMallocInt(1)
     private var mousePress = false
 
-    override fun startThread() {
+    override fun startOnThread() {
         thread(name = "SplashRender", block = {
             try {
                 initWindow()
@@ -90,9 +90,7 @@ class KoremodsSplashScreen : SplashScreen {
                 errorCallback?.free()
             }
         })
-    }
-
-    override fun awaitInit() {
+        
         try {
             initLatch.await(3, TimeUnit.SECONDS)
         } catch (e: InterruptedException) {
@@ -224,8 +222,6 @@ class KoremodsSplashScreen : SplashScreen {
         }
     }
 
-    override fun isClosing(): Boolean = closeWindow
-
     @Synchronized
     override fun log(message: String) {
         renderText.log(message)
@@ -234,7 +230,7 @@ class KoremodsSplashScreen : SplashScreen {
     override fun injectSplashLogger(context: LoggerContext) {
         val config: Configuration = context.configuration
         
-        val appender = SplashAppender.createAppender("KoremodsSplashAppender", null, this)
+        val appender = SplashAppender("KoremodsSplashAppender", null, this)
         appender.start()
         config.addAppender(appender)
 
@@ -243,7 +239,7 @@ class KoremodsSplashScreen : SplashScreen {
             "true", emptyArray(), null, config, null
         )
         loggerConfig.addAppender(appender, Level.ALL, null)
-        config.addLogger(SplashBlackboard.LOGGER_PACKAGE, loggerConfig)
+        config.addLogger(SplashBlackboard.loggerPackage, loggerConfig)
         
         context.updateLoggers()
     }

@@ -5,7 +5,7 @@
 
 package dev.su5ed.koremods.script.host
 
-import dev.su5ed.koremods.KoremodsBlackboard
+import dev.su5ed.koremods.prelaunch.KoremodsBlackboard
 import java.io.File
 import java.nio.ByteBuffer
 import java.security.MessageDigest

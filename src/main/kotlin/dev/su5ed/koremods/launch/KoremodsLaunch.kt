@@ -24,11 +24,11 @@
 
 package dev.su5ed.koremods.launch
 
-import dev.su5ed.koremods.KoremodsBlackboard
 import dev.su5ed.koremods.KoremodsDiscoverer
 import dev.su5ed.koremods.api.SplashBlackboard
 import dev.su5ed.koremods.api.SplashScreen
 import dev.su5ed.koremods.parseMainConfig
+import dev.su5ed.koremods.prelaunch.KoremodsBlackboard
 import dev.su5ed.koremods.prelaunch.KoremodsPrelaunch
 import dev.su5ed.koremods.prelaunch.SplashScreenFactory
 import org.apache.logging.log4j.LogManager
@@ -36,6 +36,7 @@ import org.apache.logging.log4j.core.LoggerContext
 import java.io.File
 import java.net.URL
 import java.nio.file.Path
+import java.util.function.Function
 import kotlin.io.path.div
 
 @Suppress("unused")
@@ -50,8 +51,8 @@ class KoremodsLaunch {
         var splash: SplashScreen? = null
         
         if (config.enableSplashScreen && splashFactory != null) {
-            SplashBlackboard.LOGGER_PACKAGE = KoremodsBlackboard.LOGGER_PACKAGE
-            SplashBlackboard.loggerFactory = KoremodsBlackboard::createLogger
+            SplashBlackboard.loggerPackage = KoremodsBlackboard.NAME
+            SplashBlackboard.loggerFactory = Function(KoremodsBlackboard::createLogger)
             
             splash = splashFactory.createSplashScreen(prelaunch)!!
             

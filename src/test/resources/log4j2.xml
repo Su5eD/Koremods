@@ -30,10 +30,6 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="dev.su5ed.koremods.KoremodTests" level="info" additivity="false">
-            <AppenderRef ref="STDOUT" level="INFO"/>
-        </Logger>
-        
         <Root level="info">
             <AppenderRef ref="STDOUT"/>
         </Root>

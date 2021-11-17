@@ -26,6 +26,7 @@
 package dev.su5ed.koremods
 
 import dev.su5ed.koremods.dsl.TransformerPropertiesExtension
+import dev.su5ed.koremods.prelaunch.KoremodsBlackboard
 import org.apache.logging.log4j.Logger
 import org.objectweb.asm.tree.ClassNode
 

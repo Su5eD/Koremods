@@ -27,6 +27,7 @@ package dev.su5ed.koremods
 import com.google.common.base.Stopwatch
 import dev.su5ed.koremods.dsl.Transformer
 import dev.su5ed.koremods.dsl.TransformerHandler
+import dev.su5ed.koremods.prelaunch.KoremodsBlackboard
 import dev.su5ed.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger

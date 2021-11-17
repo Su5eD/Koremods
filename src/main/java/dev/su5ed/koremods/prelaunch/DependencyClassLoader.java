@@ -31,14 +31,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DependencyClassLoader extends URLClassLoader { // TODO Javadoc
+/**
+ * Because some dependencies cannot be relocated when shadowed, we use jar-in-jar and extract them at runtime.
+ * To prevent conflicts with other mods that might be using them, they're loaded by a separate classloader.
+ */
+public class DependencyClassLoader extends URLClassLoader {
     private static final List<String> EXCLUSIONS = Arrays.asList(
-            "dev.su5ed.koremods.api.SplashScreen",
+            "dev.su5ed.koremods.api.",
             "dev.su5ed.koremods.prelaunch."
     );
     
+    /**
+     * Classes that are preferably loaded by this classloader. If not found, we'll attempt loading them using the parent CL instead of throwing an exception.
+     */
     private final List<String> priorityClasses;
     private final URLClassLoader delegateParent;
+    /**
+     * Completely isolates loading from the parent CL. This helps prevent conflicts in loading packages which were previously loaded as sealed by the parent.
+     */
     private final DelegateClassLoader delegateClassLoader;
     private final Map<String, Class<?>> cachedClasses = new HashMap<>();
     private final boolean strict;
@@ -80,6 +90,9 @@ public class DependencyClassLoader extends URLClassLoader { // TODO Javadoc
         return merged;
     }
 
+    /**
+     * Custom class to widen access of {@link #loadClass(String, boolean)}
+     */
     private static class DelegateClassLoader extends ClassLoader {
         
         protected DelegateClassLoader(ClassLoader parent) {

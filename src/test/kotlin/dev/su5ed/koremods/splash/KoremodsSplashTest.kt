@@ -24,9 +24,11 @@
 
 package dev.su5ed.koremods.splash
 
+import dev.su5ed.koremods.api.SplashBlackboard
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
+import java.util.function.Function
 import kotlin.concurrent.thread
 
 private val fakeLog = listOf(
@@ -43,10 +45,15 @@ private val fakeLog = listOf(
     "Compiling scrips for the first time, this may take a while"
 )
 
-private val LOG: Logger = LogManager.getLogger("KoremodsSplash")
+private val LOG: Logger = LogManager.getLogger("Koremods.Splash")
 
 fun main() {
-    val splash = initSplashScreen()
+    SplashBlackboard.loggerPackage = "Koremods"
+    SplashBlackboard.loggerFactory = Function(LogManager::getLogger)
+    
+    val splash = KoremodsSplashScreen()
+    splash.setTerminateOnClose(true)
+    splash.startOnThread()
     splash.injectSplashLogger(LogManager.getContext(false) as LoggerContext)
     
     thread(name = "SplashLog") { 
@@ -58,8 +65,8 @@ fun main() {
         }
     }
     
-    Thread.sleep(9000)
+    Thread.sleep(5000)
     LOG.info("Done")
-    splash.close()
+    splash.close(true)
 }
 

@@ -22,12 +22,24 @@
  * SOFTWARE.
  */
 
-package dev.su5ed.koremods.api
+package dev.su5ed.koremods.prelaunch;
 
-import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-object SplashBlackboard {
-    lateinit var LOGGER_PACKAGE: String
+import java.io.File;
+
+public final class KoremodsBlackboard {
+    public static final String NAME = "Koremods";
+    public static final String MODID = "koremods";
+    public static final String CONFIG_FILE = MODID + ".conf";
     
-    lateinit var loggerFactory: (String) -> Logger
+    public static File cacheDir;
+    public static ClassLoader scriptContextClassLoader;
+    
+    public static Logger createLogger(String name) {
+        return LogManager.getLogger(NAME + "." + name);
+    }
+    
+    private KoremodsBlackboard() {}
 }

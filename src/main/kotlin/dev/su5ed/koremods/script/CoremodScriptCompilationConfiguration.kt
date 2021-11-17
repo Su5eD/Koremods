@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+@file:Suppress("DEPRECATION")
+
 package dev.su5ed.koremods.script
 
 import kotlin.script.experimental.api.*

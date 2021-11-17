@@ -24,8 +24,8 @@
 
 package dev.su5ed.koremods.script
 
-import dev.su5ed.koremods.KoremodsBlackboard
 import dev.su5ed.koremods.dsl.TransformerHandler
+import dev.su5ed.koremods.prelaunch.KoremodsBlackboard
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.jetbrains.kotlin.utils.addToStdlib.cast

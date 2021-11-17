@@ -22,20 +22,15 @@
  * SOFTWARE.
  */
 
-package dev.su5ed.koremods
+package dev.su5ed.koremods.api;
 
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
-import java.io.File
+import org.apache.logging.log4j.Logger;
 
-object KoremodsBlackboard {
-    const val LOGGER_PACKAGE = "Koremods"
-    const val CONFIG_FILE = "koremods.conf"
+import java.util.function.Function;
+
+public final class SplashBlackboard {
+    public static String loggerPackage;
+    public static Function<String, Logger> loggerFactory;
     
-    var cacheDir: File? = null
-    var scriptContextClassLoader: ClassLoader? = null
-    
-    fun createLogger(name: String): Logger {
-        return LogManager.getLogger("$LOGGER_PACKAGE.$name")
-    }
+    private SplashBlackboard() {}
 }

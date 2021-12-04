@@ -26,13 +26,8 @@ package dev.su5ed.koremods.splash
 
 import dev.su5ed.koremods.api.SplashBlackboard
 import dev.su5ed.koremods.api.SplashScreen
-import dev.su5ed.koremods.splash.log.SplashAppender
 import dev.su5ed.koremods.splash.render.*
-import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
-import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.config.Configuration
-import org.apache.logging.log4j.core.config.LoggerConfig
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWImage
@@ -225,23 +220,6 @@ class KoremodsSplashScreen : SplashScreen {
     @Synchronized
     override fun log(message: String) {
         renderText.log(message)
-    }
-
-    override fun injectSplashLogger(context: LoggerContext) {
-        val config: Configuration = context.configuration
-        
-        val appender = SplashAppender("KoremodsSplashAppender", null, this)
-        appender.start()
-        config.addAppender(appender)
-
-        val loggerConfig: LoggerConfig = LoggerConfig.createLogger(
-            true, Level.ALL, "SplashLogger",
-            "true", emptyArray(), null, config, null
-        )
-        loggerConfig.addAppender(appender, Level.ALL, null)
-        config.addLogger(SplashBlackboard.loggerPackage, loggerConfig)
-        
-        context.updateLoggers()
     }
 
     @Suppress("UNUSED_PARAMETER")

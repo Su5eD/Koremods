@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -87,21 +88,22 @@ public class KoremodsPrelaunch {
         this.modJarAttributes = this.modJar.getManifest().getMainAttributes();
     }
     
-    public void launch(String splashFactoryClass) throws Exception {
+    public void launch(String splashFactoryClass, AppenderCallback appenderCallback) throws Exception {
         Path configDir = this.gameDir.resolve("config");
         URL kotlinDep = extractDependency("Kotlin");
         
         dependencyClassLoader = new DependencyClassLoader(new URL[]{ this.modJarUrl, kotlinDep }, (URLClassLoader) getClass().getClassLoader(), KOTLIN_DEP_PACKAGES);
         Class<?> launchClass = dependencyClassLoader.loadClass(LAUNCH_TARGET);
-        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, SplashScreenFactory.class);
+        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, SplashScreenFactory.class, AppenderCallback.class);
         Object instance = launchClass.newInstance();
         
-        SplashScreenFactory splashFactory = splashFactoryClass != null
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        SplashScreenFactory splashFactory = !os.contains("mac") && splashFactoryClass != null
                 ? (SplashScreenFactory) dependencyClassLoader.loadClass(splashFactoryClass).newInstance()
                 : null;
         
         LOGGER.info("Launching Koremods instance");
-        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, this.discoveryUrls, splashFactory);
+        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, this.discoveryUrls, splashFactory, appenderCallback);
     }
     
     public URL extractDependency(String name) {

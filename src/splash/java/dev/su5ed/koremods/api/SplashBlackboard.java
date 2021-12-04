@@ -29,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.function.Function;
 
 public final class SplashBlackboard {
-    public static String loggerPackage;
     public static Function<String, Logger> loggerFactory;
     
     private SplashBlackboard() {}

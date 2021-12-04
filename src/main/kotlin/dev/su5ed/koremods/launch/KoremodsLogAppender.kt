@@ -22,15 +22,15 @@
  * SOFTWARE.
  */
 
-package dev.su5ed.koremods.splash.log
+package dev.su5ed.koremods.launch
 
-import dev.su5ed.koremods.api.SplashScreen
+import dev.su5ed.koremods.prelaunch.AppenderCallback
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.appender.AbstractAppender
 
-class SplashAppender(name: String, filter: Filter?, private val splash: SplashScreen) : AbstractAppender(name, filter, null, true) {
+class KoremodsLogAppender(name: String, filter: Filter?, private val callback: AppenderCallback) : AbstractAppender(name, filter, null, true) {
     override fun append(event: LogEvent) {
-        splash.log(event.message.formattedMessage)
+        callback.append(event.message.formattedMessage)
     }
 }

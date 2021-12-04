@@ -25,6 +25,7 @@
 package dev.su5ed.koremods.splash
 
 import dev.su5ed.koremods.api.SplashBlackboard
+import dev.su5ed.koremods.launch.injectSplashLogger
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
@@ -48,13 +49,12 @@ private val fakeLog = listOf(
 private val LOG: Logger = LogManager.getLogger("Koremods.Splash")
 
 fun main() {
-    SplashBlackboard.loggerPackage = "Koremods"
     SplashBlackboard.loggerFactory = Function(LogManager::getLogger)
     
     val splash = KoremodsSplashScreen()
     splash.setTerminateOnClose(true)
     splash.startOnThread()
-    splash.injectSplashLogger(LogManager.getContext(false) as LoggerContext)
+    injectSplashLogger(LogManager.getContext(false) as LoggerContext, splash::log)
     
     thread(name = "SplashLog") { 
         var fakeLogIndex = 0

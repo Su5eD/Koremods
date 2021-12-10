@@ -31,6 +31,7 @@ import io.github.config4k.toConfig
 import java.io.Reader
 import java.nio.file.Path
 import kotlin.io.path.bufferedReader
+import kotlin.io.path.createDirectories
 import kotlin.io.path.notExists
 import kotlin.io.path.writeText
 
@@ -57,6 +58,7 @@ fun parseMainConfig(path: Path): KoremodConfig {
             .setJson(false)
         val render = obj.render(options)
         
+        path.parent.createDirectories()
         path.writeText(render)
         return koremodConfig
     }

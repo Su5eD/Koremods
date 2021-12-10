@@ -100,8 +100,8 @@ dependencies {
     
     // Dependencies shipped by Minecraft
     compileOnlyShared(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.8.1")
-    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.8.1")
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.15.0")
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.15.0")
     compileOnlyShared(group = "com.google.guava", name = "guava", version = "21.0")
     compileOnlyShared(group = "commons-io", name = "commons-io", version = "2.5")
     

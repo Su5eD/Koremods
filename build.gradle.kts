@@ -45,7 +45,7 @@ val shade: Configuration by configurations.creating
 
 val compileOnlyShared: Configuration by configurations.creating
 
-val mavenRuntime: Configuration by configurations.creating // TODO Remove?
+val mavenRuntime: Configuration by configurations.creating
 val mavenDep: (Dependency?) -> Unit = { if (it != null) { mavenRuntime.dependencies.add(it) } }
 
 configurations {
@@ -70,6 +70,25 @@ configurations {
         setExtendsFrom(setOf(mavenRuntime))
     }
     
+    apiElements {
+        extendsFrom(mavenRuntime)
+    }
+    
+    shadowRuntimeElements {
+        attributes { 
+            runtimeElements.get().attributes.let { attrs ->
+                attrs.keySet()
+                    .filterNot { it.equals(Bundling.BUNDLING_ATTRIBUTE) }
+                    .forEach {
+                        @Suppress("UNCHECKED_CAST") 
+                        attribute(it as Attribute<Any>, attrs.getAttribute(it)!!) 
+                    }
+            }
+            
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+        }
+    }
+    
     testImplementation {
         extendsFrom(compileOnly.get())
         extendsFrom(lwjglCompile)
@@ -78,6 +97,10 @@ configurations {
     testRuntimeOnly {
         extendsFrom(lwjglRuntime)
     }
+}
+
+java {
+    withSourcesJar()
 }
 
 repositories {
@@ -141,12 +164,12 @@ tasks {
     }
     
     shadowJar {
-        dependsOn("classes", "jar")
+        dependsOn("classes")
         
         configurations = listOf(shade)
+        manifest.attributes(manifestAttributes)
         from(splash.output)
         exclude("META-INF/versions/**")
-        manifest.attributes(manifestAttributes)
         relocatedPackages.forEach { relocate(it, "$repackPackagePath.$it") }
         
         dependencies {
@@ -172,10 +195,6 @@ tasks {
         gradleVersion = "7.3"
         distributionType = Wrapper.DistributionType.BIN
     }
-}
-
-java {
-    withSourcesJar()
 }
 
 publishing {

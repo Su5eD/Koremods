@@ -26,7 +26,7 @@ import codes.som.anthony.koffee.util.constructMethodDescriptor
 import org.objectweb.asm.tree.InsnNode
 
 transformers { 
-    method("dev.su5ed.koremods.transform.Person", "isTransformed", constructMethodDescriptor(Boolean::class), ::setPersonTransformed)
+    method("wtf.gofancy.koremods.transform.Person", "isTransformed", constructMethodDescriptor(Boolean::class), ::setPersonTransformed)
 }
 
 fun setPersonTransformed(node: MethodNode) {

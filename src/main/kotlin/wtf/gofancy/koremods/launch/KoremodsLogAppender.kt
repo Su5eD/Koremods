@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.launch
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+import wtf.gofancy.koremods.prelaunch.AppenderCallback
+import org.apache.logging.log4j.core.Filter
+import org.apache.logging.log4j.core.LogEvent
+import org.apache.logging.log4j.core.appender.AbstractAppender
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+class KoremodsLogAppender(name: String, filter: Filter?, private val callback: AppenderCallback) : AbstractAppender(name, filter, null, true) {
+    override fun append(event: LogEvent) {
+        callback.append(event.message.formattedMessage)
+    }
 }

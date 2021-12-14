@@ -22,12 +22,14 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.api;
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+import org.apache.logging.log4j.Logger;
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+import java.util.function.Function;
+
+public final class SplashBlackboard {
+    public static Function<String, Logger> loggerFactory;
+    
+    private SplashBlackboard() {}
 }

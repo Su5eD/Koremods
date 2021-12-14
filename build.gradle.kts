@@ -16,7 +16,7 @@ plugins {
     `maven-publish`
 }
 
-group = "dev.su5ed.koremods"
+group = "wtf.gofancy.koremods"
 version = getGitVersion()
 
 val manifestAttributes = mapOf(

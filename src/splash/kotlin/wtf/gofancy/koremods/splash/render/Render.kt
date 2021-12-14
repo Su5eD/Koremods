@@ -22,12 +22,26 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.splash.render
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+interface Render {
+    fun getWindowHints(): Map<Int, Int>
+    
+    fun initWindow(window: Long, monitor: Long)
+    
+    fun bake(VAO: Int, VBO: Int, EBO: Int, shaderFactory: (String?, String?) -> Int)
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+    fun initRender()
+    
+    fun startDrawing()
+    
+    fun draw(window: Long)
+    
+    fun endDrawing()
+    
+    fun windowClosing()
+    
+    fun shouldCloseWindow(): Boolean
+    
+    fun onWindowClose()
 }

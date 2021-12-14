@@ -22,12 +22,8 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.prelaunch;
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
-
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+public interface AppenderCallback {
+    void append(String message);
 }

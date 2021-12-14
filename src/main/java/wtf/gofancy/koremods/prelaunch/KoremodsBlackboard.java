@@ -22,12 +22,24 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.prelaunch;
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+import java.io.File;
+
+public final class KoremodsBlackboard {
+    public static final String NAME = "Koremods";
+    public static final String MODID = "koremods";
+    public static final String CONFIG_FILE = MODID + ".conf";
+    
+    public static File cacheDir;
+    public static ClassLoader scriptContextClassLoader;
+    
+    public static Logger createLogger(String name) {
+        return LogManager.getLogger(NAME + "." + name);
+    }
+    
+    private KoremodsBlackboard() {}
 }

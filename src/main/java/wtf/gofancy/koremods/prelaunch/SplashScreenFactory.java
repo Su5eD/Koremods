@@ -22,12 +22,10 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods.prelaunch;
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+import wtf.gofancy.koremods.api.SplashScreen;
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+public interface SplashScreenFactory {
+    SplashScreen createSplashScreen(KoremodsPrelaunch prelaunch);
 }

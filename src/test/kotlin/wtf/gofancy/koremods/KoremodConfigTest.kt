@@ -22,12 +22,23 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+package wtf.gofancy.koremods
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+import org.junit.jupiter.api.Test
+import java.io.File
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+class KoremodConfigTest {
+    
+    @Test
+    fun testParseModConfig() {
+        val file = File("src/test/resources/META-INF/koremods.conf")
+        val config: KoremodModConfig = parseConfig(file.bufferedReader())
+        
+        assertEquals("examplemod", config.modid)
+        
+        assertContains(config.scripts, "scripts/transformClass.core.kts")
+        assertContains(config.scripts, "scripts/transformMethod.core.kts")
+    }
 }

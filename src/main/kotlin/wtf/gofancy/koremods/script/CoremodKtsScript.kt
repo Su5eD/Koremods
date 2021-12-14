@@ -22,12 +22,26 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+@file:Suppress("unused")
 
-transformers { 
-    `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
-}
+package wtf.gofancy.koremods.script
 
-fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+import wtf.gofancy.koremods.dsl.TransformerBuilder
+import wtf.gofancy.koremods.dsl.TransformerHandler
+import wtf.gofancy.koremods.script.host.CoremodScriptHostConfiguration
+import org.apache.logging.log4j.Logger
+import kotlin.script.experimental.annotations.KotlinScript
+
+@KotlinScript(
+    fileExtension = "core.kts",
+    compilationConfiguration = CoremodScriptCompilationConfiguration::class,
+    evaluationConfiguration = CoremodScriptEvaluationConfiguration::class,
+    hostConfiguration = CoremodScriptHostConfiguration::class
+)
+abstract class CoremodKtsScript(val logger: Logger) {
+    val transformerHandler = TransformerHandler()
+    
+    fun transformers(configuration: TransformerBuilder.() -> Unit) {
+        transformerHandler.transformers(configuration)
+    }
 }

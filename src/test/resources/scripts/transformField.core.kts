@@ -23,7 +23,7 @@
  */
 
 transformers { 
-    field("dev.su5ed.koremods.transform.Person", "name", ::setFieldAccessible)
+    field("wtf.gofancy.koremods.transform.Person", "name", ::setFieldAccessible)
 }
 
 fun setFieldAccessible(node: FieldNode) {

@@ -151,9 +151,9 @@ license {
         set("app", "Koremods")
     }
     
-    excludes.add("dev/su5ed/koremods/script/host/CoremodScriptHostConfiguration.kt")
-    excludes.add("dev/su5ed/koremods/script/host/Directories.kt")
-    excludes.add("dev/su5ed/koremods/splash/math/Matrix4f.kt")
+    excludes.add("wtf/gofancy/koremods/script/host/CoremodScriptHostConfiguration.kt")
+    excludes.add("wtf/gofancy/koremods/script/host/Directories.kt")
+    excludes.add("wtf/gofancy/koremods/splash/math/Matrix4f.kt")
 }
 
 tasks {

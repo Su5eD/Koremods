@@ -29,6 +29,7 @@ import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.jetbrains.kotlin.utils.addToStdlib.cast
+import wtf.gofancy.koremods.Identifier
 import java.io.File
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.withUpdatedClasspath
@@ -38,17 +39,17 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Evaluation")
 
-fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: Collection<File> = emptyList()): TransformerHandler {
+fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, classpath: Collection<File> = emptyList()): TransformerHandler {
     when (val eval = evalScript(source, log, classpath)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
-                is ResultValue.Value-> throw IllegalStateException("Script $name returned a value instead of Unit")
+                is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
                 is ResultValue.Unit -> return result.scriptInstance
                     .cast<CoremodKtsScript>()
                     .transformerHandler
-                is ResultValue.Error -> throw RuntimeException("Exception in script $name", result.error)
+                is ResultValue.Error -> throw RuntimeException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen
-                ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $name")
+                ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $identifier")
             }
         }
         is ResultWithDiagnostics.Failure -> {
@@ -57,7 +58,7 @@ fun evalTransformers(name: String, source: SourceCode, log: Logger, classpath: C
                     ?.let { LOGGER.catching(Level.ERROR, it) }
                     ?: LOGGER.log(report.severity.toLogLevel(), report.message)
             }
-            throw ScriptEvaluationException("Failed to evaluate script $name. See the log for more information")
+            throw ScriptEvaluationException("Failed to evaluate script $identifier. See the log for more information")
         }
     }
 }

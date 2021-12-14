@@ -36,27 +36,27 @@ fun transformClass(name: String, node: ClassNode): List<TransformerPropertiesExt
     val props = mutableListOf<TransformerPropertiesExtension>()
     
     if (KoremodsDiscoverer.isInitialized()) {
-        KoremodsDiscoverer.transformers.forEach { (modid, scripts) ->
-            scripts.forEach { script ->
+        KoremodsDiscoverer.transformers
+            .flatMap(KoremodScriptPack::scripts)
+            .forEach { script ->
                 val used = script.handler.getTransformers()
                     .filter { transformer ->
                         if (transformer.targetClassName == name) {
-                            LOGGER.debug("Transforming class $name with transformer script ${script.name} of mod $modid")
+                            LOGGER.debug("Transforming class $name with transformer script ${script.identifier}")
                             try {
                                 transformer.visitClass(node)
                                 return@filter true
                             } catch (t: Throwable) {
-                                LOGGER.error("Error transforming class $name with script ${script.name} of mod $modid", t)
+                                LOGGER.error("Error transforming class $name with script ${script.identifier}", t)
                             }
                         }
-                        
+
                         return@filter false
                     }
                     .any()
-                
+
                 if (used) props.add(script.handler.getProps())
             }
-        }
     }
     
     return props.toList()

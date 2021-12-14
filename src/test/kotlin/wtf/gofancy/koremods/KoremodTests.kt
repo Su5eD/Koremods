@@ -38,11 +38,13 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
 import kotlin.script.experimental.host.toScriptSource
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class KoremodTransformationTests {
+    private val namespace = "unitTests"
     private val logger: Logger = LogManager.getLogger()
 
     @Test
@@ -77,11 +79,23 @@ class KoremodTransformationTests {
         assertNotEquals(0, name.modifiers and Opcodes.ACC_FINAL)
         assertEquals(0, name.modifiers and Opcodes.ACC_PRIVATE)
     }
+
+    @Test
+    fun testParseModConfig() {
+        val file = File("src/test/resources/META-INF/koremods.conf")
+        val config: KoremodModConfig = parseConfig(file.bufferedReader())
+
+        assertEquals(namespace, config.namespace)
+
+        assertContains(config.scripts, "scripts/transformClass.core.kts")
+        assertContains(config.scripts, "scripts/transformMethod.core.kts")
+    }
     
-    private fun getFirstTransformer(fileName: String): Transformer {
-        val script = File("src/test/resources/scripts/$fileName.core.kts")
+    private fun getFirstTransformer(name: String): Transformer {
+        val identifier = Identifier(namespace, name)
+        val script = File("src/test/resources/scripts/$name.core.kts")
     
-        val transformers: List<Transformer> = assertNotNull(evalTransformers(fileName, script.toScriptSource(), logger)).getTransformers()
+        val transformers: List<Transformer> = assertNotNull(evalTransformers(identifier, script.toScriptSource(), logger)).getTransformers()
         return transformers.first()
     }
     

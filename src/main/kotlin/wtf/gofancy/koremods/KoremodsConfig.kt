@@ -38,7 +38,7 @@ import kotlin.io.path.writeText
 /**
  * Individual config for each discovered Koremod
  */
-data class KoremodModConfig(val modid: String, val scripts: List<String>)
+data class KoremodModConfig(val namespace: String, val scripts: List<String>)
 
 /**
  * Configuration of Koremods itself

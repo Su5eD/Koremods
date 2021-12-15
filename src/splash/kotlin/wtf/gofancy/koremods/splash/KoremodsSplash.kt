@@ -56,7 +56,7 @@ internal class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     )
     
     private val initLatch = CountDownLatch(1)
-    override var terminateOnClose: Boolean = false
+    private var terminateOnClose: Boolean = false
 
     private var errorCallback: GLFWErrorCallback? = null
     private var window: Long = 0
@@ -69,6 +69,10 @@ internal class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     private val winX: IntBuffer = MemoryStack.stackMallocInt(1)
     private val winY: IntBuffer = MemoryStack.stackMallocInt(1)
     private var mousePress = false
+
+    override fun setTerminateOnClose(terminate: Boolean) {
+        terminateOnClose = terminate
+    }
 
     override fun startOnThread() {
         thread(name = "SplashRender", block = {

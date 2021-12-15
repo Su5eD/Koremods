@@ -30,6 +30,7 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import wtf.gofancy.koremods.KoremodsDiscoverer
+import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.api.SplashScreen
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
@@ -44,21 +45,21 @@ class KoremodsLaunch {
     
     fun launch(prelaunch: KoremodsPrelaunch, cacheDir: File, configDir: Path, modsDir: Path, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
         KoremodsBlackboard.cacheDir = cacheDir
-        KoremodsBlackboard.scriptContextClassLoader = KoremodsPrelaunch.dependencyClassLoader
+        KoremodsBlackboard.scriptContextClassLoader = prelaunch.dependencyClassLoader
         
         val configPath = configDir / KoremodsBlackboard.CONFIG_FILE
         val config = parseMainConfig(configPath)
         var splash: SplashScreen? = null
         val contexts = mutableSetOf(
             getLoggerContext(KoremodsPrelaunch::class.java.classLoader),
-            getLoggerContext(KoremodsPrelaunch.dependencyClassLoader),
+            getLoggerContext(prelaunch.dependencyClassLoader),
         )
         
         if (launchPlugin != null) {
             val callback: (String) -> Unit
             val os = System.getProperty("os.name").lowercase()
             
-            if (config.enableSplashScreen && launchPlugin.enableSplashScreen && !os.contains("mac")) {
+            if (config.enableSplashScreen && launchPlugin.shouldEnableSplashScreen() && !os.contains("mac")) {
                 splash = launchPlugin.createSplashScreen(prelaunch)!!
                 callback = splash::log
 

@@ -33,7 +33,8 @@ import java.util.*;
  * To prevent conflicts with other mods that might be using them, they're loaded by a separate classloader.
  */
 public class DependencyClassLoader extends URLClassLoader {
-    private static final List<String> EXCLUSIONS = Collections.singletonList(
+    private static final List<String> EXCLUSIONS = Arrays.asList(
+            "wtf.gofancy.koremods.api.",
             "wtf.gofancy.koremods.prelaunch."
     );
     

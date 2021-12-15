@@ -54,11 +54,10 @@ data class Identifier(val namespace: String, val name: String) {
     override fun toString(): String = "$namespace:$name"
 }
 
-private data class SourceScriptPack(val file: File, val scripts: List<RawScript<String>>)
-private data class FutureScriptPack(val scripts: List<RawScript<Future<TransformerHandler>>>)
+private data class RawScriptPack<T>(val namespace: String, val file: File, val scripts: List<RawScript<T>>)
 private data class RawScript<T>(val identifier: Identifier, val source: T)
 
-data class KoremodScriptPack(val scripts: List<KoremodScript>)
+data class KoremodScriptPack(val namespace: String, val file: File, val scripts: List<KoremodScript>)
 data class KoremodScript(val identifier: Identifier, val handler: TransformerHandler)
 
 private const val CONFIG_FILE_LOCATION = "META-INF/${KoremodsBlackboard.CONFIG_FILE}"
@@ -87,7 +86,7 @@ object KoremodsDiscoverer {
         transformers = if (modScripts.isNotEmpty()) evalScripts(modScripts) else emptyList()
     }
     
-    private fun scanPaths(paths: Iterable<Path>): List<SourceScriptPack> {
+    private fun scanPaths(paths: Iterable<Path>): List<RawScriptPack<String>> {
         LOGGER.debug("Scanning classpath for Koremod modules")
 
         return paths.mapNotNull { path ->
@@ -119,7 +118,7 @@ object KoremodsDiscoverer {
         }
     }
     
-    private fun readConfig(parent: File, istream: InputStream, locator: (String) -> InputStream?): SourceScriptPack? {
+    private fun readConfig(parent: File, istream: InputStream, locator: (String) -> InputStream?): RawScriptPack<String>? {
         val reader = istream.bufferedReader()
         
         val config: KoremodModConfig = parseConfig(reader)
@@ -134,7 +133,7 @@ object KoremodsDiscoverer {
         val scripts = locateScripts(config.namespace, locator, config.scripts)
         
         return if (scripts.isEmpty()) null
-        else SourceScriptPack(parent, scripts)
+        else RawScriptPack(config.namespace, parent, scripts)
     }
 
     private fun locateScripts(namespace: String, locator: (String) -> InputStream?, paths: List<String>): List<RawScript<String>> {
@@ -166,7 +165,7 @@ object KoremodsDiscoverer {
             }
     }
 
-    private fun evalScripts(sourcePacks: List<SourceScriptPack>): List<KoremodScriptPack> {
+    private fun evalScripts(sourcePacks: List<RawScriptPack<String>>): List<KoremodScriptPack> {
         val threads = sourcePacks.sumOf { it.scripts.size }
         val threadFactory = Executors.defaultThreadFactory()
         val executors = Executors.newFixedThreadPool(threads) { runnable ->
@@ -177,7 +176,7 @@ object KoremodsDiscoverer {
             }
         }
 
-        val futurePacks: List<FutureScriptPack> = sourcePacks.map { pack ->
+        val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = sourcePacks.map { pack ->
             val futureScripts = pack.scripts.map { script ->
                 val future = executors.submit(Callable {
                     evalScript(script.identifier, pack.file, script.source)
@@ -186,7 +185,7 @@ object KoremodsDiscoverer {
                 RawScript(script.identifier, future)
             }
             
-            FutureScriptPack(futureScripts)
+            RawScriptPack(pack.namespace, pack.file, futureScripts)
         }
         
         executors.shutdown()
@@ -197,7 +196,7 @@ object KoremodsDiscoverer {
                 KoremodScript(identifier, future.get())
             }
             
-            return@map KoremodScriptPack(processed)
+            return@map KoremodScriptPack(it.namespace, it.file, processed)
         }
     }
 

@@ -27,6 +27,7 @@ package wtf.gofancy.koremods.prelaunch;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import wtf.gofancy.koremods.api.KoremodsLaunchPlugin;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,8 +62,6 @@ public class KoremodsPrelaunch {
             "wtf.gofancy.koremods."
     );
     
-    public static DependencyClassLoader dependencyClassLoader;
-    
     private final Path gameDir;
     private final URL[] discoveryUrls;
     private final Path modsDir;
@@ -71,6 +70,9 @@ public class KoremodsPrelaunch {
     public final URL modJarUrl;
     private final JarFile modJar;
     private final Attributes modJarAttributes;
+    
+    private DependencyClassLoader dependencyClassLoader;
+    private KoremodsLaunchPlugin launchPlugin;
 
     public KoremodsPrelaunch(Path gameDir, String mcVersion) throws Exception {
         this.gameDir = gameDir;
@@ -93,12 +95,11 @@ public class KoremodsPrelaunch {
         
         dependencyClassLoader = new DependencyClassLoader(new URL[]{ this.modJarUrl, kotlinDep }, (URLClassLoader) getClass().getClassLoader(), KOTLIN_DEP_PACKAGES);
         Class<?> launchClass = dependencyClassLoader.loadClass(LAUNCH_TARGET);
-        Class<?> classLaunchPlugin = dependencyClassLoader.loadClass("wtf.gofancy.koremods.launch.KoremodsLaunchPlugin");
-        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, classLaunchPlugin);
+        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, KoremodsLaunchPlugin.class);
         Object instance = launchClass.newInstance();
         
-        Object launchPlugin = launchPluginClass != null
-                ? dependencyClassLoader.loadClass(launchPluginClass).newInstance()
+        launchPlugin = launchPluginClass != null
+                ? (KoremodsLaunchPlugin) dependencyClassLoader.loadClass(launchPluginClass).newInstance()
                 : null;
         
         LOGGER.info("Launching Koremods instance");
@@ -144,5 +145,13 @@ public class KoremodsPrelaunch {
                 .filter(Objects::nonNull)
                 .toArray(URL[]::new)
                 : new URL[0];
+    }
+
+    public DependencyClassLoader getDependencyClassLoader() {
+        return this.dependencyClassLoader;
+    }
+
+    public KoremodsLaunchPlugin getLaunchPlugin() {
+        return this.launchPlugin;
     }
 }

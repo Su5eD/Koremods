@@ -26,18 +26,14 @@ package wtf.gofancy.koremods.prelaunch;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Because some dependencies cannot be relocated when shadowed, we use jar-in-jar and extract them at runtime.
  * To prevent conflicts with other mods that might be using them, they're loaded by a separate classloader.
  */
 public class DependencyClassLoader extends URLClassLoader {
-    private static final List<String> EXCLUSIONS = Arrays.asList(
-            "wtf.gofancy.koremods.api.",
+    private static final List<String> EXCLUSIONS = Collections.singletonList(
             "wtf.gofancy.koremods.prelaunch."
     );
     

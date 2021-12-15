@@ -88,7 +88,7 @@ object KoremodsDiscoverer {
     }
     
     private fun scanPaths(paths: Iterable<Path>): List<SourceScriptPack> {
-        LOGGER.debug("Scanning classpath for Koremod Script Packs")
+        LOGGER.debug("Scanning classpath for Koremod modules")
 
         return paths.mapNotNull { path ->
             val file = path.toFile()
@@ -168,18 +168,19 @@ object KoremodsDiscoverer {
 
     private fun evalScripts(sourcePacks: List<SourceScriptPack>): List<KoremodScriptPack> {
         val threads = sourcePacks.sumOf { it.scripts.size }
-        val executors = Executors.newFixedThreadPool(threads)
+        val threadFactory = Executors.defaultThreadFactory()
+        val executors = Executors.newFixedThreadPool(threads) { runnable ->
+            threadFactory.newThread(runnable).apply { 
+                if (KoremodsBlackboard.scriptContextClassLoader != null) {
+                    contextClassLoader = KoremodsBlackboard.scriptContextClassLoader
+                }
+            }
+        }
 
         val futurePacks: List<FutureScriptPack> = sourcePacks.map { pack ->
             val futureScripts = pack.scripts.map { script ->
                 val future = executors.submit(Callable {
-                    val thread = Thread.currentThread()
-                    val oldCtxCl = thread.contextClassLoader
-                    KoremodsBlackboard.scriptContextClassLoader?.let(thread::setContextClassLoader)
-                    
-                    evalScript(script.identifier, pack.file, script.source).also { 
-                        thread.contextClassLoader = oldCtxCl
-                    }
+                    evalScript(script.identifier, pack.file, script.source)
                 })
                 
                 RawScript(script.identifier, future)

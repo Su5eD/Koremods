@@ -36,7 +36,7 @@ fun createFragmentShader(name: String, shaderProgram: Int) {
 }
 
 fun createShader(name: String, type: Int, shaderProgram: Int) {
-    val source = getContextResourceAsStream("shaders/$name").bufferedReader().readText()
+    val source = getSplashResourceAsStream("shaders/$name").bufferedReader().readText()
     
     val shader = glCreateShader(type)
     glShaderSource(shader, source)

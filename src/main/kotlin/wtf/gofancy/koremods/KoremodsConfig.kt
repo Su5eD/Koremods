@@ -28,6 +28,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import io.github.config4k.extract
 import io.github.config4k.toConfig
+import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import java.io.Reader
 import java.nio.file.Path
 import kotlin.io.path.bufferedReader
@@ -52,7 +53,7 @@ inline fun <reified T> parseConfig(reader: Reader): T {
 fun parseMainConfig(path: Path): KoremodConfig {
     if (path.notExists()) {
         val koremodConfig = KoremodConfig()
-        val obj = koremodConfig.toConfig("koremods").getObject("koremods")
+        val obj = koremodConfig.toConfig(KoremodsBlackboard.NAMESPACE).getObject(KoremodsBlackboard.NAMESPACE)
         val options = ConfigRenderOptions.defaults()
             .setOriginComments(false)
             .setJson(false)

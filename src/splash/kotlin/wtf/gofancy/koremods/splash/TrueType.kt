@@ -38,7 +38,7 @@ import java.nio.IntBuffer
 import kotlin.math.roundToInt
 
 class TrueType(font: String, private val fontHeight: Int, private val windowSize: Pair<Int, Int>) {
-    private val ttf: ByteBuffer = getContextResourceAsStream(font).toManagedByteBuffer()
+    private val ttf: ByteBuffer = getSplashResourceAsStream(font).toManagedByteBuffer()
     private val info: STBTTFontinfo = STBTTFontinfo.create()
     
     private var contentScaleX: Float = 0f
@@ -50,7 +50,7 @@ class TrueType(font: String, private val fontHeight: Int, private val windowSize
     private lateinit var cdata: STBTTBakedChar.Buffer
 
     init {
-        check(stbtt_InitFont(info, ttf)) { "Failed to initialize wtf.gofancy.koremods.splash.font information." }
+        check(stbtt_InitFont(info, ttf)) { "Failed to initialize font information." }
     }
     
     fun initWindow(monitor: Long) {

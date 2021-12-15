@@ -24,12 +24,10 @@
 
 package wtf.gofancy.koremods.splash
 
-import wtf.gofancy.koremods.api.SplashBlackboard
 import wtf.gofancy.koremods.launch.injectSplashLogger
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
-import java.util.function.Function
 import kotlin.concurrent.thread
 
 private val fakeLog = listOf(
@@ -49,9 +47,7 @@ private val fakeLog = listOf(
 private val LOG: Logger = LogManager.getLogger("Koremods.Splash")
 
 fun main() {
-    SplashBlackboard.loggerFactory = Function(LogManager::getLogger)
-    
-    val splash = KoremodsSplashScreen()
+    val splash = KoremodsSplashScreen(LOG)
     splash.setTerminateOnClose(true)
     splash.startOnThread()
     injectSplashLogger(LogManager.getContext(false) as LoggerContext, splash::log)

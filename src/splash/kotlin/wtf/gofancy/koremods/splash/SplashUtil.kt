@@ -73,7 +73,7 @@ internal fun bufferIndices(EBO: Int, indices: IntArray, usage: Int) {
 }
 
 internal fun <T> loadImage(name: String, flip: Boolean, block: (MemoryStack, IntBuffer, IntBuffer, ByteBuffer) -> T): T {
-    val resourceBuf = getContextResourceAsStream(name).toManagedByteBuffer()
+    val resourceBuf = getSplashResourceAsStream(name).toManagedByteBuffer()
     
     MemoryStack.stackPush().use { stack ->
         val width = stack.mallocInt(1)
@@ -91,6 +91,6 @@ internal fun <T> loadImage(name: String, flip: Boolean, block: (MemoryStack, Int
     }
 }
 
-internal fun getContextResourceAsStream(name: String): InputStream {
-    return Thread.currentThread().contextClassLoader.getResourceAsStream(name) ?: throw IllegalArgumentException("Coudln't find resource $name")
+internal fun getSplashResourceAsStream(name: String): InputStream {
+    return KoremodsSplashScreen::class.java.getResourceAsStream("/$name") ?: throw IllegalArgumentException("Couldn't find resource $name")
 }

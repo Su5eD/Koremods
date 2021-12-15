@@ -24,8 +24,6 @@
 
 package wtf.gofancy.koremods.splash
 
-import wtf.gofancy.koremods.api.SplashBlackboard
-import wtf.gofancy.koremods.api.SplashScreen
 import org.apache.logging.log4j.Logger
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -34,6 +32,7 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
+import wtf.gofancy.koremods.api.SplashScreen
 import wtf.gofancy.koremods.splash.render.*
 import java.nio.IntBuffer
 import java.util.concurrent.CountDownLatch
@@ -43,10 +42,9 @@ import kotlin.concurrent.thread
 internal val WINDOW_SIZE = Pair(550, 250)
 internal const val WINDOW_ICON = "logo.png"
 
-class KoremodsSplashScreen : SplashScreen {
+internal class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     companion object {
         private const val CLOSE_DELAY_MS = 1000
-        private val LOGGER: Logger = SplashBlackboard.loggerFactory.apply("Splash")
     }
     
     private val renderText = RenderText()
@@ -58,7 +56,7 @@ class KoremodsSplashScreen : SplashScreen {
     )
     
     private val initLatch = CountDownLatch(1)
-    private var terminateOnClose = false
+    override var terminateOnClose: Boolean = false
 
     private var errorCallback: GLFWErrorCallback? = null
     private var window: Long = 0
@@ -79,7 +77,7 @@ class KoremodsSplashScreen : SplashScreen {
                 loop()
                 glfwDestroyWindow(window)
             } catch(t: Throwable) {
-                LOGGER.catching(t)  
+                logger.catching(t)  
             } finally {
                 if (terminateOnClose) glfwTerminate()
                 errorCallback?.free()
@@ -89,12 +87,8 @@ class KoremodsSplashScreen : SplashScreen {
         try {
             initLatch.await(3, TimeUnit.SECONDS)
         } catch (e: InterruptedException) {
-            LOGGER.catching(e)
+            logger.catching(e)
         }
-    }
-    
-    override fun setTerminateOnClose(terminate: Boolean) {
-        terminateOnClose = terminate
     }
 
     private fun initWindow() {

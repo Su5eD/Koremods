@@ -41,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -77,7 +76,7 @@ public class KoremodsPrelaunch {
         this.gameDir = gameDir;
         this.discoveryUrls = getModClasses();
         this.modsDir = gameDir.resolve("mods");
-        Path koremodsDir = this.modsDir.resolve(mcVersion).resolve("koremods");
+        Path koremodsDir = this.modsDir.resolve(mcVersion).resolve(KoremodsBlackboard.NAMESPACE);
         this.cacheDir = koremodsDir.resolve("cache").toFile();
         this.cacheDir.mkdirs();
         this.depsPath = koremodsDir.resolve("dependencies");
@@ -88,22 +87,22 @@ public class KoremodsPrelaunch {
         this.modJarAttributes = this.modJar.getManifest().getMainAttributes();
     }
     
-    public void launch(String splashFactoryClass, AppenderCallback appenderCallback) throws Exception {
+    public void launch(String launchPluginClass) throws Exception {
         Path configDir = this.gameDir.resolve("config");
         URL kotlinDep = extractDependency("Kotlin");
         
         dependencyClassLoader = new DependencyClassLoader(new URL[]{ this.modJarUrl, kotlinDep }, (URLClassLoader) getClass().getClassLoader(), KOTLIN_DEP_PACKAGES);
         Class<?> launchClass = dependencyClassLoader.loadClass(LAUNCH_TARGET);
-        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, SplashScreenFactory.class, AppenderCallback.class);
+        Class<?> classLaunchPlugin = dependencyClassLoader.loadClass("wtf.gofancy.koremods.launch.KoremodsLaunchPlugin");
+        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, classLaunchPlugin);
         Object instance = launchClass.newInstance();
         
-        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        SplashScreenFactory splashFactory = !os.contains("mac") && splashFactoryClass != null
-                ? (SplashScreenFactory) dependencyClassLoader.loadClass(splashFactoryClass).newInstance()
+        Object launchPlugin = launchPluginClass != null
+                ? dependencyClassLoader.loadClass(launchPluginClass).newInstance()
                 : null;
         
         LOGGER.info("Launching Koremods instance");
-        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, this.discoveryUrls, splashFactory, appenderCallback);
+        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, this.discoveryUrls, launchPlugin);
     }
     
     public URL extractDependency(String name) {

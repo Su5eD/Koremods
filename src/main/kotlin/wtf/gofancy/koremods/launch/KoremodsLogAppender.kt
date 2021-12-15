@@ -24,13 +24,12 @@
 
 package wtf.gofancy.koremods.launch
 
-import wtf.gofancy.koremods.prelaunch.AppenderCallback
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.appender.AbstractAppender
 
-class KoremodsLogAppender(name: String, filter: Filter?, private val callback: AppenderCallback) : AbstractAppender(name, filter, null, true) {
+class KoremodsLogAppender(name: String, filter: Filter?, private val callback: (String) -> Unit) : AbstractAppender(name, filter, null, true) {
     override fun append(event: LogEvent) {
-        callback.append(event.message.formattedMessage)
+        callback(event.message.formattedMessage)
     }
 }

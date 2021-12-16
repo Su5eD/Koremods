@@ -25,15 +25,14 @@
 package wtf.gofancy.koremods
 
 import com.google.common.base.Stopwatch
-import wtf.gofancy.koremods.dsl.Transformer
-import wtf.gofancy.koremods.dsl.TransformerHandler
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
-import wtf.gofancy.koremods.script.evalTransformers
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.Marker
 import org.apache.logging.log4j.MarkerManager
-import java.io.File
+import wtf.gofancy.koremods.dsl.Transformer
+import wtf.gofancy.koremods.dsl.TransformerHandler
+import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
+import wtf.gofancy.koremods.script.evalTransformers
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Files
@@ -44,9 +43,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
-import kotlin.io.path.extension
-import kotlin.io.path.isDirectory
-import kotlin.io.path.name
+import kotlin.io.path.*
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
 
@@ -54,10 +51,10 @@ data class Identifier(val namespace: String, val name: String) {
     override fun toString(): String = "$namespace:$name"
 }
 
-private data class RawScriptPack<T>(val namespace: String, val file: File, val scripts: List<RawScript<T>>)
+private data class RawScriptPack<T>(val namespace: String, val path: Path, val scripts: List<RawScript<T>>)
 private data class RawScript<T>(val identifier: Identifier, val source: T)
 
-data class KoremodScriptPack(val namespace: String, val file: File, val scripts: List<KoremodScript>)
+data class KoremodScriptPack(val namespace: String, val path: Path, val scripts: List<KoremodScript>)
 data class KoremodScript(val identifier: Identifier, val handler: TransformerHandler)
 
 private const val CONFIG_FILE_LOCATION = "META-INF/${KoremodsBlackboard.CONFIG_FILE}"
@@ -90,25 +87,24 @@ object KoremodsDiscoverer {
         LOGGER.debug("Scanning classpath for Koremod modules")
 
         return paths.mapNotNull { path ->
-            val file = path.toFile()
-            if (file.isDirectory) {
-                LOGGER.debug(SCRIPT_SCAN, "Scanning ${file.relativeTo(file.parentFile.parentFile.parentFile).path}")
+            if (path.isDirectory()) {
+                LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.relativeTo(path.parent.parent.parent)}")
                 
                 val conf = path.resolve(CONFIG_FILE_LOCATION).toFile()
                 if (conf.exists()) {
-                    return@mapNotNull readConfig(file, conf.inputStream()) {
-                        val scriptFile = File(file, it)
-                        if (scriptFile.exists()) scriptFile.inputStream()
+                    return@mapNotNull readConfig(path, conf.inputStream()) {
+                        val scriptPath = path / it
+                        if (scriptPath.exists()) scriptPath.inputStream()
                         else null
                     }
                 }
             } else if (path.extension == "jar" || path.extension == "zip") {
-                LOGGER.debug(SCRIPT_SCAN, "Scanning ${file.name}")
+                LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.name}")
                 
-                val zip = ZipFile(file)
+                val zip = ZipFile(path.toFile())
                 zip.getEntry(CONFIG_FILE_LOCATION)?.let { entry ->
                     val inputStream = zip.getInputStream(entry)
-                    return@mapNotNull readConfig(file, inputStream) {
+                    return@mapNotNull readConfig(path, inputStream) {
                         zip.getEntry(it)?.let(zip::getInputStream)
                     }
                 }
@@ -118,7 +114,7 @@ object KoremodsDiscoverer {
         }
     }
     
-    private fun readConfig(parent: File, istream: InputStream, locator: (String) -> InputStream?): RawScriptPack<String>? {
+    private fun readConfig(parent: Path, istream: InputStream, locator: (String) -> InputStream?): RawScriptPack<String>? {
         val reader = istream.bufferedReader()
         
         val config: KoremodModConfig = parseConfig(reader)
@@ -179,13 +175,13 @@ object KoremodsDiscoverer {
         val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = sourcePacks.map { pack ->
             val futureScripts = pack.scripts.map { script ->
                 val future = executors.submit(Callable {
-                    evalScript(script.identifier, pack.file, script.source)
+                    evalScript(script.identifier, pack.path, script.source)
                 })
                 
                 RawScript(script.identifier, future)
             }
             
-            RawScriptPack(pack.namespace, pack.file, futureScripts)
+            RawScriptPack(pack.namespace, pack.path, futureScripts)
         }
         
         executors.shutdown()
@@ -196,16 +192,16 @@ object KoremodsDiscoverer {
                 KoremodScript(identifier, future.get())
             }
             
-            return@map KoremodScriptPack(it.namespace, it.file, processed)
+            return@map KoremodScriptPack(it.namespace, it.path, processed)
         }
     }
 
-    private fun evalScript(identifier: Identifier, file: File, source: String): TransformerHandler {
+    private fun evalScript(identifier: Identifier, path: Path, source: String): TransformerHandler {
         LOGGER.debug("Evaluating script $identifier")
         
         val handler = LOGGER.measureTime(Level.DEBUG, "Evaluating script $identifier") {
             val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
-            evalTransformers(identifier, source.toScriptSource(), engineLogger, listOf(file))
+            evalTransformers(identifier, source.toScriptSource(), engineLogger, listOf(path.toFile()))
         }
         if (handler.getTransformers().isEmpty()) LOGGER.error("Script $identifier does not define any transformers")
 

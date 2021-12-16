@@ -2,6 +2,9 @@ package wtf.gofancy.koremods.api;
 
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch;
 
+import java.nio.file.Path;
+import java.util.Map;
+
 public interface KoremodsLaunchPlugin {
     boolean shouldEnableSplashScreen();
     
@@ -9,5 +12,5 @@ public interface KoremodsLaunchPlugin {
     
     void appendLogMessage(String message);
     
-    void verifyScriptPacks();
+    void verifyScriptPacks(Map<String, Path> namespaceSources);
 }

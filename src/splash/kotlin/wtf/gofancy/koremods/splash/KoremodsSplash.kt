@@ -42,7 +42,7 @@ import kotlin.concurrent.thread
 internal val WINDOW_SIZE = Pair(550, 250)
 internal const val WINDOW_ICON = "logo.png"
 
-internal class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
+class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     companion object {
         private const val CLOSE_DELAY_MS = 1000
     }

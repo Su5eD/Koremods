@@ -118,7 +118,10 @@ dependencies {
     mavenDep(implementation(kotlin("stdlib-jdk8")))
     implementation(kotlin("reflect"))
     
-    mavenDep(shade(group = "dev.su5ed", name = "koffee", version = "8.1.5"))
+    mavenDep(shade(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.ow2.asm")
+    })
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
     // Dependencies shipped by Minecraft

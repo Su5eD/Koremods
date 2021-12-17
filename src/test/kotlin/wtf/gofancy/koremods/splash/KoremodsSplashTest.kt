@@ -24,24 +24,26 @@
 
 package wtf.gofancy.koremods.splash
 
-import wtf.gofancy.koremods.launch.injectSplashLogger
+import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
+import wtf.gofancy.koremods.launch.injectSplashLogger
 import kotlin.concurrent.thread
 
 private val fakeLog = listOf(
-    "Initializing Koremods",
-    "Hello world",
-    "Setting up environment",
-    "Creating directories",
-    "Discovering scripts",
-    "More useless text",
-    "Located script foo",
-    "Located script bar",
-    "Evaluating scripts",
-    "Actually evaluating scripts",
-    "Compiling scrips for the first time, this may take a while"
+    Pair(Level.INFO, "Initializing Koremods"),
+    Pair(Level.WARN, "Hello world"),
+    Pair(Level.INFO, "Setting up environment"),
+    Pair(Level.INFO, "Creating directories"),
+    Pair(Level.INFO, "Discovering scripts"),
+    Pair(Level.WARN, "More useless text"),
+    Pair(Level.INFO, "Located script foo"),
+    Pair(Level.INFO, "Located script bar"),
+    Pair(Level.INFO, "Evaluating scripts"),
+    Pair(Level.WARN, "Actually evaluating scripts"),
+    Pair(Level.WARN, "Compiling scrips for the first time, this may take a while"),
+    Pair(Level.ERROR, "Script example:exampleTransformer does not define any transformers")
 )
 
 private val LOG: Logger = LogManager.getLogger("Koremods.Splash")
@@ -51,13 +53,14 @@ fun main() {
     splash.setTerminateOnClose(true)
     splash.startOnThread()
     injectSplashLogger(LogManager.getContext(false) as LoggerContext, splash::log)
-    
+
     thread(name = "SplashLog") { 
         var fakeLogIndex = 0
-        
+
         while (fakeLogIndex < fakeLog.size) {
             Thread.sleep(250)
-            LOG.info(fakeLog[fakeLogIndex++])
+            val log = fakeLog[fakeLogIndex++]
+            LOG.log(log.first, log.second)
         }
     }
     

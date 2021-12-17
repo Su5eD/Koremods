@@ -37,7 +37,7 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import kotlin.math.roundToInt
 
-class TrueType(font: String, private val fontHeight: Int, private val windowSize: Pair<Int, Int>) {
+class TrueType(font: String, val fontHeight: Float, private val windowSize: Pair<Int, Int>) {
     private val ttf: ByteBuffer = getSplashResourceAsStream(font).toManagedByteBuffer()
     private val info: STBTTFontinfo = STBTTFontinfo.create()
     
@@ -69,7 +69,6 @@ class TrueType(font: String, private val fontHeight: Int, private val windowSize
         
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
         fontTexture = glGenTextures()
         val chardata = STBTTBakedChar.malloc(224)

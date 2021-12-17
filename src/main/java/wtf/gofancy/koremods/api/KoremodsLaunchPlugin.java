@@ -24,6 +24,7 @@
 
 package wtf.gofancy.koremods.api;
 
+import org.apache.logging.log4j.Level;
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch;
 
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ public interface KoremodsLaunchPlugin {
     
     SplashScreen createSplashScreen(KoremodsPrelaunch prelaunch);
     
-    void appendLogMessage(String message);
+    void appendLogMessage(Level level, String message);
     
     void verifyScriptPacks(Map<String, Path> namespaceSources);
 }

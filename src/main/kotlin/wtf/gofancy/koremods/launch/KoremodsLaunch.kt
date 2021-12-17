@@ -56,7 +56,7 @@ class KoremodsLaunch {
         )
         
         if (launchPlugin != null) {
-            val callback: (String) -> Unit
+            val callback: (Level, String) -> Unit
             val os = System.getProperty("os.name").lowercase()
             
             if (config.enableSplashScreen && launchPlugin.shouldEnableSplashScreen() && !os.contains("mac")) {
@@ -86,7 +86,7 @@ class KoremodsLaunch {
     }
 }
 
-internal fun injectSplashLogger(context: LoggerContext, callback: (String) -> Unit) {
+internal fun injectSplashLogger(context: LoggerContext, callback: (Level, String) -> Unit) {
     val config: Configuration = context.configuration
 
     val appender = KoremodsLogAppender("KoremodsAppender", null, callback)

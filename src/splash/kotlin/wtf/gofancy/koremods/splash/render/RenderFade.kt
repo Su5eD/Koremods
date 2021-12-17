@@ -60,7 +60,6 @@ class RenderFade : RenderBase() {
 
     override fun initRender() {
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
         glBindVertexArray(VAO)
 
@@ -81,7 +80,6 @@ class RenderFade : RenderBase() {
         
         glBlendFunc(GL_ZERO, GL_SRC_ALPHA)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     }
 
     override fun windowClosing() {

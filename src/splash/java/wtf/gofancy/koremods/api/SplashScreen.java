@@ -24,12 +24,14 @@
 
 package wtf.gofancy.koremods.api;
 
+import org.apache.logging.log4j.Level;
+
 public interface SplashScreen {
     void startOnThread();
 
     void setTerminateOnClose(boolean terminate);
 
-    void log(String message);
+    void log(Level level, String message);
 
     void close(boolean delay);
 }

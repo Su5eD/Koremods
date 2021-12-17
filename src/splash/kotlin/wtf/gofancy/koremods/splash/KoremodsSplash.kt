@@ -24,6 +24,7 @@
 
 package wtf.gofancy.koremods.splash
 
+import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -216,8 +217,8 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     }
 
     @Synchronized
-    override fun log(message: String) {
-        renderText.log(message)
+    override fun log(level: Level, message: String) {
+        renderText.log(level, message)
     }
 
     @Suppress("UNUSED_PARAMETER")

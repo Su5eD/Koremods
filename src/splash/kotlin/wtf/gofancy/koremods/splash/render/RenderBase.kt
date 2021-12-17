@@ -54,8 +54,9 @@ abstract class RenderBase : Render {
     }
 
     override fun startDrawing() {
-        glBindVertexArray(VAO)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
+        glBindVertexArray(VAO)
         glUseProgram(shader)
         
         uniforms.forEach(Uniform::tick)

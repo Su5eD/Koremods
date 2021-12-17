@@ -12,7 +12,7 @@ uniform sampler2D ourTexture;
 
 void main()
 {
-    FragColor = vec4(ourColor, texture(ourTexture, TexCoord).r - 0.2);
+    FragColor = vec4(ourColor, texture(ourTexture, TexCoord).r - 0.05);
     if (gl_FragCoord.y >= fadeY) {
         float diff = gl_FragCoord.y - fadeY;
         FragColor.a -= diff / fadeHeight;

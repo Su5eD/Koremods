@@ -1,7 +1,7 @@
 /*
  * This file is part of Koremods, licensed under the MIT License
  *
- * Copyright (c) 2021 Garden of Fancy
+ * Copyright (c) 2021-2022 Garden of Fancy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

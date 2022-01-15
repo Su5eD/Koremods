@@ -1,7 +1,7 @@
 /*
  * This file is part of Koremods, licensed under the MIT License
  *
- * Copyright (c) 2021 Garden of Fancy
+ * Copyright (c) 2021-2022 Garden of Fancy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ class KoremodTransformationTests {
 
         val cls = transformClass(transformer)
         val isTransformed = cls.getDeclaredMethod("isTransformed")
-        val person = cls.newInstance()
+        val person = cls.getConstructor().newInstance()
         val result = isTransformed.invoke(person) as Boolean
                             
         assert(result)
@@ -115,9 +115,9 @@ class KoremodTransformationTests {
     }
 }
 
-class RawByteClassLoader(private val name: String, private val data: ByteArray) : ClassLoader() {
+class RawByteClassLoader(private val className: String, private val data: ByteArray) : ClassLoader() {
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {
-        if (this.name == name) return defineClass(name, data, 0, data.size)
+        if (this.className == name) return defineClass(name, data, 0, data.size)
         return super.loadClass(name, resolve)
     }
 }

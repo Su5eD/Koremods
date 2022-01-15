@@ -29,8 +29,8 @@ import java.net.URLClassLoader;
 import java.util.*;
 
 /**
- * Because some dependencies cannot be relocated when shadowed, we use jar-in-jar and extract them at runtime.
- * To prevent conflicts with other mods that might be using them, they're loaded by a separate classloader.
+ * Because some dependencies cannot be relocated when shadowed, we use a custom classloader to load them in an
+ * isolated environment and prevent conflicts with other consumers on the classpath that might be using the same library
  */
 public class DependencyClassLoader extends URLClassLoader {
     private static final List<String> EXCLUSIONS = Arrays.asList(
@@ -42,20 +42,13 @@ public class DependencyClassLoader extends URLClassLoader {
      * Classes that are preferably loaded by this classloader. If not found, we'll attempt loading them using the parent CL instead of throwing an exception.
      */
     private final List<String> priorityClasses;
-    private final URLClassLoader delegateParent;
-    /**
-     * Completely isolates loading from the parent CL. This helps prevent conflicts in loading packages which were previously loaded as sealed by the parent.
-     */
-    private final DelegateClassLoader delegateClassLoader;
     private final Map<String, Class<?>> cachedClasses = new HashMap<>();
     private final boolean strict;
 
-    public DependencyClassLoader(URL[] urls, URLClassLoader parent, List<String> priorityClasses) {
-        super(urls, null);
-        
-        this.delegateParent = parent;
+    public DependencyClassLoader(URL[] urls, ClassLoader parent, List<String> priorityClasses) {
+        super(urls, parent);
+
         this.priorityClasses = priorityClasses;
-        this.delegateClassLoader = new DelegateClassLoader(this.delegateParent);
         this.strict = urls.length > 0;
     }
 
@@ -71,34 +64,10 @@ public class DependencyClassLoader extends URLClassLoader {
             }
         }
         
-        return this.delegateClassLoader.loadClass(name, resolve);
+        return loadClassFallback(name, resolve);
     }
-
-    @Override
-    public URL[] getURLs() {
-        URL[] urls = super.getURLs();
-        URL[] delegateUrls = this.delegateParent.getURLs();
-
-        URL[] merged = new URL[urls.length + delegateUrls.length];
-        int i = 0;
-        for (URL url : urls) merged[i++] = url;
-        for (URL url : delegateUrls) merged[i++] = url;
-
-        return merged;
-    }
-
-    /**
-     * Custom class to widen access of {@link #loadClass(String, boolean)}
-     */
-    private static class DelegateClassLoader extends ClassLoader {
-        
-        protected DelegateClassLoader(ClassLoader parent) {
-            super(parent);
-        }
-
-        @Override
-        public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            return super.loadClass(name, resolve);
-        }
+    
+    protected Class<?> loadClassFallback(String name, boolean resolve) throws ClassNotFoundException {
+        return super.loadClass(name, resolve);
     }
 }

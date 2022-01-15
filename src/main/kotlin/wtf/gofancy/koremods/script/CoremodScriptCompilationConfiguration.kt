@@ -44,7 +44,7 @@ internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfigur
     jvm {
         dependenciesFromClassloader(
             classLoader = CoremodKtsScript::class.java.classLoader,
-            wholeClasspath = true
+            wholeClasspath = true, // TODO Select libs
         )
         defaultImports( // TODO
             "org.objectweb.asm.Opcodes.*",

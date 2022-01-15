@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.cast
 import wtf.gofancy.koremods.Identifier
 import java.io.File
 import kotlin.script.experimental.api.*
+import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.withUpdatedClasspath
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate

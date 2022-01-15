@@ -65,16 +65,16 @@ object KoremodsDiscoverer {
     lateinit var transformers: List<KoremodScriptPack>
     private val scriptNameRegex = "^[a-zA-Z0-9]*\$".toRegex()
     
-    fun discoverKoremods(dir: Path, classpath: Array<URL>) {
+    fun discoverKoremods(dir: Path, additionalPaths: Array<URL>) {
         val paths = Files.walk(dir, 1)
             .filter { !it.isDirectory() && it.name != dir.name }
             .toList()
-        val classPaths = classpath
+        val additional = additionalPaths
             .map(URL::toURI)
             .filter { it.scheme == "file" }
             .map(Paths::get)
         
-        discoverKoremods(paths + classPaths)
+        discoverKoremods(paths + additional)
     }
     
     fun discoverKoremods(paths: Iterable<Path>) {

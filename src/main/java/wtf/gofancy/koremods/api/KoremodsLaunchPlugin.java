@@ -37,5 +37,5 @@ public interface KoremodsLaunchPlugin {
     
     void appendLogMessage(Level level, String message);
     
-    void verifyScriptPacks(Map<String, Path> namespaceSources);
+    void verifyScriptPacks();
 }

@@ -31,7 +31,9 @@ val manifestAttributes = mapOf(
 val repackPackagePath: String by project
 val relocatedPackages: Sequence<String> = sequenceOf("com.typesafe.config", "io.github.config4k", "org.intellij.lang", "org.jetbrains.annotations")
 
+val javaVersion: String by project
 val kotlinVersion: String by project
+val asmVersion: String by project
 val lwjglVersion: String by project
 val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
 val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
@@ -85,7 +87,7 @@ configurations {
                     }
             }
             
-            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, javaVersion.toInt())
         }
     }
     
@@ -100,6 +102,8 @@ configurations {
 }
 
 java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion.toInt()))
+    
     withSourcesJar()
 }
 
@@ -112,7 +116,7 @@ repositories {
 dependencies {
     implementation(kotlin("compiler-embeddable"))
     implementation(kotlin("scripting-common"))
-    implementation(kotlin("scripting-jvm"))
+    mavenDep(implementation(kotlin("scripting-jvm")))
     mavenDep(implementation(kotlin("scripting-jvm-host")))
     mavenDep(implementation(kotlin("stdlib")))
     mavenDep(implementation(kotlin("stdlib-jdk8")))
@@ -125,9 +129,11 @@ dependencies {
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2")
     
     // Dependencies shipped by Minecraft
-    compileOnlyShared(group = "org.ow2.asm", name = "asm-debug-all", version = "5.2")
-    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.15.0")
-    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.15.0")
+    compileOnlyShared(group = "org.ow2.asm", name = "asm", version = asmVersion)
+    compileOnlyShared(group = "org.ow2.asm", name = "asm-tree", version = asmVersion)
+    compileOnlyShared(group = "org.ow2.asm", name = "asm-commons", version = asmVersion)
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1")
+    compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1")
     compileOnlyShared(group = "com.google.guava", name = "guava", version = "21.0")
     compileOnlyShared(group = "commons-io", name = "commons-io", version = "2.5")
     
@@ -149,14 +155,16 @@ license {
     header(file("NOTICE"))
     
     properties {
-        set("year", Calendar.getInstance().get(Calendar.YEAR))
+        set("year", "2021-${Calendar.getInstance().get(Calendar.YEAR)}")
         set("name", "Garden of Fancy")
         set("app", "Koremods")
     }
     
-    excludes.add("wtf/gofancy/koremods/script/host/CoremodScriptHostConfiguration.kt")
-    excludes.add("wtf/gofancy/koremods/script/host/Directories.kt")
-    excludes.add("wtf/gofancy/koremods/splash/math/Matrix4f.kt")
+    exclude(
+        "wtf/gofancy/koremods/script/host/CoremodScriptHostConfiguration.kt",
+        "wtf/gofancy/koremods/script/host/Directories.kt",
+        "wtf/gofancy/koremods/splash/math/Matrix4f.kt"
+    )
 }
 
 tasks {
@@ -191,7 +199,7 @@ tasks {
     }
     
     withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "1.8"
+        kotlinOptions.jvmTarget = javaVersion
     }
     
     withType<Wrapper> {

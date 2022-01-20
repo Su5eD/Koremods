@@ -69,10 +69,10 @@ public class KoremodsPrelaunch {
     private ClassLoader dependencyClassLoader;
     private KoremodsLaunchPlugin launchPlugin;
 
-    public KoremodsPrelaunch(Path gameDir, String mcVersion, URL mainJarUrl) throws Exception {
+    public KoremodsPrelaunch(Path gameDir, URL mainJarUrl) throws Exception {
         this.gameDir = gameDir;
         this.modsDir = gameDir.resolve("mods");
-        Path koremodsDir = this.modsDir.resolve(mcVersion).resolve(KoremodsBlackboard.NAMESPACE);
+        Path koremodsDir = this.modsDir.resolve(KoremodsBlackboard.NAMESPACE);
         this.cacheDir = koremodsDir.resolve("cache").toFile();
         this.cacheDir.mkdirs();
         this.depsPath = koremodsDir.resolve("dependencies");

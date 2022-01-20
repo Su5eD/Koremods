@@ -43,7 +43,7 @@ import kotlin.io.path.div
 @Suppress("unused")
 class KoremodsLaunch {
     
-    fun launch(prelaunch: KoremodsPrelaunch, cacheDir: File, configDir: Path, modsDir: Path, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
+    fun launch(prelaunch: KoremodsPrelaunch, cacheDir: File, configDir: Path, modsDir: Path, discoveryUrls: Array<URL>, libraries: Array<String>, launchPlugin: KoremodsLaunchPlugin?) {
         KoremodsBlackboard.cacheDir = cacheDir
         KoremodsBlackboard.scriptContextClassLoader = prelaunch.dependencyClassLoader
         
@@ -72,7 +72,9 @@ class KoremodsLaunch {
         }
         
         try {
-            KoremodsDiscoverer.discoverKoremods(modsDir, discoveryUrls)
+            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(listOf(prelaunch.mainJarFile), prelaunch.mainJarFile.name, *libraries).apply { 
+                discoverKoremods(modsDir, discoveryUrls)
+            }
             
             splash?.close(true)
         } catch (t: Throwable) {

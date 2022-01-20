@@ -29,6 +29,7 @@ package wtf.gofancy.koremods.script
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.JvmScriptCompilationConfigurationKeys
 import kotlin.script.experimental.jvm.dependenciesFromClassloader
+import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.util.PropertiesCollection
 import kotlin.script.experimental.util.filterByAnnotationType
@@ -40,20 +41,16 @@ annotation class Allow(vararg val paths: String)
 
 internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<List<String>>()
 
+private val DEFAULT_IMPORTS: List<String> = listOf(
+    "wtf.gofancy.koremods.script.Allow",
+    "org.objectweb.asm.tree.ClassNode",
+    "org.objectweb.asm.tree.MethodNode",
+    "org.objectweb.asm.tree.FieldNode",
+    "org.objectweb.asm.Opcodes.*",
+)
+
 internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
-    jvm {
-        dependenciesFromClassloader(
-            classLoader = CoremodKtsScript::class.java.classLoader,
-            wholeClasspath = true, // TODO Select libs
-        )
-        defaultImports( // TODO
-            "org.objectweb.asm.Opcodes.*",
-            "wtf.gofancy.koremods.script.Allow",
-            "org.objectweb.asm.tree.ClassNode",
-            "org.objectweb.asm.tree.MethodNode",
-            "org.objectweb.asm.tree.FieldNode"
-        )
-    }
+    defaultImports(DEFAULT_IMPORTS)
     refineConfiguration {
         onAnnotations(Allow::class, handler = CoremodScriptConfigurator)
     }

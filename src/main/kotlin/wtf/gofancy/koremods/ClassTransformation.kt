@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-@file:JvmName("ClassTransformation")
 package wtf.gofancy.koremods
 
 import wtf.gofancy.koremods.dsl.TransformerPropertiesExtension
@@ -33,31 +32,26 @@ import org.objectweb.asm.tree.ClassNode
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 
 fun transformClass(name: String, node: ClassNode): List<TransformerPropertiesExtension> {
-    val props = mutableListOf<TransformerPropertiesExtension>()
-    
-    if (KoremodsDiscoverer.isInitialized()) {
-        KoremodsDiscoverer.transformers
+    return KoremodsDiscoverer.INSTANCE?.run {
+        scriptPacks
             .flatMap(KoremodScriptPack::scripts)
-            .forEach { script ->
-                val used = script.handler.getTransformers()
-                    .filter { transformer ->
+            .filter { script ->
+                script.handler.getTransformers()
+                    .filter used@{ transformer ->
                         if (transformer.targetClassName == name) {
                             LOGGER.debug("Transforming class $name with transformer script ${script.identifier}")
                             try {
                                 transformer.visitClass(node)
-                                return@filter true
+                                return@used true
                             } catch (t: Throwable) {
                                 LOGGER.error("Error transforming class $name with script ${script.identifier}", t)
                             }
                         }
-
-                        return@filter false
+                        return@used false
                     }
                     .any()
-
-                if (used) props.add(script.handler.getProps())
             }
-    }
-    
-    return props.toList()
+            .map { script -> script.handler.getProps() }
+            .toList()
+    } ?: emptyList()
 }

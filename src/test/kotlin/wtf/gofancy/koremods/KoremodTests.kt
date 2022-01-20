@@ -24,8 +24,6 @@
 
 package wtf.gofancy.koremods
 
-import wtf.gofancy.koremods.dsl.Transformer
-import wtf.gofancy.koremods.script.evalTransformers
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.junit.jupiter.api.Test
@@ -36,6 +34,8 @@ import org.objectweb.asm.ClassWriter.COMPUTE_FRAMES
 import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import wtf.gofancy.koremods.dsl.Transformer
+import wtf.gofancy.koremods.script.evalTransformers
 import java.io.File
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertContains

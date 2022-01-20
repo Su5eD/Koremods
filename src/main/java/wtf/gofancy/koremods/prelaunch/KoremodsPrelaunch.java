@@ -63,6 +63,7 @@ public class KoremodsPrelaunch {
     private final Path depsPath;
     public final URL mainJarUrl;
     public final JarFile mainJar;
+    public final File mainJarFile;
     private final Attributes attributes;
 
     private ClassLoader dependencyClassLoader;
@@ -77,17 +78,17 @@ public class KoremodsPrelaunch {
         this.depsPath = koremodsDir.resolve("dependencies");
 
         this.mainJarUrl = mainJarUrl;
-        File file = new File(this.mainJarUrl.toURI());
-        this.mainJar = new JarFile(file);
+        this.mainJarFile = new File(this.mainJarUrl.toURI());
+        this.mainJar = new JarFile(this.mainJarFile);
         this.attributes = this.mainJar.getManifest().getMainAttributes();
     }
 
-    public void launch(String launchPluginClass, URL[] discoveryUrls, ClassLoader classLoader) throws Exception {
+    public void launch(String launchPluginClass, URL[] discoveryUrls, String[] libraries, ClassLoader classLoader) throws Exception {
         Path configDir = this.gameDir.resolve("config");
 
         dependencyClassLoader = classLoader;
         Class<?> launchClass = dependencyClassLoader.loadClass(LAUNCH_TARGET);
-        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, KoremodsLaunchPlugin.class);
+        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, String[].class, KoremodsLaunchPlugin.class);
         Object instance = launchClass.getConstructor().newInstance();
 
         launchPlugin = launchPluginClass != null
@@ -95,7 +96,7 @@ public class KoremodsPrelaunch {
                 : null;
 
         LOGGER.info("Launching Koremods instance");
-        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, discoveryUrls, launchPlugin);
+        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, discoveryUrls, libraries, launchPlugin);
     }
 
     public URL extractDependency(String name) {

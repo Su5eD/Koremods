@@ -25,6 +25,7 @@
 package wtf.gofancy.koremods
 
 import com.google.common.base.Stopwatch
+import com.google.common.collect.ImmutableList
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.Marker
@@ -33,6 +34,7 @@ import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.evalTransformers
+import java.io.File
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Files
@@ -61,9 +63,14 @@ private const val CONFIG_FILE_LOCATION = "META-INF/${KoremodsBlackboard.CONFIG_F
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
-object KoremodsDiscoverer {
-    lateinit var transformers: List<KoremodScriptPack>
+class KoremodsDiscoverer(private val compileClasspath: Collection<File>, private vararg val libraries: String) {
+    companion object {
+        var INSTANCE: KoremodsDiscoverer? = null
+    }
+    
     private val scriptNameRegex = "^[a-zA-Z0-9]*\$".toRegex()
+    var scriptPacks: List<KoremodScriptPack> = emptyList()
+        private set
     
     fun discoverKoremods(dir: Path, additionalPaths: Array<URL>) {
         val paths = Files.walk(dir, 1)
@@ -78,9 +85,11 @@ object KoremodsDiscoverer {
     }
     
     fun discoverKoremods(paths: Iterable<Path>) {
-        val modScripts = scanPaths(paths)
-        
-        transformers = if (modScripts.isNotEmpty()) evalScripts(modScripts) else emptyList()
+        val rawScriptPacks = scanPaths(paths)
+        if (rawScriptPacks.isNotEmpty()) {
+            val eval = evalScripts(rawScriptPacks)
+            scriptPacks = ImmutableList.copyOf(eval)
+        }
     }
     
     private fun scanPaths(paths: Iterable<Path>): List<RawScriptPack<String>> {
@@ -175,7 +184,7 @@ object KoremodsDiscoverer {
         val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = sourcePacks.map { pack ->
             val futureScripts = pack.scripts.map { script ->
                 val future = executors.submit(Callable {
-                    evalScript(script.identifier, pack.path, script.source)
+                    evalScript(script.identifier, pack.path.toFile(), script.source)
                 })
                 
                 RawScript(script.identifier, future)
@@ -196,22 +205,21 @@ object KoremodsDiscoverer {
         }
     }
 
-    private fun evalScript(identifier: Identifier, path: Path, source: String): TransformerHandler {
+    private fun evalScript(identifier: Identifier, file: File, source: String): TransformerHandler {
         LOGGER.debug("Evaluating script $identifier")
         
         val handler = LOGGER.measureTime(Level.DEBUG, "Evaluating script $identifier") {
             val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
-            evalTransformers(identifier, source.toScriptSource(), engineLogger, listOf(path.toFile()))
+            val classpath = compileClasspath + file
+            evalTransformers(identifier, source.toScriptSource(), engineLogger, libraries, classpath)
         }
         if (handler.getTransformers().isEmpty()) LOGGER.error("Script $identifier does not define any transformers")
 
         return handler
     }
     
-    fun isInitialized(): Boolean = KoremodsDiscoverer::transformers.isInitialized
-    
     fun getFlatTransformers(): List<Transformer> {
-        return transformers
+        return scriptPacks
             .flatMap(KoremodScriptPack::scripts)
             .flatMap { it.handler.getTransformers() }
     }

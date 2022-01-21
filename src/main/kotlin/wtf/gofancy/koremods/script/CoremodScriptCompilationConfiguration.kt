@@ -43,6 +43,7 @@ internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCol
 
 private val DEFAULT_IMPORTS: List<String> = listOf(
     "wtf.gofancy.koremods.script.Allow",
+    "wtf.gofancy.koremods.dsl.*",
     "org.objectweb.asm.tree.ClassNode",
     "org.objectweb.asm.tree.MethodNode",
     "org.objectweb.asm.tree.FieldNode",

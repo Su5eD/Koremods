@@ -72,7 +72,7 @@ class KoremodsLaunch {
         }
         
         try {
-            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(listOf(prelaunch.mainJarFile), prelaunch.mainJarFile.name, *libraries).apply { 
+            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(prelaunch.mainJarFile.name, *libraries).apply { 
                 discoverKoremods(modsDir, discoveryUrls)
             }
             

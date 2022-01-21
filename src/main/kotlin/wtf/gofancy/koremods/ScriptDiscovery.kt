@@ -34,7 +34,6 @@ import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.evalTransformers
-import java.io.File
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Files
@@ -63,7 +62,7 @@ private const val CONFIG_FILE_LOCATION = "META-INF/${KoremodsBlackboard.CONFIG_F
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
-class KoremodsDiscoverer(private val compileClasspath: Collection<File>, private vararg val libraries: String) {
+class KoremodsDiscoverer(private vararg val libraries: String) {
     companion object {
         var INSTANCE: KoremodsDiscoverer? = null
     }
@@ -184,7 +183,7 @@ class KoremodsDiscoverer(private val compileClasspath: Collection<File>, private
         val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = sourcePacks.map { pack ->
             val futureScripts = pack.scripts.map { script ->
                 val future = executors.submit(Callable {
-                    evalScript(script.identifier, pack.path.toFile(), script.source)
+                    evalScript(script.identifier, script.source)
                 })
                 
                 RawScript(script.identifier, future)
@@ -205,13 +204,12 @@ class KoremodsDiscoverer(private val compileClasspath: Collection<File>, private
         }
     }
 
-    private fun evalScript(identifier: Identifier, file: File, source: String): TransformerHandler {
+    private fun evalScript(identifier: Identifier, source: String): TransformerHandler {
         LOGGER.debug("Evaluating script $identifier")
         
         val handler = LOGGER.measureTime(Level.DEBUG, "Evaluating script $identifier") {
             val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
-            val classpath = compileClasspath + file
-            evalTransformers(identifier, source.toScriptSource(), engineLogger, libraries, classpath)
+            evalTransformers(identifier, source.toScriptSource(), engineLogger, libraries)
         }
         if (handler.getTransformers().isEmpty()) LOGGER.error("Script $identifier does not define any transformers")
 

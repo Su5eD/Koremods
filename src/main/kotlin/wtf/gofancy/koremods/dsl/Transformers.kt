@@ -83,7 +83,7 @@ class MethodTransformer(private val owner: String, private val name: String, pri
 
     override fun visitClass(node: ClassNode) {
         node.methods
-            .first { it.name == this.name && it.desc == this.desc }
+            .first { it.name == this.name && it.desc == this.desc } // TODO Error handling
             .run(block)
     }
 }
@@ -95,7 +95,7 @@ class FieldTransformer(private val owner: String, private val name: String, priv
 
     override fun visitClass(node: ClassNode) {
         node.fields
-            .first { it.name == this.name }
+            .first { it.name == this.name } // TODO Error handling
             .run(block)
     }
 }

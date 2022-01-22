@@ -27,17 +27,6 @@
 package wtf.gofancy.koremods.script
 
 import kotlin.script.experimental.api.*
-import kotlin.script.experimental.jvm.JvmScriptCompilationConfigurationKeys
-import kotlin.script.experimental.jvm.jvm
-import kotlin.script.experimental.util.PropertiesCollection
-import kotlin.script.experimental.util.filterByAnnotationType
-
-@Target(AnnotationTarget.FILE)
-@Retention(AnnotationRetention.SOURCE)
-@Deprecated("")
-annotation class Allow(vararg val paths: String)
-
-internal val JvmScriptCompilationConfigurationKeys.restrictions by PropertiesCollection.key<List<String>>()
 
 private val DEFAULT_IMPORTS: List<String> = listOf(
     "wtf.gofancy.koremods.script.Allow",
@@ -50,28 +39,7 @@ private val DEFAULT_IMPORTS: List<String> = listOf(
 
 internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfiguration({
     defaultImports(DEFAULT_IMPORTS)
-    refineConfiguration {
-        onAnnotations(Allow::class, handler = ScriptAnnotationProcessor)
-    }
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
 })
-
-private object ScriptAnnotationProcessor : RefineScriptCompilationConfigurationHandler {
-    override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
-        return processAnnotations(context)
-    }
-    
-    private fun processAnnotations(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
-        val annotation = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)
-            ?.filterByAnnotationType<Allow>()
-            ?.map(ScriptSourceAnnotation<Allow>::annotation)
-            ?.firstOrNull()
-            ?: return context.compilationConfiguration.asSuccess()
-        
-        return context.compilationConfiguration.with { 
-            jvm.restrictions(annotation.paths.toList())
-        }.asSuccess()
-    }
-}

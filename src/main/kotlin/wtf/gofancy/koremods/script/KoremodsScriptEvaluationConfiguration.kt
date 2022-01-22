@@ -45,7 +45,7 @@ private val RESTRICTIONS: List<String> = listOf(
     "kotlin.",
     "org.apache.logging.log4j.",
     "org.objectweb.asm.",
-    "wtf.gofancy.koremods.script.CoremodKtsScript",
+    "wtf.gofancy.koremods.script.KoremodsKtsScript",
     "wtf.gofancy.koremods.dsl.",
 )
 

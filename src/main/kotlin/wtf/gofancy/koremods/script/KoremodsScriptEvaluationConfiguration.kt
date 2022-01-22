@@ -32,7 +32,7 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.loadDependencies
 
-internal class CoremodScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
+internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     jvm {
         baseClassLoader(FilteredClassLoader())
         loadDependencies(false)

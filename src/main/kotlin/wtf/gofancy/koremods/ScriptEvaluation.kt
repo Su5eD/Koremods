@@ -22,15 +22,14 @@
  * SOFTWARE.
  */
 
-package wtf.gofancy.koremods.script
+package wtf.gofancy.koremods
 
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import org.jetbrains.kotlin.utils.addToStdlib.cast
-import wtf.gofancy.koremods.Identifier
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
-import java.io.File
+import wtf.gofancy.koremods.script.KoremodsKtsScript
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.*
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
@@ -45,7 +44,7 @@ fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, li
             when (val result = eval.value.returnValue) {
                 is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
                 is ResultValue.Unit -> return result.scriptInstance
-                    .cast<CoremodKtsScript>()
+                    .cast<KoremodsKtsScript>()
                     .transformerHandler
                 is ResultValue.Error -> throw RuntimeException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen
@@ -66,12 +65,12 @@ fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, li
 class ScriptEvaluationException(msg: String) : RuntimeException(msg)
 
 fun evalScript(source: SourceCode, logger: Logger, libraries: Array<out String> = emptyArray()): ResultWithDiagnostics<EvaluationResult> {
-    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<CoremodKtsScript> {
+    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript> {
         jvm { 
             dependenciesFromCurrentContext(libraries = libraries)
         }
     }
-    val evaluationConfiguration = createJvmEvaluationConfigurationFromTemplate<CoremodKtsScript> {
+    val evaluationConfiguration = createJvmEvaluationConfigurationFromTemplate<KoremodsKtsScript> {
         constructorArgs(logger)
     }
     

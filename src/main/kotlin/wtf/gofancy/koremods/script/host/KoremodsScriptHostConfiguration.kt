@@ -24,7 +24,7 @@ private const val COMPILED_SCRIPTS_CACHE_DIR_ENV_VAR = "WTF_GOFANCY_KOREMODS_COM
 private const val COMPILED_SCRIPTS_CACHE_DIR = "wtf.gofancy.koremods.compiled.cache"
 private const val COMPILED_SCRIPTS_CACHE_VERSION = 1
 
-class CoremodScriptHostConfiguration : ScriptingHostConfiguration(
+class KoremodsScriptHostConfiguration : ScriptingHostConfiguration(
     {
         jvm {
             (KoremodsBlackboard.cacheDir ?: getDefaultCacheDir())

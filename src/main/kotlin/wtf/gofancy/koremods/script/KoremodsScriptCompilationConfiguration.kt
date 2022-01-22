@@ -28,8 +28,6 @@ package wtf.gofancy.koremods.script
 
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.jvm.JvmScriptCompilationConfigurationKeys
-import kotlin.script.experimental.jvm.dependenciesFromClassloader
-import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.util.PropertiesCollection
 import kotlin.script.experimental.util.filterByAnnotationType
@@ -50,17 +48,17 @@ private val DEFAULT_IMPORTS: List<String> = listOf(
     "org.objectweb.asm.Opcodes.*",
 )
 
-internal class CoremodScriptCompilationConfiguration : ScriptCompilationConfiguration({
+internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfiguration({
     defaultImports(DEFAULT_IMPORTS)
     refineConfiguration {
-        onAnnotations(Allow::class, handler = CoremodScriptConfigurator)
+        onAnnotations(Allow::class, handler = ScriptAnnotationProcessor)
     }
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
 })
 
-object CoremodScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+private object ScriptAnnotationProcessor : RefineScriptCompilationConfigurationHandler {
     override fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         return processAnnotations(context)
     }

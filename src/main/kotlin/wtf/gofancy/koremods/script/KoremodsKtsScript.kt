@@ -28,17 +28,17 @@ package wtf.gofancy.koremods.script
 
 import wtf.gofancy.koremods.dsl.TransformerBuilder
 import wtf.gofancy.koremods.dsl.TransformerHandler
-import wtf.gofancy.koremods.script.host.CoremodScriptHostConfiguration
+import wtf.gofancy.koremods.script.host.KoremodsScriptHostConfiguration
 import org.apache.logging.log4j.Logger
 import kotlin.script.experimental.annotations.KotlinScript
 
 @KotlinScript(
     fileExtension = "core.kts",
-    compilationConfiguration = CoremodScriptCompilationConfiguration::class,
-    evaluationConfiguration = CoremodScriptEvaluationConfiguration::class,
-    hostConfiguration = CoremodScriptHostConfiguration::class
+    compilationConfiguration = KoremodsScriptCompilationConfiguration::class,
+    evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
+    hostConfiguration = KoremodsScriptHostConfiguration::class
 )
-abstract class CoremodKtsScript(val logger: Logger) {
+abstract class KoremodsKtsScript(val logger: Logger) {
     val transformerHandler = TransformerHandler()
     
     fun transformers(configuration: TransformerBuilder.() -> Unit) {

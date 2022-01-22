@@ -33,7 +33,6 @@ import org.apache.logging.log4j.MarkerManager
 import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
-import wtf.gofancy.koremods.script.evalTransformers
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Files

@@ -83,8 +83,9 @@ class MethodTransformer(private val owner: String, private val name: String, pri
 
     override fun visitClass(node: ClassNode) {
         node.methods
-            .first { it.name == this.name && it.desc == this.desc } // TODO Error handling
-            .run(block)
+            .find { it.name == this.name && it.desc == this.desc }
+            ?.run(block)
+            ?: throw IllegalArgumentException("Class $owner does not contain method '$name$desc'")
     }
 }
 
@@ -95,8 +96,9 @@ class FieldTransformer(private val owner: String, private val name: String, priv
 
     override fun visitClass(node: ClassNode) {
         node.fields
-            .first { it.name == this.name } // TODO Error handling
-            .run(block)
+            .find { it.name == this.name }
+            ?.run(block)
+            ?: throw IllegalArgumentException("Class $owner does not contain field '$name'")
     }
 }
 

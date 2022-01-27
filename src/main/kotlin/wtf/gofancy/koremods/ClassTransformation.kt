@@ -32,26 +32,24 @@ import org.objectweb.asm.tree.ClassNode
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 
 fun transformClass(name: String, node: ClassNode): List<TransformerPropertiesExtension> {
-    return KoremodsDiscoverer.INSTANCE?.run {
-        scriptPacks
-            .flatMap(KoremodScriptPack::scripts)
-            .filter { script ->
-                script.handler.getTransformers()
-                    .filter used@{ transformer ->
-                        if (transformer.targetClassName == name) {
-                            LOGGER.debug("Transforming class $name with transformer script ${script.identifier}")
-                            try {
-                                transformer.visitClass(node)
-                                return@used true
-                            } catch (t: Throwable) {
-                                LOGGER.error("Error transforming class $name with script ${script.identifier}", t)
-                            }
+    return KoremodsDiscoverer.INSTANCE!!.scriptPacks
+        .flatMap(KoremodScriptPack::scripts)
+        .filter { script ->
+            script.handler.getTransformers()
+                .filter used@{ transformer ->
+                    if (transformer.targetClassName == name) {
+                        LOGGER.debug("Transforming class $name with transformer script ${script.identifier}")
+                        try {
+                            transformer.visitClass(node)
+                            return@used true
+                        } catch (t: Throwable) {
+                            LOGGER.error("Error transforming class $name with script ${script.identifier}", t)
                         }
-                        return@used false
                     }
-                    .any()
-            }
-            .map { script -> script.handler.getProps() }
-            .toList()
-    } ?: emptyList()
+                    return@used false
+                }
+                .any()
+        }
+        .map { script -> script.handler.props }
+        .toList()
 }

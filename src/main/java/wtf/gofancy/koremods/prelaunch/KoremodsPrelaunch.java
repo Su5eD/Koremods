@@ -27,12 +27,10 @@ package wtf.gofancy.koremods.prelaunch;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import wtf.gofancy.koremods.api.KoremodsLaunchPlugin;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,39 +41,38 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 public class KoremodsPrelaunch {
-    static final Logger LOGGER = LogManager.getLogger("Koremods.Prelaunch");
-    private static final String LAUNCH_TARGET = "wtf.gofancy.koremods.launch.KoremodsLaunch";
+    private static final Logger LOGGER = LogManager.getLogger("Koremods.Prelaunch");
     public static final List<String> KOTLIN_DEP_PACKAGES = Arrays.asList(
-            "org.jetbrains.",
-            "kotlin.",
-            "org.intellij.lang.",
-            "kotlinx.coroutines.",
-            "javaslang.",
-            "gnu.trove.",
-            "codes.som.anthony.koffee.",
-            "io.github.config4k.",
-            "wtf.gofancy.koremods."
+        "org.jetbrains.",
+        "kotlin.",
+        "org.intellij.lang.",
+        "kotlinx.coroutines.",
+        "javaslang.",
+        "gnu.trove.",
+        "codes.som.anthony.koffee.",
+        "io.github.config4k.",
+        "wtf.gofancy.koremods."
     );
 
-    private final Path gameDir;
-    private final Path modsDir;
-    private final File cacheDir;
-    private final Path depsPath;
+    public final Path gameDir;
+    public final Path configDir;
+    public final Path modsDir;
+    public final File cacheDir;
+    private final Path depsDir;
+    
     public final URL mainJarUrl;
     public final JarFile mainJar;
     public final File mainJarFile;
     private final Attributes attributes;
 
-    private ClassLoader dependencyClassLoader;
-    private KoremodsLaunchPlugin launchPlugin;
-
     public KoremodsPrelaunch(Path gameDir, URL mainJarUrl) throws Exception {
         this.gameDir = gameDir;
+        this.configDir = this.gameDir.resolve("config");
         this.modsDir = gameDir.resolve("mods");
         Path koremodsDir = this.modsDir.resolve(KoremodsBlackboard.NAMESPACE);
         this.cacheDir = koremodsDir.resolve("cache").toFile();
         this.cacheDir.mkdirs();
-        this.depsPath = koremodsDir.resolve("dependencies");
+        this.depsDir = koremodsDir.resolve("dependencies");
 
         this.mainJarUrl = mainJarUrl;
         this.mainJarFile = new File(this.mainJarUrl.toURI());
@@ -83,30 +80,15 @@ public class KoremodsPrelaunch {
         this.attributes = this.mainJar.getManifest().getMainAttributes();
     }
 
-    public void launch(String launchPluginClass, URL[] discoveryUrls, String[] libraries, ClassLoader classLoader) throws Exception {
-        Path configDir = this.gameDir.resolve("config");
-
-        dependencyClassLoader = classLoader;
-        Class<?> launchClass = dependencyClassLoader.loadClass(LAUNCH_TARGET);
-        Method launchMethod = launchClass.getDeclaredMethod("launch", KoremodsPrelaunch.class, File.class, Path.class, Path.class, URL[].class, String[].class, KoremodsLaunchPlugin.class);
-        Object instance = launchClass.getConstructor().newInstance();
-
-        launchPlugin = launchPluginClass != null
-                ? (KoremodsLaunchPlugin) dependencyClassLoader.loadClass(launchPluginClass).getConstructor().newInstance()
-                : null;
-
-        LOGGER.info("Launching Koremods instance");
-        launchMethod.invoke(instance, this, this.cacheDir, configDir, this.modsDir, discoveryUrls, libraries, launchPlugin);
-    }
-
     public URL extractDependency(String name) {
         String depName = this.attributes.getValue("Additional-Dependencies-" + name);
         if (depName == null) throw new IllegalArgumentException("Required dependency " + name + " not found");
-        
+
         try {
-            Path destPath = this.depsPath.resolve(depName);
+            Path destPath = this.depsDir.resolve(depName);
             if (Files.notExists(destPath)) {
-                Files.createDirectories(this.depsPath);
+                LOGGER.info("Extracting dependency '{}' to {}", name, destPath);
+                Files.createDirectories(this.depsDir);
 
                 ZipEntry entry = this.mainJar.getEntry(depName);
                 InputStream source = this.mainJar.getInputStream(entry);
@@ -115,15 +97,7 @@ public class KoremodsPrelaunch {
             }
             return destPath.toUri().toURL();
         } catch (Exception e) {
-            throw new RuntimeException("Can't extract required dependency " + name, e);
+            throw new RuntimeException("Failed to extract required dependency " + name, e);
         }
-    }
-
-    public ClassLoader getDependencyClassLoader() {
-        return this.dependencyClassLoader;
-    }
-
-    public KoremodsLaunchPlugin getLaunchPlugin() {
-        return this.launchPlugin;
     }
 }

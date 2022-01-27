@@ -104,13 +104,11 @@ class FieldTransformer(private val owner: String, private val name: String, priv
 
 class TransformerHandler {
     private val transformers = mutableListOf<Transformer>()
-    private val props = TransformerPropertiesExtension()
+    val props = TransformerPropertiesExtension()
         
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
         transformer.invoke(TransformerBuilder(transformers, props))
     }
     
     fun getTransformers() = transformers.toList()
-    
-    fun getProps() = props
 }

@@ -35,7 +35,6 @@ import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import wtf.gofancy.koremods.dsl.Transformer
-import wtf.gofancy.koremods.script.evalTransformers
 import java.io.File
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertContains

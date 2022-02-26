@@ -79,7 +79,7 @@ class RenderFade : RenderBase() {
         currentFade = uniformFade.update(fadeTime)
         
         glBlendFunc(GL_ZERO, GL_SRC_ALPHA)
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
+        glDrawElements(GL_TRIANGLES, indices.size, GL_UNSIGNED_INT, 0)
     }
 
     override fun windowClosing() {
@@ -87,5 +87,5 @@ class RenderFade : RenderBase() {
         fadeTime = FADE_OUT_MS
     }
 
-    override fun shouldCloseWindow(): Boolean = uniformFade.reverse && currentFade <= 0f
+    override fun shouldCloseWindow(): Boolean = uniformFade.reverse && currentFade <= 0
 }

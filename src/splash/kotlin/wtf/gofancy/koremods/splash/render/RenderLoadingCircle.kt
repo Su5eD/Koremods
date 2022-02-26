@@ -66,6 +66,6 @@ class RenderLoadingCircle : RenderBase() {
     }
 
     override fun draw(window: Long) {
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0)
+        glDrawElements(GL_TRIANGLES, indices.size, GL_UNSIGNED_INT, 0)
     }
 }

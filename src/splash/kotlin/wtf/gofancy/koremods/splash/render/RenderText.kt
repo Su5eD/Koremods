@@ -37,6 +37,8 @@ class RenderText : RenderBase() {
         private val COLOR_BLACK = Triple(0f, 0f, 0f)
         private val COLOR_YELLOW = Triple(0.9f, 0.9f, 0f)
         private val COLOR_NEON_BLUE = Triple(21 / 255f, 242 / 255f, 253 / 255f)
+
+        private val COPYRIGHT_NOTICE = "Copyright \u00a9 2021 Garden of Fancy. All Rights Reserved."
     }
     
     private val indices = intArrayOf(
@@ -96,7 +98,7 @@ class RenderText : RenderBase() {
     override fun draw(window: Long) {
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
         
-        fontUbuntu.renderText("Copyright \u00a9 2021 Garden of Fancy. All Rights Reserved.", COLOR_BLACK, VBO, 230f)
+        fontUbuntu.renderText(COPYRIGHT_NOTICE, COLOR_BLACK, VBO, 230f)
         
         glUseProgram(logShader)
         splashLog.reversed().forEachIndexed { index, (level, message) ->

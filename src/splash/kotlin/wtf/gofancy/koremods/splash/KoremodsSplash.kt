@@ -47,15 +47,15 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     companion object {
         private const val CLOSE_DELAY_MS = 1000
     }
-    
+
     private val renderText = RenderText()
     private val renders = listOf(
-        RenderSplash(),
-        RenderLoadingCircle(),
-        renderText,
-        RenderFade()
+            RenderSplash(),
+            RenderLoadingCircle(),
+            renderText,
+            RenderFade()
     )
-    
+
     private val initLatch = CountDownLatch(1)
     private var terminateOnClose: Boolean = false
 
@@ -64,7 +64,7 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     private var closeWindow = false
     private var endWindow = false
     private var closeDelayMillis: Long = 0
-    
+
     private val cursorX = MemoryStack.stackMallocDouble(1)
     private val cursorY = MemoryStack.stackMallocDouble(1)
     private val winX: IntBuffer = MemoryStack.stackMallocInt(1)
@@ -81,14 +81,14 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
                 initWindow()
                 loop()
                 glfwDestroyWindow(window)
-            } catch(t: Throwable) {
-                logger.catching(t)  
+            } catch (t: Throwable) {
+                logger.catching(t)
             } finally {
                 if (terminateOnClose) glfwTerminate()
                 errorCallback?.free()
             }
         })
-        
+
         try {
             initLatch.await(3, TimeUnit.SECONDS)
         } catch (e: InterruptedException) {
@@ -98,8 +98,8 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
 
     private fun initWindow() {
         errorCallback = glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err))
-        if (!glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
-        
+        check(glfwInit()) { "Unable to initialize GLFW" }
+
         glfwDefaultWindowHints()
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API)
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API)
@@ -107,12 +107,12 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-        
+
         renders.map(Render::getWindowHints).forEach { it.forEach(::glfwWindowHint) }
-        
+
         window = glfwCreateWindow(WINDOW_SIZE.first, WINDOW_SIZE.second, "Koremods loading", NULL, NULL)
         if (window == NULL) throw RuntimeException("Failed to create the GLFW window")
-        
+
         val monitor = glfwGetPrimaryMonitor()
         if (monitor != NULL) {
             val vidmode = glfwGetVideoMode(monitor)!!
@@ -124,9 +124,9 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
         glfwMakeContextCurrent(window)
         GL.createCapabilities()
         glfwSwapInterval(1)
-        
+
         renders.forEach { it.initWindow(window, monitor) }
-        
+
         glfwShowWindow(window)
         glfwPollEvents()
     }
@@ -150,14 +150,14 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
                 glGenBuffers(ebo)
                 EBO = ebo.get()
             }
-            
+
             glBindVertexArray(VAO)
-            
+
             glBindBuffer(GL_ARRAY_BUFFER, VBO)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO)
-            
+
             glBindVertexArray(0)
-            
+
             it.bake(VAO, VBO, EBO, ::createShaders)
             it.initRender()
         }
@@ -166,19 +166,19 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     private fun loop() {
         initRender()
         initLatch.countDown()
-        
+
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents()
             glClear(GL_COLOR_BUFFER_BIT)
-            
+
             renders.forEach {
                 it.startDrawing()
                 it.draw(window)
                 it.endDrawing()
             }
-            
+
             glfwSwapBuffers(window)
-            
+
             if (closeWindow) {
                 val delta = System.currentTimeMillis() - closeDelayMillis
                 if (delta >= CLOSE_DELAY_MS) {
@@ -189,14 +189,14 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
             }
             if (endWindow && renders.all(Render::shouldCloseWindow)) break
         }
-        
+
         renders.forEach(Render::onWindowClose)
     }
-    
+
     private fun setWindowIcon() {
         loadImage(WINDOW_ICON, false) { stack, width, height, image ->
             val glfwImages = GLFWImage.mallocStack(1, stack)
-        
+
             glfwImages.position(0)
             glfwImages.width(width.get(0))
             glfwImages.height(height.get(0))
@@ -205,7 +205,7 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
             glfwSetWindowIcon(window, glfwImages)
         }
     }
-    
+
     override fun close(delay: Boolean) {
         if (delay) {
             closeWindow = true
@@ -248,11 +248,10 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
 }
 
 private fun createShaders(vertex: String?, fragment: String?): Int {
-    val program = glCreateProgram()
-    
-    vertex?.let { createVertexShader(it, program) }
-    fragment?.let { createFragmentShader(it, program) }
+    return glCreateProgram().also { program ->
+        vertex?.let { createVertexShader(it, program) }
+        fragment?.let { createFragmentShader(it, program) }
 
-    glLinkProgram(program)
-    return program
+        glLinkProgram(program)
+    }
 }

@@ -215,7 +215,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
         return handler
     }
     
-    fun getFlatTransformers(): List<Transformer> {
+    fun getFlatTransformers(): List<Transformer<*>> {
         return scriptPacks
             .flatMap(KoremodScriptPack::scripts)
             .flatMap { it.handler.getTransformers() }

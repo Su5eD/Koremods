@@ -39,7 +39,7 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Evaluation")
 
 fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, libraries: Array<out String> = emptyArray()): TransformerHandler {
-    when (val eval = evalScript(source, log, libraries)) {
+    when (val eval = evalScript(identifier, source, log, libraries)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
                 is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
@@ -64,14 +64,14 @@ fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, li
 
 class ScriptEvaluationException(msg: String) : RuntimeException(msg)
 
-fun evalScript(source: SourceCode, logger: Logger, libraries: Array<out String> = emptyArray()): ResultWithDiagnostics<EvaluationResult> {
+fun evalScript(identifier: Identifier, source: SourceCode, logger: Logger, libraries: Array<out String> = emptyArray()): ResultWithDiagnostics<EvaluationResult> {
     val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript> {
         jvm { 
             dependenciesFromCurrentContext(libraries = libraries)
         }
     }
     val evaluationConfiguration = createJvmEvaluationConfigurationFromTemplate<KoremodsKtsScript> {
-        constructorArgs(logger)
+        constructorArgs(identifier, logger)
     }
     
     return BasicJvmScriptingHost().eval(source, compilationConfiguration, evaluationConfiguration)

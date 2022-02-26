@@ -30,6 +30,7 @@ import wtf.gofancy.koremods.dsl.TransformerBuilder
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.script.host.KoremodsScriptHostConfiguration
 import org.apache.logging.log4j.Logger
+import wtf.gofancy.koremods.Identifier
 import kotlin.script.experimental.annotations.KotlinScript
 
 @KotlinScript(
@@ -38,8 +39,8 @@ import kotlin.script.experimental.annotations.KotlinScript
     evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
     hostConfiguration = KoremodsScriptHostConfiguration::class
 )
-abstract class KoremodsKtsScript(val logger: Logger) {
-    val transformerHandler = TransformerHandler()
+abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
+    val transformerHandler = TransformerHandler(identifier)
     
     fun transformers(configuration: TransformerBuilder.() -> Unit) {
         transformerHandler.transformers(configuration)

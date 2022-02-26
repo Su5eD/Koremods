@@ -27,12 +27,15 @@ package wtf.gofancy.koremods.dsl
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
+import wtf.gofancy.koremods.Identifier
 import kotlin.reflect.KProperty
 
-interface Transformer {
+interface Transformer<T> {
+    val scriptIdentifier: Identifier
+    val props: TransformerPropertiesExtension
     val targetClassName: String
     
-    fun visitClass(node: ClassNode)
+    fun visit(node: T)
 }
 
 class TransformerPropertiesExtension internal constructor()
@@ -49,17 +52,17 @@ class DefaultProperty<T : Any>(default: T) {
     }
 }
 
-class TransformerBuilder(private val transformers: MutableList<Transformer>, private val props: TransformerPropertiesExtension) {
+class TransformerBuilder(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
     fun `class`(name: String, block: ClassNode.() -> Unit) {
-        transformers.add(ClassTransformer(name, block))
+        transformers.add(ClassTransformer(scriptIdentifier, props, name, block))
     }
     
     fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
-        transformers.add(MethodTransformer(owner, name, desc, block)) 
+        transformers.add(MethodTransformer(scriptIdentifier, props, owner, name, desc, block)) 
     }
     
     fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
-        transformers.add(FieldTransformer(owner, name, block))
+        transformers.add(FieldTransformer(scriptIdentifier, props, owner, name, block))
     }
     
     fun ext(block: TransformerPropertiesExtension.() -> Unit) {
@@ -67,47 +70,24 @@ class TransformerBuilder(private val transformers: MutableList<Transformer>, pri
     }
 }
 
-class ClassTransformer(private val name: String, private val block: ClassNode.() -> Unit) : Transformer {
-    override val targetClassName: String
-        get() = name
-
-    override fun visitClass(node: ClassNode) {
-        block(node)
-    }
+class ClassTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
+    override fun visit(node: ClassNode) = block(node)
 }
 
-class MethodTransformer(private val owner: String, private val name: String, private val desc: String, private val block: MethodNode.() -> Unit) :
-    Transformer {
-    override val targetClassName: String
-        get() = owner
-
-    override fun visitClass(node: ClassNode) {
-        node.methods
-            .find { it.name == this.name && it.desc == this.desc }
-            ?.run(block)
-            ?: throw IllegalArgumentException("Class $owner does not contain method '$name$desc'")
-    }
+class MethodTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
+    override fun visit(node: MethodNode) = block(node)
 }
 
-class FieldTransformer(private val owner: String, private val name: String, private val block: FieldNode.() -> Unit) :
-    Transformer {
-    override val targetClassName: String
-        get() = owner
-
-    override fun visitClass(node: ClassNode) {
-        node.fields
-            .find { it.name == this.name }
-            ?.run(block)
-            ?: throw IllegalArgumentException("Class $owner does not contain field '$name'")
-    }
+class FieldTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
+    override fun visit(node: FieldNode) = block(node)
 }
 
-class TransformerHandler {
-    private val transformers = mutableListOf<Transformer>()
+class TransformerHandler(private val scriptIdentifier: Identifier) {
+    private val transformers = mutableListOf<Transformer<*>>()
     val props = TransformerPropertiesExtension()
         
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
-        transformer.invoke(TransformerBuilder(transformers, props))
+        transformer.invoke(TransformerBuilder(scriptIdentifier, transformers, props))
     }
     
     fun getTransformers() = transformers.toList()

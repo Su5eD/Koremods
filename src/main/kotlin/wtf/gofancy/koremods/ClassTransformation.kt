@@ -24,32 +24,25 @@
 
 package wtf.gofancy.koremods
 
+import org.apache.logging.log4j.Logger
+import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerPropertiesExtension
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
-import org.apache.logging.log4j.Logger
-import org.objectweb.asm.tree.ClassNode
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 
-fun transformClass(name: String, node: ClassNode): List<TransformerPropertiesExtension> {
-    return KoremodsDiscoverer.INSTANCE!!.scriptPacks
-        .flatMap(KoremodScriptPack::scripts)
-        .filter { script ->
-            script.handler.getTransformers()
-                .filter used@{ transformer ->
-                    if (transformer.targetClassName == name) {
-                        LOGGER.debug("Transforming class $name with transformer script ${script.identifier}")
-                        try {
-                            transformer.visitClass(node)
-                            return@used true
-                        } catch (t: Throwable) {
-                            LOGGER.error("Error transforming class $name with script ${script.identifier}", t)
-                        }
-                    }
-                    return@used false
-                }
-                .any()
+fun <T : Transformer<U>, U> applyTransform(name: Any, transformers: List<T>, node: U): List<TransformerPropertiesExtension> {
+    return transformers
+        .filter { transformer ->
+            LOGGER.debug("Transforming $name with transformer script ${transformer.scriptIdentifier}")
+            try {
+                transformer.visit(node)
+                return@filter true
+            } catch (t: Throwable) {
+                LOGGER.error("Error transforming node", t)
+            }
+            return@filter false
         }
-        .map { script -> script.handler.props }
+        .map(Transformer<*>::props)
         .toList()
 }

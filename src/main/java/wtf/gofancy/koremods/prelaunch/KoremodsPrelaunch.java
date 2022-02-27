@@ -24,13 +24,11 @@
 
 package wtf.gofancy.koremods.prelaunch;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +40,7 @@ import java.util.zip.ZipEntry;
 
 public class KoremodsPrelaunch {
     private static final Logger LOGGER = LogManager.getLogger("Koremods.Prelaunch");
+    public static final String[] ASM_DEP_NAMES = new String[] { "asm", "asm-commons", "asm-tree" };
     public static final List<String> KOTLIN_DEP_PACKAGES = Arrays.asList(
         "org.jetbrains.",
         "kotlin.",
@@ -92,8 +91,7 @@ public class KoremodsPrelaunch {
 
                 ZipEntry entry = this.mainJar.getEntry(depName);
                 InputStream source = this.mainJar.getInputStream(entry);
-                OutputStream dest = Files.newOutputStream(destPath);
-                IOUtils.copy(source, dest);
+                Files.copy(source, destPath);
             }
             return destPath.toUri().toURL();
         } catch (Exception e) {

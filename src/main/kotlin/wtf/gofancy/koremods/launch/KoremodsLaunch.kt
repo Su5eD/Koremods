@@ -63,7 +63,7 @@ object KoremodsLaunch {
             
             if (config.enableSplashScreen && launchPlugin.shouldEnableSplashScreen() && !os.contains("mac")) {
                 LOGGER.info("Creating splash screen")
-                splash = launchPlugin.createSplashScreen(prelaunch)!!
+                splash = launchPlugin.createSplashScreen(prelaunch)
                 callback = splash::log
 
                 contexts.add(getLoggerContext(splash::class.java.classLoader))

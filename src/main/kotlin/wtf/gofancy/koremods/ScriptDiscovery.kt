@@ -47,7 +47,7 @@ import kotlin.io.path.*
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.streams.toList
 
-data class Identifier(val namespace: String, val name: String) {
+data class Identifier internal constructor(val namespace: String, val name: String) {
     override fun toString(): String = "$namespace:$name"
 }
 

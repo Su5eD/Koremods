@@ -34,7 +34,12 @@ import org.objectweb.asm.ClassWriter.COMPUTE_FRAMES
 import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import wtf.gofancy.koremods.dsl.ClassTransformer
+import wtf.gofancy.koremods.dsl.FieldTransformer
+import wtf.gofancy.koremods.dsl.MethodTransformer
 import wtf.gofancy.koremods.dsl.Transformer
+import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
+import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.File
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertContains
@@ -48,7 +53,7 @@ class KoremodTransformationTests {
 
     @Test
     fun testClassTransformer() {
-        val transformer = getFirstTransformer("transformClass")
+        val transformer = getFirstTransformer("transformClass", ClassTransformer::class.java)
 
         val cls = transformClass(transformer)
         val fooBar = assertDoesNotThrow { cls.getDeclaredField("fooBar") }
@@ -57,23 +62,23 @@ class KoremodTransformationTests {
 
     @Test
     fun testMethodTransformer() {
-        val transformer = getFirstTransformer("transformMethod")
+        val transformer = getFirstTransformer("transformMethod", MethodTransformer::class.java)
 
-        val cls = transformClass(transformer)
+        val cls = transformMethod(transformer)
         val isTransformed = cls.getDeclaredMethod("isTransformed")
         val person = cls.getConstructor().newInstance()
         val result = isTransformed.invoke(person) as Boolean
-                            
+
         assert(result)
     }
-    
+
     @Test
     fun testFieldTransformer() {
-        val transformer = getFirstTransformer("transformField")
-    
-        val cls = transformClass(transformer)
+        val transformer = getFirstTransformer("transformField", FieldTransformer::class.java)
+
+        val cls = transformField(transformer)
         val name = cls.getDeclaredField("name")
-        
+
         assertNotEquals(0, name.modifiers and Opcodes.ACC_PUBLIC)
         assertNotEquals(0, name.modifiers and Opcodes.ACC_FINAL)
         assertEquals(0, name.modifiers and Opcodes.ACC_PRIVATE)
@@ -89,28 +94,52 @@ class KoremodTransformationTests {
         assertContains(config.scripts, "scripts/transformClass.core.kts")
         assertContains(config.scripts, "scripts/transformMethod.core.kts")
     }
-    
-    private fun getFirstTransformer(name: String): Transformer {
+
+    private fun <T> getFirstTransformer(name: String, cls: Class<T>): T {
         val identifier = Identifier(namespace, name)
         val script = File("src/test/resources/scripts/$name.core.kts")
-    
-        val transformers: List<Transformer> = assertNotNull(evalTransformers(identifier, script.toScriptSource(), logger)).getTransformers()
-        return transformers.first()
+
+        val libraries = listOf(KoremodsKtsScript::class.java, javaClass)
+            .map { File(it.protectionDomain.codeSource.location.toURI()).name } + KoremodsPrelaunch.ASM_DEP_NAMES + "koffee"
+        val transformers: List<Transformer<*>> = assertNotNull(evalTransformers(identifier, script.toScriptSource(), logger, libraries.toTypedArray())).getTransformers()
+        return transformers
+            .filterIsInstance(cls)
+            .first()
     }
-    
-    private fun transformClass(transformer: Transformer): Class<*> {
-        val reader = ClassReader("wtf.gofancy.koremods.transform.Person")
-    
+
+    private fun transformClass(transformer: Transformer<ClassNode>): Class<*> {
+        return transform(transformer) { it }
+    }
+
+    private fun transformMethod(transformer: MethodTransformer): Class<*> {
+        return transform(transformer) { node ->
+            node.methods
+                .first { it.name == transformer.name && it.desc == transformer.desc }
+        }
+    }
+
+    private fun transformField(transformer: FieldTransformer): Class<*> {
+        return transform(transformer) { node ->
+            node.fields
+                .first { it.name == transformer.name }
+        }
+    }
+
+    private fun <T> transform(transformer: Transformer<T>, finder: (ClassNode) -> T): Class<*> {
+        val className = "wtf.gofancy.koremods.transform.Person"
+        val reader = ClassReader(className)
+
         val node = ClassNode()
         reader.accept(node, 0)
-        transformer.visitClass(node)
-    
+
+        val transformNode = finder(node)
+        applyTransform(node.name, listOf(transformer), transformNode)
+
         val writer = ClassWriter(reader, COMPUTE_MAXS or COMPUTE_FRAMES)
         node.accept(writer)
-    
-        val name = transformer.targetClassName
-        val cl = RawByteClassLoader(name, writer.toByteArray())
-        return cl.loadClass(name)
+
+        val cl = RawByteClassLoader(className, writer.toByteArray())
+        return cl.loadClass(className)
     }
 }
 

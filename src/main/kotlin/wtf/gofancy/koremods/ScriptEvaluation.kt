@@ -26,12 +26,12 @@ package wtf.gofancy.koremods
 
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import kotlin.script.experimental.api.*
-import kotlin.script.experimental.jvm.*
+import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
+import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
@@ -43,8 +43,7 @@ fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, li
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
                 is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
-                is ResultValue.Unit -> return result.scriptInstance
-                    .cast<KoremodsKtsScript>()
+                is ResultValue.Unit -> return (result.scriptInstance as KoremodsKtsScript)
                     .transformerHandler
                 is ResultValue.Error -> throw RuntimeException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen

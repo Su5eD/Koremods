@@ -22,12 +22,14 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.util.constructDescriptor
+import codes.som.anthony.koffee.koffee
 
 transformers { 
     `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
 }
 
 fun addFieldToClass(node: ClassNode) {
-    node.fields.add(FieldNode(ACC_PUBLIC, "fooBar", constructDescriptor(String::class), null, null))
+    node.koffee { 
+        field(public, "fooBar", String::class)
+    }
 }

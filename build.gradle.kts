@@ -114,7 +114,7 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("compiler-embeddable"))
+    implementation(kotlin("scripting-compiler-embeddable"))
     implementation(kotlin("scripting-common"))
     mavenDep(implementation(kotlin("scripting-jvm")))
     mavenDep(implementation(kotlin("scripting-jvm-host")))
@@ -130,8 +130,8 @@ dependencies {
     
     // Dependencies shipped by Minecraft
     compileOnlyShared(group = "org.ow2.asm", name = "asm", version = asmVersion)
-    compileOnlyShared(group = "org.ow2.asm", name = "asm-tree", version = asmVersion)
     compileOnlyShared(group = "org.ow2.asm", name = "asm-commons", version = asmVersion)
+    compileOnlyShared(group = "org.ow2.asm", name = "asm-tree", version = asmVersion)
     compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1")
     compileOnlyShared(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1")
     compileOnlyShared(group = "com.google.guava", name = "guava", version = "21.0")

@@ -1,6 +1,6 @@
 # Koremods
 
-A bytecode modification framework running KTS/JSR-223
+A Kotlin Script bytecode manipulation framework.
 
 #### Note on syntax highlighting
 Until [KT-31176](https://youtrack.jetbrains.com/issue/KT-31176) is resolved, you need to build

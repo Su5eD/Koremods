@@ -33,18 +33,16 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL30.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil.NULL
-import wtf.gofancy.koremods.api.SplashScreen
 import wtf.gofancy.koremods.splash.render.*
 import java.nio.IntBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-internal val WINDOW_SIZE = Pair(550, 250)
-internal const val WINDOW_ICON = "logo.png"
-
-class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
+class KoremodsSplashScreen(private val logger: Logger) {
     companion object {
+        internal val WINDOW_SIZE = Pair(550, 250)
+        private const val WINDOW_ICON = "logo.png"
         private const val CLOSE_DELAY_MS = 1000
     }
 
@@ -71,11 +69,11 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     private val winY: IntBuffer = MemoryStack.stackMallocInt(1)
     private var mousePress = false
 
-    override fun setTerminateOnClose(terminate: Boolean) {
+    fun setTerminateOnClose(terminate: Boolean) {
         terminateOnClose = terminate
     }
 
-    override fun startOnThread() {
+    fun startOnThread() {
         thread(name = "SplashRender", block = {
             try {
                 initWindow()
@@ -206,7 +204,7 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
         }
     }
 
-    override fun close(delay: Boolean) {
+    fun close(delay: Boolean) {
         if (delay) {
             closeWindow = true
             closeDelayMillis = System.currentTimeMillis()
@@ -216,7 +214,7 @@ class KoremodsSplashScreen(private val logger: Logger) : SplashScreen {
     }
 
     @Synchronized
-    override fun log(level: Level, message: String) {
+    fun log(level: Level, message: String) {
         renderText.log(level, message)
     }
 

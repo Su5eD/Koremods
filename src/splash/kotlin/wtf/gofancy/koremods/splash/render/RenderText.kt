@@ -38,7 +38,7 @@ class RenderText : RenderBase() {
         private val COLOR_YELLOW = Triple(0.9f, 0.9f, 0f)
         private val COLOR_NEON_BLUE = Triple(21 / 255f, 242 / 255f, 253 / 255f)
 
-        private val COPYRIGHT_NOTICE = "Copyright \u00a9 2021 Garden of Fancy. All Rights Reserved."
+        private const val COPYRIGHT_NOTICE = "Copyright \u00a9 2021 Garden of Fancy. All Rights Reserved."
     }
     
     private val indices = intArrayOf(
@@ -52,7 +52,7 @@ class RenderText : RenderBase() {
     override val uniforms: List<Uniform> = listOf(UniformView, UniformTextColor)
     
     private var logShader: Int = 0
-    private val fontUbuntu = TrueType("ubuntu_regular.ttf", 14f, WINDOW_SIZE)
+    private val fontUbuntu = TrueType("ubuntu_regular.ttf", 14f, KoremodsSplashScreen.WINDOW_SIZE)
 
     override fun getWindowHints(): Map<Int, Int> = mapOf(
         GLFW_VISIBLE to GLFW_FALSE

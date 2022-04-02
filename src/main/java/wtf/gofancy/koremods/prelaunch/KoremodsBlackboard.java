@@ -33,6 +33,7 @@ public final class KoremodsBlackboard {
     public static final String NAME = "Koremods";
     public static final String NAMESPACE = "koremods";
     public static final String CONFIG_FILE = NAMESPACE + ".conf";
+    public static final String CONFIG_FILE_LOCATION = "META-INF/" + CONFIG_FILE;
     
     public static File cacheDir;
     public static ClassLoader scriptContextClassLoader;

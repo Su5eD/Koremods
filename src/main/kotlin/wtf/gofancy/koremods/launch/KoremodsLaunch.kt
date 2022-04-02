@@ -32,54 +32,59 @@ import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import wtf.gofancy.koremods.KoremodsDiscoverer
 import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
-import wtf.gofancy.koremods.api.SplashScreen
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
+import wtf.gofancy.koremods.splash.KoremodsSplashScreen
 import java.net.URL
 import kotlin.io.path.div
 
 @Suppress("unused")
 object KoremodsLaunch {
-    private val LOGGER: Logger = LogManager.getLogger("Koremods.Launch")
-    
-    fun launch(prelaunch: KoremodsPrelaunch, discoveryUrls: Array<URL>, libraries: Array<String>, launchPlugin: KoremodsLaunchPlugin?) {
+    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
+
+    fun launch(
+        prelaunch: KoremodsPrelaunch,
+        discoveryUrls: Array<URL>,
+        libraries: Array<String>,
+        launchPlugin: KoremodsLaunchPlugin?
+    ) {
         LOGGER.info("Launching Koremods instance")
-        
+
         KoremodsBlackboard.cacheDir = prelaunch.cacheDir
         KoremodsBlackboard.scriptContextClassLoader = javaClass.classLoader
-        
+
         val configPath = prelaunch.configDir / KoremodsBlackboard.CONFIG_FILE
         val config = parseMainConfig(configPath)
-        var splash: SplashScreen? = null
+        var splash: KoremodsSplashScreen? = null
         val contexts = mutableSetOf(
             getLoggerContext(KoremodsPrelaunch::class.java.classLoader),
             getLoggerContext(KoremodsBlackboard.scriptContextClassLoader),
         )
-        
+
         if (launchPlugin != null) {
             val callback: (Level, String) -> Unit
             val os = System.getProperty("os.name").lowercase()
-            
+
             if (config.enableSplashScreen && launchPlugin.shouldEnableSplashScreen() && !os.contains("mac")) {
                 LOGGER.info("Creating splash screen")
-                splash = launchPlugin.createSplashScreen(prelaunch)
+                splash = createSplashScreen()
                 callback = splash::log
 
-                contexts.add(getLoggerContext(splash::class.java.classLoader))
+                contexts.add(getLoggerContext(splash.javaClass.classLoader))
             } else {
                 callback = launchPlugin::appendLogMessage
             }
-            
+
             LOGGER.debug("Injecting splash screen log appenders")
             contexts.forEach { ctx -> injectSplashLogger(ctx, callback) }
         }
-        
+
         try {
-            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(prelaunch.mainJarFile.name, *libraries).apply { 
+            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(prelaunch.mainJarFile.name, *libraries).apply {
                 discoverKoremods(prelaunch.modsDir, discoveryUrls)
             }
-            
+
             LOGGER.fatal("Discovering Koremods finished successfully")
             splash?.close(true)
         } catch (t: Throwable) {
@@ -88,10 +93,15 @@ object KoremodsLaunch {
             throw t
         }
     }
-    
+
     private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
         return LogManager.getContext(classLoader, false) as LoggerContext
     }
+}
+
+private fun createSplashScreen(): KoremodsSplashScreen {
+    val logger = KoremodsBlackboard.createLogger("Splash")
+    return KoremodsSplashScreen(logger).apply(KoremodsSplashScreen::startOnThread)
 }
 
 internal fun injectSplashLogger(context: LoggerContext, callback: (Level, String) -> Unit) {

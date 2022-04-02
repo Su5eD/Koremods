@@ -9,7 +9,7 @@ import java.io.File
 import java.util.*
 
 /**
- * STOLEN from kotlin-main-kts [Directories](https://github.com/JetBrains/kotlin/blob/4ad5f01324117335c122cbb062420b3d6145f827/libraries/tools/kotlin-main-kts/src/org/jetbrains/kotlin/mainKts/impl/directories.kt)
+ * Source: kotlin-main-kts [Directories](https://github.com/JetBrains/kotlin/blob/4ad5f01324117335c122cbb062420b3d6145f827/libraries/tools/kotlin-main-kts/src/org/jetbrains/kotlin/mainKts/impl/directories.kt)
  */
 internal class Directories(private val systemProperties: Properties, private val environment: Map<String, String>) {
     // Links to recommendations for storing various kinds of files on different platforms:

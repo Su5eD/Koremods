@@ -55,7 +55,7 @@ object UniformResolution : UniformBase("resolution") {
     override fun init(shaderProgram: Int) {
         super.init(shaderProgram)
         
-        glUniform2f(location, WINDOW_SIZE.first.toFloat(), WINDOW_SIZE.second.toFloat())
+        glUniform2f(location, KoremodsSplashScreen.WINDOW_SIZE.first.toFloat(), KoremodsSplashScreen.WINDOW_SIZE.second.toFloat())
     }
 }
 

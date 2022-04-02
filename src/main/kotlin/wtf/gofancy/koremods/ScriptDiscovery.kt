@@ -57,7 +57,6 @@ private data class RawScript<T>(val identifier: Identifier, val source: T)
 data class KoremodScriptPack(val namespace: String, val path: Path, val scripts: List<KoremodScript>)
 data class KoremodScript(val identifier: Identifier, val handler: TransformerHandler)
 
-private const val CONFIG_FILE_LOCATION = "META-INF/${KoremodsBlackboard.CONFIG_FILE}"
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
@@ -97,7 +96,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
             if (path.isDirectory()) {
                 LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.relativeTo(path.parent.parent.parent)}")
                 
-                val conf = path.resolve(CONFIG_FILE_LOCATION).toFile()
+                val conf = path.resolve(KoremodsBlackboard.CONFIG_FILE_LOCATION).toFile()
                 if (conf.exists()) {
                     return@mapNotNull readConfig(path, conf.inputStream()) {
                         val scriptPath = path / it
@@ -109,7 +108,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
                 LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.name}")
                 
                 val zip = ZipFile(path.toFile())
-                zip.getEntry(CONFIG_FILE_LOCATION)?.let { entry ->
+                zip.getEntry(KoremodsBlackboard.CONFIG_FILE_LOCATION)?.let { entry ->
                     val inputStream = zip.getInputStream(entry)
                     return@mapNotNull readConfig(path, inputStream) {
                         zip.getEntry(it)?.let(zip::getInputStream)

@@ -26,7 +26,10 @@ package wtf.gofancy.koremods.prelaunch;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Because some dependencies cannot be relocated when shadowed, we use a custom classloader to load them in an
@@ -42,7 +45,7 @@ public class DependencyClassLoader extends URLClassLoader {
      * Classes that are preferably loaded by this classloader. If not found, we'll attempt loading them using the parent CL instead of throwing an exception.
      */
     private final List<String> priorityClasses;
-    private final Map<String, Class<?>> cachedClasses = new HashMap<>();
+    private final Map<String, Class<?>> cachedClasses = new HashMap<>(); // TODO findLoadedClass
     private final boolean strict;
 
     public DependencyClassLoader(URL[] urls, ClassLoader parent, List<String> priorityClasses) {

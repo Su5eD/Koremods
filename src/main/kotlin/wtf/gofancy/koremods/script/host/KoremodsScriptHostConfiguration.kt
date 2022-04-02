@@ -17,7 +17,7 @@ import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.CompiledScriptJarsCache
 
 /**
- * STOLEN from kotlin-main-kts [scriptDef](https://github.com/JetBrains/kotlin/blob/4ad5f01324117335c122cbb062420b3d6145f827/libraries/tools/kotlin-main-kts/src/org/jetbrains/kotlin/mainKts/scriptDef.kt)
+ * Source: kotlin-main-kts [scriptDef](https://github.com/JetBrains/kotlin/blob/4ad5f01324117335c122cbb062420b3d6145f827/libraries/tools/kotlin-main-kts/src/org/jetbrains/kotlin/mainKts/scriptDef.kt)
  */
 private const val COMPILED_SCRIPTS_CACHE_DIR_PROPERTY = "wtf.gofancy.koremods.core.kts.compiled.scripts.cache.dir"
 private const val COMPILED_SCRIPTS_CACHE_DIR_ENV_VAR = "WTF_GOFANCY_KOREMODS_COMPILED_SCRIPTS_CACHE_DIR"

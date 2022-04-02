@@ -24,7 +24,6 @@
 
 package wtf.gofancy.koremods.prelaunch;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
@@ -39,18 +38,18 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 public class KoremodsPrelaunch {
-    private static final Logger LOGGER = LogManager.getLogger("Koremods.Prelaunch");
-    public static final String[] ASM_DEP_NAMES = new String[] { "asm", "asm-commons", "asm-tree" };
+    private static final Logger LOGGER = KoremodsBlackboard.createLogger("Prelaunch");
+    public static final String[] ASM_DEP_NAMES = { "asm", "asm-commons", "asm-tree" };
     public static final List<String> KOTLIN_DEP_PACKAGES = Arrays.asList(
-        "org.jetbrains.",
-        "kotlin.",
-        "org.intellij.lang.",
-        "kotlinx.coroutines.",
-        "javaslang.",
-        "gnu.trove.",
-        "codes.som.anthony.koffee.",
-        "io.github.config4k.",
-        "wtf.gofancy.koremods."
+            "codes.som.anthony.koffee.",
+            "gnu.trove.",
+            "io.github.config4k.",
+            "javaslang.",
+            "kotlin.",
+            "kotlinx.coroutines.",
+            "org.intellij.lang.",
+            "org.jetbrains.",
+            "wtf.gofancy.koremods."
     );
 
     public final Path gameDir;
@@ -58,7 +57,7 @@ public class KoremodsPrelaunch {
     public final Path modsDir;
     public final File cacheDir;
     private final Path depsDir;
-    
+
     public final URL mainJarUrl;
     public final JarFile mainJar;
     public final File mainJarFile;

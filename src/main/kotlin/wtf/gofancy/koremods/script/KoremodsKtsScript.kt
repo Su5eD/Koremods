@@ -26,18 +26,16 @@
 
 package wtf.gofancy.koremods.script
 
-import wtf.gofancy.koremods.dsl.TransformerBuilder
-import wtf.gofancy.koremods.dsl.TransformerHandler
-import wtf.gofancy.koremods.script.host.KoremodsScriptHostConfiguration
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.Identifier
+import wtf.gofancy.koremods.dsl.TransformerBuilder
+import wtf.gofancy.koremods.dsl.TransformerHandler
 import kotlin.script.experimental.annotations.KotlinScript
 
 @KotlinScript(
     fileExtension = "core.kts",
     compilationConfiguration = KoremodsScriptCompilationConfiguration::class,
     evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
-    hostConfiguration = KoremodsScriptHostConfiguration::class
 )
 abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
     val transformerHandler = TransformerHandler(identifier)

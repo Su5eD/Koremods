@@ -33,9 +33,7 @@ val splash: SourceSet by sourceSets.creating
 val lwjglCompile: Configuration by configurations.creating
 val lwjglRuntime: Configuration by configurations.creating
 
-val shade: Configuration by configurations.creating {
-//    exclude(group = "org.jetbrains.kotlin")
-}
+val shade: Configuration by configurations.creating
 val sharedImplementation: Configuration by configurations.creating
 val mavenRuntime: Configuration by configurations.creating
 
@@ -126,11 +124,7 @@ license {
         set("app", "Koremods")
     }
 
-    exclude(
-        "wtf/gofancy/koremods/script/host/KoremodsScriptHostConfiguration.kt",
-        "wtf/gofancy/koremods/script/host/Directories.kt",
-        "wtf/gofancy/koremods/splash/math/Matrix4f.kt"
-    )
+    exclude("wtf/gofancy/koremods/splash/math/Matrix4f.kt")
 }
 
 tasks {

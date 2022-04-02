@@ -29,7 +29,6 @@ package wtf.gofancy.koremods.script
 import kotlin.script.experimental.api.*
 
 private val DEFAULT_IMPORTS: List<String> = listOf(
-    "wtf.gofancy.koremods.script.Allow",
     "wtf.gofancy.koremods.dsl.*",
     "org.objectweb.asm.tree.ClassNode",
     "org.objectweb.asm.tree.MethodNode",

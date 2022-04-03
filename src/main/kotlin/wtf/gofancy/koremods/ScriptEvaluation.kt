@@ -29,7 +29,9 @@ import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
+import java.io.InputStream
 import java.nio.file.Path
+import java.security.ProtectionDomain
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -48,7 +50,7 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
 
-class ScriptEvaluationException(msg: String) : RuntimeException(msg)
+class ScriptEvaluationException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
 internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodScriptPack> {
     val threads = compiledPacks.sumOf { it.scripts.size }
@@ -99,9 +101,9 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
     when (val eval = evalScript(identifier, script, logger)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
-                is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
+                is ResultValue.Value-> throw ScriptEvaluationException("Script $identifier returned a value instead of Unit")
                 is ResultValue.Unit -> return (result.scriptInstance as KoremodsKtsScript).transformerHandler
-                is ResultValue.Error -> throw RuntimeException("Exception in script $identifier", result.error)
+                is ResultValue.Error -> throw ScriptEvaluationException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen
                 ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $identifier")
             }
@@ -126,15 +128,22 @@ fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): 
 }
 
 fun Path.loadScriptFromJar(): CompiledScript {
-    val className: String = this.inputStream().use { istream ->
-        JarInputStream(istream).use {
-            it.manifest.mainAttributes.getValue("Main-Class")
+    val (className, entries) = inputStream().use { istream ->
+        JarInputStream(istream).use jistream@{
+            val className = it.manifest.mainAttributes.getValue("Main-Class") 
+                ?: throw IllegalArgumentException("No Main-Class manifest attribute")
+            return@jistream Pair(className, it.readEntries())
         }
-    } ?: throw IllegalArgumentException("No Main-Class manifest attribute")
-    return KJvmCompiledScriptLoadedFromJar(className)
+    }
+    return KJvmCompiledScriptLoadedFromJar(className, entries)
 }
 
-internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String) : CompiledScript {
+fun JarInputStream.readEntries(): Map<String, ByteArray> {
+    return generateSequence(::getNextJarEntry)
+        .associate { Pair(it.name, readAllBytes()) }
+}
+
+internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String, private val entries: Map<String, ByteArray>) : CompiledScript {
     private var loadedScript: KJvmCompiledScript? = null
 
     private fun getScriptOrFail(): KJvmCompiledScript = loadedScript ?: throw RuntimeException("Compiled script is not loaded yet")
@@ -142,8 +151,9 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
     override suspend fun getClass(scriptEvaluationConfiguration: ScriptEvaluationConfiguration?): ResultWithDiagnostics<KClass<*>> {
         if (loadedScript == null) {
             val actualEvaluationConfiguration = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
-            val classLoader = actualEvaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
+            val baseClassLoader = actualEvaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
                 ?: Thread.currentThread().contextClassLoader
+            val classLoader = JarClassLoader(entries, baseClassLoader)
             loadedScript = createScriptFromClassLoader(scriptClassFQName, classLoader)
         }
         return getScriptOrFail().getClass(scriptEvaluationConfiguration)
@@ -160,4 +170,20 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
 
     override val resultField: Pair<String, KotlinType>?
         get() = getScriptOrFail().resultField
+}
+
+internal class JarClassLoader(private val entries: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {
+    override fun findClass(name: String): Class<*> {
+        val resource = name.replace('.', '/') + ".class"
+        
+        return entries[resource]?.let { bytes ->
+            val protectionDomain = ProtectionDomain(null, null)
+            return defineClass(name, bytes, 0, bytes.size, protectionDomain)
+        }
+            ?: throw ClassNotFoundException(name)
+    }
+
+    override fun getResourceAsStream(name: String): InputStream? {
+        return entries[name]?.inputStream()
+    }
 }

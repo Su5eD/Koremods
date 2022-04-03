@@ -34,13 +34,11 @@ import org.objectweb.asm.ClassWriter.COMPUTE_FRAMES
 import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
-import wtf.gofancy.koremods.dsl.ClassTransformer
-import wtf.gofancy.koremods.dsl.FieldTransformer
-import wtf.gofancy.koremods.dsl.MethodTransformer
-import wtf.gofancy.koremods.dsl.Transformer
+import wtf.gofancy.koremods.dsl.*
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.File
+import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -86,7 +84,7 @@ class KoremodTransformationTests {
 
     @Test
     fun testParseModConfig() {
-        val file = File("src/test/resources/META-INF/koremods.conf")
+        val file = File("src/test/resources/foo/META-INF/koremods.conf")
         val config: KoremodModConfig = parseConfig(file.bufferedReader())
 
         assertEquals(namespace, config.namespace)
@@ -97,12 +95,12 @@ class KoremodTransformationTests {
 
     private fun <T> getFirstTransformer(name: String, cls: Class<T>): T {
         val identifier = Identifier(namespace, name)
-        val script = File("src/test/resources/scripts/$name.core.kts")
+        val script = File("src/test/resources/foo/scripts/$name.core.kts")
 
         val libraries = listOf(KoremodsKtsScript::class.java, javaClass)
             .map { File(it.protectionDomain.codeSource.location.toURI()).name } + KoremodsPrelaunch.ASM_DEP_NAMES + "koffee"
-        val transformers: List<Transformer<*>> = assertNotNull(evalTransformers(identifier, script.toScriptSource(), logger, libraries.toTypedArray())).getTransformers()
-        return transformers
+        val handler = compileAndEvalTransformers(identifier, script.toScriptSource(), logger, libraries.toTypedArray())
+        return assertNotNull(handler).getTransformers()
             .filterIsInstance(cls)
             .first()
     }
@@ -141,6 +139,11 @@ class KoremodTransformationTests {
         val cl = RawByteClassLoader(className, writer.toByteArray())
         return cl.loadClass(className)
     }
+}
+
+internal fun compileAndEvalTransformers(identifier: Identifier, source: SourceCode, logger: Logger, libraries: Array<String>): TransformerHandler {
+    val compiled = compileScriptResult(identifier, source, libraries)
+    return evalTransformers(identifier, compiled, logger)
 }
 
 class RawByteClassLoader(private val className: String, private val data: ByteArray) : ClassLoader() {

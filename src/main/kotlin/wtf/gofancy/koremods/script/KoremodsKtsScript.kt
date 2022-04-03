@@ -32,8 +32,10 @@ import wtf.gofancy.koremods.dsl.TransformerBuilder
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import kotlin.script.experimental.annotations.KotlinScript
 
+const val KOREMODS_SCRIPT_EXTENSION = "core.kts"
+
 @KotlinScript(
-    fileExtension = "core.kts",
+    fileExtension = KOREMODS_SCRIPT_EXTENSION,
     compilationConfiguration = KoremodsScriptCompilationConfiguration::class,
     evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
 )

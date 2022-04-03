@@ -29,59 +29,135 @@ import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
+import java.nio.file.Path
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.jar.JarInputStream
+import kotlin.io.path.inputStream
+import kotlin.reflect.KClass
 import kotlin.script.experimental.api.*
-import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
+import kotlin.script.experimental.impl.internalScriptingRunSuspend
+import kotlin.script.experimental.jvm.BasicJvmScriptEvaluator
+import kotlin.script.experimental.jvm.baseClassLoader
+import kotlin.script.experimental.jvm.impl.KJvmCompiledScript
+import kotlin.script.experimental.jvm.impl.createScriptFromClassLoader
 import kotlin.script.experimental.jvm.jvm
-import kotlin.script.experimental.jvmhost.BasicJvmScriptingHost
-import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
-private val LOGGER: Logger = KoremodsBlackboard.createLogger("Evaluation")
+private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
 
-fun evalTransformers(identifier: Identifier, source: SourceCode, log: Logger, libraries: Array<out String> = emptyArray()): TransformerHandler {
-    when (val eval = evalScript(identifier, source, log, libraries)) {
+class ScriptEvaluationException(msg: String) : RuntimeException(msg)
+
+internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodScriptPack> {
+    val threads = compiledPacks.sumOf { it.scripts.size }
+    val threadFactory = Executors.defaultThreadFactory()
+    val executors = Executors.newFixedThreadPool(threads) { runnable ->
+        threadFactory.newThread(runnable).apply {
+            KoremodsBlackboard.scriptContextClassLoader?.let(::setContextClassLoader)
+        }
+    }
+
+    val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = compiledPacks.map { pack ->
+        val futureScripts = pack.scripts.map { script ->
+            val future = executors.submit(Callable {
+                evalTransformers(script.identifier, script.source)
+            })
+
+            RawScript(script.identifier, future)
+        }
+
+        RawScriptPack(pack.namespace, pack.path, futureScripts)
+    }
+
+    executors.shutdown()
+    executors.awaitTermination(10, TimeUnit.SECONDS)
+
+    return futurePacks.map {
+        val processed = it.scripts.map { (identifier, future) ->
+            KoremodScript(identifier, future.get())
+        }
+
+        return@map KoremodScriptPack(it.namespace, it.path, processed)
+    }
+}
+
+private fun evalTransformers(identifier: Identifier, script: CompiledScript): TransformerHandler {
+    LOGGER.debug("Evaluating script $identifier")
+    val handler = LOGGER.measureMillis(Level.DEBUG, "Evaluating script $identifier") {
+        val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
+        evalTransformers(identifier, script, engineLogger) 
+    }
+    if (handler.getTransformers().isEmpty()) {
+        throw RuntimeException("Script $identifier does not define any transformers")
+    }
+    return handler
+}
+
+fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Logger): TransformerHandler {
+    when (val eval = evalScript(identifier, script, logger)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
                 is ResultValue.Value-> throw IllegalStateException("Script $identifier returned a value instead of Unit")
-                is ResultValue.Unit -> return (result.scriptInstance as KoremodsKtsScript)
-                    .transformerHandler
+                is ResultValue.Unit -> return (result.scriptInstance as KoremodsKtsScript).transformerHandler
                 is ResultValue.Error -> throw RuntimeException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen
                 ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $identifier")
             }
         }
         is ResultWithDiagnostics.Failure -> {
-            eval.reports.forEach { report ->
-                report.exception
-                    ?.let { LOGGER.catching(Level.ERROR, it) }
-                    ?: LOGGER.log(report.severity.toLogLevel(), report.message)
-            }
+            eval.printErrors()
             throw ScriptEvaluationException("Failed to evaluate script $identifier. See the log for more information")
         }
     }
 }
 
-class ScriptEvaluationException(msg: String) : RuntimeException(msg)
 
-fun evalScript(identifier: Identifier, source: SourceCode, logger: Logger, libraries: Array<out String> = emptyArray()): ResultWithDiagnostics<EvaluationResult> {
-    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript> {
-        jvm { 
-            dependenciesFromCurrentContext(libraries = libraries)
-        }
-    }
+@Suppress("DEPRECATION_ERROR")
+fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): ResultWithDiagnostics<EvaluationResult> {
+    LOGGER.info("Evaluating script $identifier")
+    
     val evaluationConfiguration = createJvmEvaluationConfigurationFromTemplate<KoremodsKtsScript> {
         constructorArgs(identifier, logger)
     }
     
-    return BasicJvmScriptingHost().eval(source, compilationConfiguration, evaluationConfiguration)
+    return internalScriptingRunSuspend { BasicJvmScriptEvaluator().invoke(script, evaluationConfiguration) }
 }
 
-private fun ScriptDiagnostic.Severity.toLogLevel(): Level {
-    return when(this) {
-        ScriptDiagnostic.Severity.FATAL -> Level.FATAL
-        ScriptDiagnostic.Severity.ERROR -> Level.ERROR
-        ScriptDiagnostic.Severity.WARNING -> Level.WARN
-        ScriptDiagnostic.Severity.INFO -> Level.INFO
-        ScriptDiagnostic.Severity.DEBUG -> Level.DEBUG
+fun Path.loadScriptFromJar(): CompiledScript {
+    val className: String = this.inputStream().use { istream ->
+        JarInputStream(istream).use {
+            it.manifest.mainAttributes.getValue("Main-Class")
+        }
+    } ?: throw IllegalArgumentException("No Main-Class manifest attribute")
+    return KJvmCompiledScriptLoadedFromJar(className)
+}
+
+internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String) : CompiledScript {
+    private var loadedScript: KJvmCompiledScript? = null
+
+    private fun getScriptOrFail(): KJvmCompiledScript = loadedScript ?: throw RuntimeException("Compiled script is not loaded yet")
+
+    override suspend fun getClass(scriptEvaluationConfiguration: ScriptEvaluationConfiguration?): ResultWithDiagnostics<KClass<*>> {
+        if (loadedScript == null) {
+            val actualEvaluationConfiguration = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
+            val classLoader = actualEvaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
+                ?: Thread.currentThread().contextClassLoader
+            loadedScript = createScriptFromClassLoader(scriptClassFQName, classLoader)
+        }
+        return getScriptOrFail().getClass(scriptEvaluationConfiguration)
     }
+
+    override val compilationConfiguration: ScriptCompilationConfiguration
+        get() = getScriptOrFail().compilationConfiguration
+
+    override val sourceLocationId: String?
+        get() = getScriptOrFail().sourceLocationId
+
+    override val otherScripts: List<CompiledScript>
+        get() = getScriptOrFail().otherScripts
+
+    override val resultField: Pair<String, KotlinType>?
+        get() = getScriptOrFail().resultField
 }

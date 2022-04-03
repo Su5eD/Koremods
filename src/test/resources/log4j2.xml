@@ -30,7 +30,7 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="info">
+        <Root level="all">
             <AppenderRef ref="STDOUT"/>
         </Root>
     </Loggers>

@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
+import wtf.gofancy.koremods.DiscoveryMode
 import wtf.gofancy.koremods.KoremodsDiscoverer
 import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.parseMainConfig
@@ -82,7 +83,7 @@ object KoremodsLaunch {
 
         try {
             KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(prelaunch.mainJarFile.name, *libraries).apply {
-                discoverKoremods(prelaunch.modsDir, discoveryUrls)
+                discoverKoremods(DiscoveryMode.EVAL, prelaunch.modsDir, discoveryUrls)
             }
 
             LOGGER.fatal("Discovering Koremods finished successfully")

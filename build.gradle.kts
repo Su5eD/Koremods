@@ -79,6 +79,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("scripting-common"))
+    implementation(kotlin("scripting-compiler-embeddable"))
     mavenDep(implementation(kotlin("scripting-jvm")))
     mavenDep(implementation(kotlin("scripting-jvm-host")))
     mavenDep(implementation(kotlin("stdlib")))

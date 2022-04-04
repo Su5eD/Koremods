@@ -113,7 +113,7 @@ class RenderText : RenderBase() {
     
     private fun getLevelColor(level: Level): Triple<Float, Float, Float> {
         return when(level) {
-            Level.ERROR -> COLOR_NEON_BLUE
+            Level.ERROR, Level.FATAL -> COLOR_NEON_BLUE
             Level.WARN -> COLOR_YELLOW
             else -> COLOR_WHITE
         }

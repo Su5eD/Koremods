@@ -86,7 +86,6 @@ internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScr
 }
 
 private fun evalTransformers(identifier: Identifier, script: CompiledScript): TransformerHandler {
-    LOGGER.debug("Evaluating script $identifier")
     val handler = LOGGER.measureMillis(Level.DEBUG, "Evaluating script $identifier") {
         val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
         evalTransformers(identifier, script, engineLogger) 

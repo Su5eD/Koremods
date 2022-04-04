@@ -58,20 +58,15 @@ private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 val SCRIPT_NAME_PATTERN = "^[a-zA-Z0-9]*\$".toRegex()
 
-enum class DiscoveryMode(val extension: String) {
-    COMPILE_EVAL(KOREMODS_SCRIPT_EXTENSION),
-    EVAL("jar")
-}
+sealed class DiscoveryMode(internal val extension: String)
+class CompileDiscovery(internal vararg val libraries: String) : DiscoveryMode(KOREMODS_SCRIPT_EXTENSION)
+object EvalDiscovery : DiscoveryMode("jar")
 
-class KoremodsDiscoverer(private vararg val libraries: String) {
-    companion object {
-        var INSTANCE: KoremodsDiscoverer? = null
-    }
-
+class KoremodsDiscoverer(private val mode: DiscoveryMode) {
     var scriptPacks: List<KoremodScriptPack> = emptyList()
         private set
 
-    fun discoverKoremods(mode: DiscoveryMode, dir: Path, additionalPaths: Array<URL>) {
+    fun discoverKoremods(dir: Path, additionalPaths: Array<URL>) {
         val paths = Files.walk(dir, 1)
             .filter { !it.isDirectory() && it.name != dir.name }
             .toList()
@@ -80,15 +75,15 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
             .filter { it.scheme == "file" }
             .map(Paths::get)
 
-        discoverKoremods(mode, paths + additional)
+        discoverKoremods(paths + additional)
     }
 
-    fun discoverKoremods(mode: DiscoveryMode, paths: Iterable<Path>) {
-        val located = scanPaths(paths, mode)
+    fun discoverKoremods(paths: Iterable<Path>) {
+        val located = scanPaths(paths)
         
-        val compiled = if (mode == DiscoveryMode.COMPILE_EVAL) {
+        val compiled = if (mode is CompileDiscovery) {
             val sources = readScriptSources(located)
-            compileScriptPacks(sources, libraries)
+            compileScriptPacks(sources, mode.libraries)
         } else {
             readCompiledScripts(located)
         }
@@ -97,7 +92,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
         scriptPacks = ImmutableList.copyOf(evaluated)
     }
 
-    private fun scanPaths(paths: Iterable<Path>, mode: DiscoveryMode): List<RawScriptPack<Path>> {
+    private fun scanPaths(paths: Iterable<Path>): List<RawScriptPack<Path>> {
         LOGGER.debug("Scanning classpath for Koremods script packs")
 
         return paths.mapNotNull { path ->
@@ -106,7 +101,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
 
                 val conf = path.resolve(KoremodsBlackboard.CONFIG_FILE_LOCATION)
                 if (conf.exists()) {
-                    return@mapNotNull readConfig(path, conf, path, mode)
+                    return@mapNotNull readConfig(path, conf, path)
                 }
             } else if (path.extension == "jar" || path.extension == "zip") {
                 LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.name}")
@@ -114,7 +109,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
                 val zipFs = FileSystems.newFileSystem(path, null)
                 val conf = zipFs.getPath(KoremodsBlackboard.CONFIG_FILE_LOCATION)
                 if (conf.exists()) {
-                    return@mapNotNull readConfig(path, conf, zipFs.getPath(""), mode)
+                    return@mapNotNull readConfig(path, conf, zipFs.getPath(""))
                 }
             }
 
@@ -122,7 +117,7 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
         }
     }
 
-    private fun readConfig(parent: Path, configPath: Path, rootPath: Path, mode: DiscoveryMode): RawScriptPack<Path>? {
+    private fun readConfig(parent: Path, configPath: Path, rootPath: Path): RawScriptPack<Path>? {
         val config: KoremodModConfig = configPath.bufferedReader().use(::parseConfig)
         LOGGER.info("Loading scripts for pack ${config.namespace}")
 
@@ -131,12 +126,12 @@ class KoremodsDiscoverer(private vararg val libraries: String) {
             return null
         }
 
-        val scripts = locateScripts(config.namespace, config.scripts, rootPath, mode)
+        val scripts = locateScripts(config.namespace, config.scripts, rootPath)
         
         return if (scripts.isNotEmpty()) RawScriptPack(config.namespace, parent, scripts) else null
     }
 
-    private fun locateScripts(namespace: String, scripts: List<String>, rootPath: Path, mode: DiscoveryMode): List<RawScript<Path>> {
+    private fun locateScripts(namespace: String, scripts: List<String>, rootPath: Path): List<RawScript<Path>> {
         return scripts
             .map { script ->
                 val nameWithExt = script.substringAfterLast('/')

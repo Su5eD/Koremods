@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
-import wtf.gofancy.koremods.DiscoveryMode
+import wtf.gofancy.koremods.EvalDiscovery
 import wtf.gofancy.koremods.KoremodsDiscoverer
 import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.parseMainConfig
@@ -43,13 +43,9 @@ import kotlin.io.path.div
 @Suppress("unused")
 object KoremodsLaunch {
     private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
+    lateinit var DISCOVERY: KoremodsDiscoverer
 
-    fun launch(
-        prelaunch: KoremodsPrelaunch,
-        discoveryUrls: Array<URL>,
-        libraries: Array<String>,
-        launchPlugin: KoremodsLaunchPlugin?
-    ) {
+    fun launch(prelaunch: KoremodsPrelaunch, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
         LOGGER.info("Launching Koremods instance")
 
         KoremodsBlackboard.cacheDir = prelaunch.cacheDir
@@ -64,6 +60,8 @@ object KoremodsLaunch {
         )
 
         if (launchPlugin != null) {
+            LOGGER.debug("Found launch plugin: ${launchPlugin.javaClass.name}")
+            
             val callback: (Level, String) -> Unit
             val os = System.getProperty("os.name").lowercase()
 
@@ -82,11 +80,11 @@ object KoremodsLaunch {
         }
 
         try {
-            KoremodsDiscoverer.INSTANCE = KoremodsDiscoverer(prelaunch.mainJarFile.name, *libraries).apply {
-                discoverKoremods(DiscoveryMode.EVAL, prelaunch.modsDir, discoveryUrls)
+            DISCOVERY = KoremodsDiscoverer(EvalDiscovery).apply {
+                discoverKoremods(prelaunch.modsDir, discoveryUrls)
             }
 
-            LOGGER.fatal("Discovering Koremods finished successfully")
+            LOGGER.info("Discovering Koremods finished successfully")
             splash?.close(true)
         } catch (t: Throwable) {
             LOGGER.fatal("An error has occured while discovering Koremods")

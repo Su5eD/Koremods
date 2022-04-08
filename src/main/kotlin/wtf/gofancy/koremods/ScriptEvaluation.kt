@@ -52,7 +52,7 @@ private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation"
 
 class ScriptEvaluationException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
-internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodScriptPack> {
+internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodsScriptPack> {
     val threads = compiledPacks.sumOf { it.scripts.size }
     val threadFactory = Executors.defaultThreadFactory()
     val executors = Executors.newFixedThreadPool(threads) { runnable ->
@@ -76,12 +76,12 @@ internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScr
     executors.shutdown()
     executors.awaitTermination(10, TimeUnit.SECONDS)
 
-    return futurePacks.map {
-        val processed = it.scripts.map { (identifier, future) ->
-            KoremodScript(identifier, future.get())
+    return futurePacks.map { pack ->
+        val processed = pack.scripts.map { (identifier, future) ->
+            KoremodsScript(identifier, future.get())
         }
 
-        return@map KoremodScriptPack(it.namespace, it.path, processed)
+        return@map KoremodsScriptPack(pack.namespace, pack.path, processed)
     }
 }
 
@@ -152,7 +152,7 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
             val actualEvaluationConfiguration = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
             val baseClassLoader = actualEvaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
                 ?: Thread.currentThread().contextClassLoader
-            val classLoader = JarClassLoader(entries, baseClassLoader)
+            val classLoader = MemoryClassLoader(entries, baseClassLoader)
             loadedScript = createScriptFromClassLoader(scriptClassFQName, classLoader)
         }
         return getScriptOrFail().getClass(scriptEvaluationConfiguration)
@@ -171,11 +171,11 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
         get() = getScriptOrFail().resultField
 }
 
-internal class JarClassLoader(private val entries: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {
+internal class MemoryClassLoader(private val resources: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {
     override fun findClass(name: String): Class<*> {
         val resource = name.replace('.', '/') + ".class"
         
-        return entries[resource]?.let { bytes ->
+        return resources[resource]?.let { bytes ->
             val protectionDomain = ProtectionDomain(null, null)
             return defineClass(name, bytes, 0, bytes.size, protectionDomain)
         }
@@ -183,6 +183,6 @@ internal class JarClassLoader(private val entries: Map<String, ByteArray>, paren
     }
 
     override fun getResourceAsStream(name: String): InputStream? {
-        return entries[name]?.inputStream()
+        return resources[name]?.inputStream()
     }
 }

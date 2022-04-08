@@ -83,8 +83,11 @@ fun compileScript(identifier: Identifier, source: SourceCode, libraries: Array<o
 }
 
 internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<String>> {
+    LOGGER.info("Reading script sources from packs")
+    
     return packs.map { pack ->
         val sourceScripts = pack.scripts.map readScripts@{ script ->
+            LOGGER.debug("Reading source for ${script.identifier}")
             val source = readScriptSource(script.identifier, script.source)
             return@readScripts RawScript(script.identifier, source)
         }

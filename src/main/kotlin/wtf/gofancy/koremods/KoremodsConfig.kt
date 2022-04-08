@@ -37,23 +37,23 @@ import kotlin.io.path.notExists
 import kotlin.io.path.writeText
 
 /**
- * Individual config for each discovered Koremod
+ * Individual config for Koremods script packs
  */
-data class KoremodModConfig(val namespace: String, val scripts: List<String>)
+data class KoremodsPackConfig(val namespace: String, val scripts: List<String>)
 
 /**
  * Configuration of Koremods itself
  */
-data class KoremodConfig(val enableSplashScreen: Boolean = true)
+data class KoremodsConfig(val enableSplashScreen: Boolean = false)
 
 inline fun <reified T> parseConfig(reader: Reader): T {
     return ConfigFactory.parseReader(reader).extract()
 }
 
-fun parseMainConfig(path: Path): KoremodConfig {
+fun parseMainConfig(path: Path): KoremodsConfig {
     if (path.notExists()) {
-        val koremodConfig = KoremodConfig()
-        val obj = koremodConfig.toConfig(KoremodsBlackboard.NAMESPACE).getObject(KoremodsBlackboard.NAMESPACE)
+        val koremodsConfig = KoremodsConfig()
+        val obj = koremodsConfig.toConfig(KoremodsBlackboard.NAMESPACE).getObject(KoremodsBlackboard.NAMESPACE)
         val options = ConfigRenderOptions.defaults()
             .setOriginComments(false)
             .setJson(false)
@@ -61,7 +61,7 @@ fun parseMainConfig(path: Path): KoremodConfig {
         
         path.parent.createDirectories()
         path.writeText(render)
-        return koremodConfig
+        return koremodsConfig
     }
     
     return parseConfig(path.bufferedReader())

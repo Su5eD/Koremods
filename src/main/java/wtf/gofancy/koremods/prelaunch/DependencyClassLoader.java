@@ -26,18 +26,15 @@ package wtf.gofancy.koremods.prelaunch;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Because some dependencies cannot be relocated when shadowed, we use a custom classloader to load them in an
  * isolated environment and prevent conflicts with other consumers on the classpath that might be using the same library
  */
 public class DependencyClassLoader extends URLClassLoader {
-    private static final List<String> EXCLUSIONS = Arrays.asList(
-            "wtf.gofancy.koremods.api.",
+    private static final Set<String> EXCLUSIONS = Set.of(
             "wtf.gofancy.koremods.prelaunch."
     );
     
@@ -45,26 +42,20 @@ public class DependencyClassLoader extends URLClassLoader {
      * Classes that are preferably loaded by this classloader. If not found, we'll attempt loading them using the parent CL instead of throwing an exception.
      */
     private final List<String> priorityClasses;
-    private final Map<String, Class<?>> cachedClasses = new HashMap<>(); // TODO findLoadedClass
-    private final boolean strict;
 
     public DependencyClassLoader(URL[] urls, ClassLoader parent, List<String> priorityClasses) {
         super(urls, parent);
 
         this.priorityClasses = priorityClasses;
-        this.strict = urls.length > 0;
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (EXCLUSIONS.stream().noneMatch(name::startsWith)) {
-            if (this.cachedClasses.containsKey(name)) return this.cachedClasses.get(name);
-            
-            if (this.strict && this.priorityClasses.stream().anyMatch(name::startsWith)) {
-                Class<?> cls = findClass(name);
-                this.cachedClasses.put(name, cls);
-                return cls;
-            }
+        Class<?> existing = findLoadedClass(name);
+        if (existing != null) return existing;
+        
+        if (EXCLUSIONS.stream().noneMatch(name::startsWith) && this.priorityClasses.stream().anyMatch(name::startsWith)) {
+            return findClass(name);
         }
         
         return loadClassFallback(name, resolve);

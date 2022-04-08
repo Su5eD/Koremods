@@ -51,8 +51,8 @@ data class Identifier internal constructor(val namespace: String, val name: Stri
 internal data class RawScriptPack<T>(val namespace: String, val path: Path, val scripts: List<RawScript<T>>)
 internal data class RawScript<T>(val identifier: Identifier, val source: T)
 
-data class KoremodScriptPack(val namespace: String, val path: Path, val scripts: List<KoremodScript>)
-data class KoremodScript(val identifier: Identifier, val handler: TransformerHandler)
+data class KoremodsScriptPack(val namespace: String, val path: Path, val scripts: List<KoremodsScript>)
+data class KoremodsScript(val identifier: Identifier, val handler: TransformerHandler)
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discoverer")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
@@ -63,7 +63,7 @@ class CompileDiscovery(internal vararg val libraries: String) : DiscoveryMode(KO
 object EvalDiscovery : DiscoveryMode("jar")
 
 class KoremodsDiscoverer(private val mode: DiscoveryMode) {
-    var scriptPacks: List<KoremodScriptPack> = emptyList()
+    var scriptPacks: List<KoremodsScriptPack> = emptyList()
         private set
 
     fun discoverKoremods(dir: Path, additionalPaths: Array<URL>) {
@@ -115,10 +115,13 @@ class KoremodsDiscoverer(private val mode: DiscoveryMode) {
 
             return@mapNotNull null
         }
+            .onEach { pack -> 
+                LOGGER.debug("Found ${pack.scripts.size} scripts in namespace ${pack.namespace}") 
+            }
     }
 
     private fun readConfig(parent: Path, configPath: Path, rootPath: Path): RawScriptPack<Path>? {
-        val config: KoremodModConfig = configPath.bufferedReader().use(::parseConfig)
+        val config: KoremodsPackConfig = configPath.bufferedReader().use(::parseConfig)
         LOGGER.info("Loading scripts for pack ${config.namespace}")
 
         if (config.scripts.isEmpty()) {
@@ -161,6 +164,8 @@ class KoremodsDiscoverer(private val mode: DiscoveryMode) {
     }
     
     private fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<CompiledScript>> {
+        LOGGER.info("Reading compiled scripts")
+        
         return packs.map { pack ->
             val compiledScripts = pack.scripts.map readCompiled@{ script ->
                 if (script.source.extension == "jar") {
@@ -178,7 +183,7 @@ class KoremodsDiscoverer(private val mode: DiscoveryMode) {
 
     fun getAllTransformers(): List<Transformer<*>> {
         return scriptPacks
-            .flatMap(KoremodScriptPack::scripts)
+            .flatMap(KoremodsScriptPack::scripts)
             .flatMap { it.handler.getTransformers() }
     }
 }

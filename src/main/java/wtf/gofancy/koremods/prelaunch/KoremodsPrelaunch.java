@@ -39,7 +39,6 @@ import java.util.zip.ZipEntry;
 
 public class KoremodsPrelaunch {
     private static final Logger LOGGER = KoremodsBlackboard.createLogger("Prelaunch");
-    public static final String[] ASM_DEP_NAMES = { "asm", "asm-commons", "asm-tree" };
     public static final List<String> KOTLIN_DEP_PACKAGES = Arrays.asList(
             "codes.som.anthony.koffee.",
             "gnu.trove.",

@@ -85,7 +85,7 @@ class KoremodTransformationTests {
     @Test
     fun testParseModConfig() {
         val file = File("src/test/resources/foo/META-INF/koremods.conf")
-        val config: KoremodModConfig = parseConfig(file.bufferedReader())
+        val config: KoremodsPackConfig = parseConfig(file.bufferedReader())
 
         assertEquals(namespace, config.namespace)
 

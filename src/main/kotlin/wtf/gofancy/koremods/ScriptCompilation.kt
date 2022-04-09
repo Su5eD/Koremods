@@ -46,15 +46,15 @@ internal fun compileScriptPacks(packs: Collection<RawScriptPack<SourceCode>>, li
 
     return packs.map { pack ->
         val compiledScripts = pack.scripts.map compile@{ script ->
-            val compiled = compileScriptResult(script.identifier, script.source, libraries)
+            val compiled = compileScriptResult(script, libraries)
             return@compile RawScript(script.identifier, compiled)
         }
         return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
     }
 }
 
-fun compileScriptResult(identifier: Identifier, source: SourceCode, libraries: Array<out String>): CompiledScript {
-    return compileScriptResult(identifier, source) {
+fun compileScriptResult(script: RawScript<SourceCode>, libraries: Array<out String>): CompiledScript { // TODO RawScript instance method?
+    return compileScriptResult(script.identifier, script.source) {
         jvm {
             dependenciesFromCurrentContext(libraries = libraries)
         }
@@ -89,7 +89,6 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
 
     return packs.map { pack ->
         val sourceScripts = pack.scripts.map readScripts@{ script ->
-            LOGGER.debug("Reading source for ${script.identifier}")
             val source = readScriptSource(script.identifier, script.source)
             return@readScripts RawScript(script.identifier, source)
         }
@@ -98,7 +97,9 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
         .toList()
 }
 
-internal fun readScriptSource(identifier: Identifier, path: Path): SourceCode { // TODO Path source code
+fun readScriptSource(identifier: Identifier, path: Path): SourceCode { // TODO Path source code
+    LOGGER.debug("Reading source for script $identifier")
+    
     val text = path.bufferedReader().readText()
     return if (text.isNotEmpty()) text.toScriptSource()
     else throw RuntimeException("Script $identifier could not be read")

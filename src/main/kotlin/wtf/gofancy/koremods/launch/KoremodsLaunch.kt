@@ -28,10 +28,9 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
-import wtf.gofancy.koremods.EvalDiscovery
-import wtf.gofancy.koremods.KoremodsDiscoverer
+import wtf.gofancy.koremods.EvalLoad
+import wtf.gofancy.koremods.KoremodsLoader
 import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
@@ -43,7 +42,8 @@ import kotlin.io.path.div
 @Suppress("unused")
 object KoremodsLaunch {
     private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
-    lateinit var DISCOVERY: KoremodsDiscoverer
+    lateinit var LOADER: KoremodsLoader
+        private set
 
     fun launch(prelaunch: KoremodsPrelaunch, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
         LOGGER.info("Launching Koremods instance")
@@ -80,8 +80,8 @@ object KoremodsLaunch {
         }
 
         try {
-            DISCOVERY = KoremodsDiscoverer(EvalDiscovery).apply {
-                discoverKoremods(prelaunch.modsDir, discoveryUrls)
+            LOADER = KoremodsLoader(EvalLoad).apply {
+                loadKoremods(prelaunch.modsDir, discoveryUrls)
             }
 
             LOGGER.info("Discovering Koremods finished successfully")
@@ -92,10 +92,10 @@ object KoremodsLaunch {
             throw t
         }
     }
+}
 
-    private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
-        return LogManager.getContext(classLoader, false) as LoggerContext
-    }
+private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
+    return LogManager.getContext(classLoader, false) as LoggerContext
 }
 
 private fun createSplashScreen(): KoremodsSplashScreen {
@@ -104,13 +104,13 @@ private fun createSplashScreen(): KoremodsSplashScreen {
 }
 
 internal fun injectSplashLogger(context: LoggerContext, callback: (Level, String) -> Unit) {
-    val config: Configuration = context.configuration
+    val config = context.configuration
 
     val appender = KoremodsLogAppender("KoremodsAppender", null, callback)
     appender.start()
     config.addAppender(appender)
 
-    val loggerConfig: LoggerConfig = LoggerConfig.createLogger(
+    val loggerConfig = LoggerConfig.createLogger(
         true, Level.ALL, "KoremodsLogger",
         "true", emptyArray(), null, config, null
     )

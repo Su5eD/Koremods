@@ -30,10 +30,8 @@ import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.nio.file.Path
 import kotlin.io.path.bufferedReader
-import kotlin.script.experimental.api.CompiledScript
-import kotlin.script.experimental.api.ResultWithDiagnostics
-import kotlin.script.experimental.api.ScriptDiagnostic
-import kotlin.script.experimental.api.SourceCode
+import kotlin.io.path.extension
+import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.toScriptSource
 import kotlin.script.experimental.impl.internalScriptingRunSuspend
 import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
@@ -43,12 +41,12 @@ import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromT
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
 
-internal fun compileScriptPacks(packs: Collection<RawScriptPack<String>>, libraries: Array<out String> = emptyArray()): List<RawScriptPack<CompiledScript>> {
+internal fun compileScriptPacks(packs: Collection<RawScriptPack<SourceCode>>, libraries: Array<out String> = emptyArray()): List<RawScriptPack<CompiledScript>> {
     LOGGER.info("Compiling script packs")
 
     return packs.map { pack ->
         val compiledScripts = pack.scripts.map compile@{ script ->
-            val compiled = compileScriptResult(script.identifier, script.source.toScriptSource(), libraries)
+            val compiled = compileScriptResult(script.identifier, script.source, libraries)
             return@compile RawScript(script.identifier, compiled)
         }
         return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
@@ -56,10 +54,18 @@ internal fun compileScriptPacks(packs: Collection<RawScriptPack<String>>, librar
 }
 
 fun compileScriptResult(identifier: Identifier, source: SourceCode, libraries: Array<out String>): CompiledScript {
-    val result = LOGGER.measureMillis(Level.DEBUG, "Compiling script $identifier") {
-        compileScript(identifier, source, libraries)
+    return compileScriptResult(identifier, source) {
+        jvm {
+            dependenciesFromCurrentContext(libraries = libraries)
+        }
     }
-    return when(result) {
+}
+
+fun compileScriptResult(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): CompiledScript {
+    val result = LOGGER.measureMillis(Level.DEBUG, "Compiling script $identifier") {
+        compileScript(identifier, source, configBuilder)
+    }
+    return when (result) {
         is ResultWithDiagnostics.Success -> result.value
         is ResultWithDiagnostics.Failure -> {
             result.printErrors()
@@ -69,22 +75,18 @@ fun compileScriptResult(identifier: Identifier, source: SourceCode, libraries: A
 }
 
 @Suppress("DEPRECATION_ERROR")
-fun compileScript(identifier: Identifier, source: SourceCode, libraries: Array<out String>): ResultWithDiagnostics<CompiledScript> {
+fun compileScript(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): ResultWithDiagnostics<CompiledScript> {
     LOGGER.info("Compiling script $identifier")
 
     val compiler = JvmScriptCompiler()
-    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript> {
-        jvm {
-            dependenciesFromCurrentContext(libraries = libraries)
-        }
-    }
+    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript>(body = configBuilder)
 
     return internalScriptingRunSuspend { compiler.invoke(source, compilationConfiguration) }
 }
 
-internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<String>> {
+internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<SourceCode>> {
     LOGGER.info("Reading script sources from packs")
-    
+
     return packs.map { pack ->
         val sourceScripts = pack.scripts.map readScripts@{ script ->
             LOGGER.debug("Reading source for ${script.identifier}")
@@ -96,13 +98,31 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
         .toList()
 }
 
-internal fun readScriptSource(identifier: Identifier, path: Path): String {
-    val lines = path.bufferedReader().readLines()
-    return if (lines.isNotEmpty()) lines.joinToString(separator = "\n")
+internal fun readScriptSource(identifier: Identifier, path: Path): SourceCode { // TODO Path source code
+    val text = path.bufferedReader().readText()
+    return if (text.isNotEmpty()) text.toScriptSource()
     else throw RuntimeException("Script $identifier could not be read")
 }
 
-internal fun ResultWithDiagnostics.Failure.printErrors() {
+internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<CompiledScript>> {
+    LOGGER.info("Reading compiled scripts")
+
+    return packs.map { pack ->
+        val compiledScripts = pack.scripts.map readCompiled@{ script ->
+            if (script.source.extension == "jar") {
+                val compiled = script.source.loadScriptFromJar()
+                return@readCompiled RawScript(script.identifier, compiled)
+            } else {
+                LOGGER.error("Script ${script.identifier} has invalid extension ${script.source.extension}")
+                throw IllegalArgumentException("Invalid script extension '${script.source.extension}'")
+            }
+        }
+        return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
+    }
+        .toList()
+}
+
+fun ResultWithDiagnostics.Failure.printErrors() {
     reports.forEach { report ->
         report.exception
             ?.let { LOGGER.catching(Level.ERROR, it) }
@@ -110,8 +130,8 @@ internal fun ResultWithDiagnostics.Failure.printErrors() {
     }
 }
 
-internal fun ScriptDiagnostic.Severity.toLogLevel(): Level {
-    return when(this) {
+fun ScriptDiagnostic.Severity.toLogLevel(): Level {
+    return when (this) {
         ScriptDiagnostic.Severity.FATAL -> Level.FATAL
         ScriptDiagnostic.Severity.ERROR -> Level.ERROR
         ScriptDiagnostic.Severity.WARNING -> Level.WARN

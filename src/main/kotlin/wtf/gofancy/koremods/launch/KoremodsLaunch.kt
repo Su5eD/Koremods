@@ -48,7 +48,6 @@ object KoremodsLaunch {
     fun launch(prelaunch: KoremodsPrelaunch, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
         LOGGER.info("Launching Koremods instance")
 
-        KoremodsBlackboard.cacheDir = prelaunch.cacheDir
         KoremodsBlackboard.scriptContextClassLoader = javaClass.classLoader
 
         val configPath = prelaunch.configDir / KoremodsBlackboard.CONFIG_FILE

@@ -54,7 +54,6 @@ public class KoremodsPrelaunch {
     public final Path gameDir;
     public final Path configDir;
     public final Path modsDir;
-    public final File cacheDir;
     private final Path depsDir;
 
     public final URL mainJarUrl;
@@ -67,8 +66,6 @@ public class KoremodsPrelaunch {
         this.configDir = this.gameDir.resolve("config");
         this.modsDir = gameDir.resolve("mods");
         Path koremodsDir = this.modsDir.resolve(KoremodsBlackboard.NAMESPACE);
-        this.cacheDir = koremodsDir.resolve("cache").toFile();
-        this.cacheDir.mkdirs();
         this.depsDir = koremodsDir.resolve("dependencies");
 
         this.mainJarUrl = mainJarUrl;

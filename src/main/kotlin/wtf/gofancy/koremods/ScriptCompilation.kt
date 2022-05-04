@@ -28,11 +28,13 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
+import java.io.Serializable
+import java.net.URL
 import java.nio.file.Path
-import kotlin.io.path.bufferedReader
+import kotlin.io.path.absolute
 import kotlin.io.path.extension
+import kotlin.io.path.readText
 import kotlin.script.experimental.api.*
-import kotlin.script.experimental.host.toScriptSource
 import kotlin.script.experimental.impl.internalScriptingRunSuspend
 import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
@@ -68,7 +70,7 @@ fun compileScriptResult(identifier: Identifier, source: SourceCode, configBuilde
     return when (result) {
         is ResultWithDiagnostics.Success -> result.value
         is ResultWithDiagnostics.Failure -> {
-            result.printErrors()
+            LOGGER.logResultErrors(result)
             throw ScriptEvaluationException("Failed to compile script $identifier. See the log for more information")
         }
     }
@@ -77,10 +79,8 @@ fun compileScriptResult(identifier: Identifier, source: SourceCode, configBuilde
 @Suppress("DEPRECATION_ERROR")
 fun compileScript(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): ResultWithDiagnostics<CompiledScript> {
     LOGGER.info("Compiling script $identifier")
-
     val compiler = JvmScriptCompiler()
     val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript>(body = configBuilder)
-
     return internalScriptingRunSuspend { compiler.invoke(source, compilationConfiguration) }
 }
 
@@ -97,13 +97,10 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
         .toList()
 }
 
-fun readScriptSource(identifier: Identifier, path: Path): SourceCode { // TODO Path source code
+internal fun readScriptSource(identifier: Identifier, path: Path): SourceCode {
     LOGGER.debug("Reading source for script $identifier")
-    
-    val text = path.bufferedReader().readText()
-    return if (text.isNotEmpty()) text.toScriptSource()
-    else throw RuntimeException("Script $identifier could not be read")
-}
+    return PathScriptSource(path)
+} 
 
 internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<CompiledScript>> {
     LOGGER.info("Reading compiled scripts")
@@ -123,20 +120,15 @@ internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<R
         .toList()
 }
 
-fun ResultWithDiagnostics.Failure.printErrors() {
-    reports.forEach { report ->
-        report.exception
-            ?.let { LOGGER.catching(Level.ERROR, it) }
-            ?: LOGGER.log(report.severity.toLogLevel(), report.message)
-    }
-}
+open class PathScriptSource(private val path: Path) : ExternalSourceCode, Serializable {
+    override val externalLocation: URL = path.toUri().toURL()
+    
+    override val text: String by lazy(path::readText)
+    override val name: String = path.fileName.toString()
+    override val locationId: String = path.toString()
 
-fun ScriptDiagnostic.Severity.toLogLevel(): Level {
-    return when (this) {
-        ScriptDiagnostic.Severity.FATAL -> Level.FATAL
-        ScriptDiagnostic.Severity.ERROR -> Level.ERROR
-        ScriptDiagnostic.Severity.WARNING -> Level.WARN
-        ScriptDiagnostic.Severity.INFO -> Level.INFO
-        ScriptDiagnostic.Severity.DEBUG -> Level.DEBUG
-    }
+    override fun equals(other: Any?): Boolean =
+        this === other || (other as? PathScriptSource)?.let { path == it.path && text == it.text } == true
+
+    override fun hashCode(): Int = path.absolute().hashCode() + text.hashCode() * 23
 }

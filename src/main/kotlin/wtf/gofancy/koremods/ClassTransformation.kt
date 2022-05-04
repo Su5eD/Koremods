@@ -31,7 +31,7 @@ import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 
-fun <T : Transformer<U>, U> applyTransform(name: Any, transformers: List<T>, node: U): List<TransformerPropertiesExtension> {
+fun <T : Transformer<U>, U> applyTransform(name: Any, transformers: List<T>, node: U): Collection<TransformerPropertiesExtension> {
     return transformers
         .filter { transformer ->
             LOGGER.debug("Transforming $name with transformer script ${transformer.scriptIdentifier}")
@@ -44,5 +44,5 @@ fun <T : Transformer<U>, U> applyTransform(name: Any, transformers: List<T>, nod
             return@filter false
         }
         .map(Transformer<*>::props)
-        .toList()
+        .toSet()
 }

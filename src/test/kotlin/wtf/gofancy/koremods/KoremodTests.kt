@@ -51,6 +51,18 @@ private const val TEST_CLASS_NAME = "wtf.gofancy.koremods.transform.Person"
 class KoremodTransformationTests {
     private val namespace = "unitTests"
     private val logger: Logger = LogManager.getLogger()
+    private val scriptLibraries: Array<String> = listOf(KoremodsKtsScript::class.java, javaClass)
+        .map { File(it.protectionDomain.codeSource.location.toURI()).name }
+        .plus(SCRIPT_DEPS)
+        .toTypedArray()
+
+    @Test
+    fun testScriptLoader() {
+        val path = Path("src/test/resources/foo")
+        val loader = KoremodsLoader(CompileEvalLoad(scriptLibraries))
+        
+        assertDoesNotThrow { loader.loadKoremods(setOf(path)) }
+    }
 
     @Test
     fun testClassTransformer() {
@@ -102,10 +114,7 @@ class KoremodTransformationTests {
         val source = readScriptSource(identifier, path)
         val script = RawScript(identifier, source)
 
-        val libraries = listOf(KoremodsKtsScript::class.java, javaClass)
-            .map { File(it.protectionDomain.codeSource.location.toURI()).name } + SCRIPT_DEPS
-
-        val compiled = compileScriptResult(script, libraries.toTypedArray())
+        val compiled = compileScriptResult(script, scriptLibraries)
         val handler = evalTransformers(script.identifier, compiled, logger)
         return handler.getTransformers()
             .filterIsInstance(cls)

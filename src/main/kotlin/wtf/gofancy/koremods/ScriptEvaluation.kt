@@ -32,10 +32,6 @@ import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.InputStream
 import java.nio.file.Path
 import java.security.ProtectionDomain
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.jar.JarInputStream
 import kotlin.io.path.inputStream
 import kotlin.reflect.KClass
@@ -53,34 +49,11 @@ private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation"
 class ScriptEvaluationException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
 internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodsScriptPack> {
-    val threads = compiledPacks.sumOf { it.scripts.size }
-    val threadFactory = Executors.defaultThreadFactory()
-    val executors = Executors.newFixedThreadPool(threads) { runnable ->
-        threadFactory.newThread(runnable).apply {
-            KoremodsBlackboard.scriptContextClassLoader?.let(::setContextClassLoader)
+    return compiledPacks.map { pack ->
+        val processed = pack.scripts.map { script ->
+            val transformers = evalTransformers(script.identifier, script.source)
+            KoremodsScript(script.identifier, transformers)
         }
-    }
-
-    val futurePacks: List<RawScriptPack<Future<TransformerHandler>>> = compiledPacks.map { pack ->
-        val futureScripts = pack.scripts.map { script ->
-            val future = executors.submit(Callable {
-                evalTransformers(script.identifier, script.source)
-            })
-
-            RawScript(script.identifier, future)
-        }
-
-        RawScriptPack(pack.namespace, pack.path, futureScripts)
-    }
-
-    executors.shutdown()
-    executors.awaitTermination(10, TimeUnit.SECONDS)
-
-    return futurePacks.map { pack ->
-        val processed = pack.scripts.map { (identifier, future) ->
-            KoremodsScript(identifier, future.get())
-        }
-
         return@map KoremodsScriptPack(pack.namespace, pack.path, processed)
     }
 }
@@ -88,7 +61,7 @@ internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScr
 private fun evalTransformers(identifier: Identifier, script: CompiledScript): TransformerHandler {
     val handler = LOGGER.measureMillis(Level.DEBUG, "Evaluating script $identifier") {
         val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
-        evalTransformers(identifier, script, engineLogger) 
+        evalTransformers(identifier, script, engineLogger)
     }
     if (handler.getTransformers().isEmpty()) {
         throw RuntimeException("Script $identifier does not define any transformers")
@@ -100,7 +73,7 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
     when (val eval = evalScript(identifier, script, logger)) {
         is ResultWithDiagnostics.Success -> {
             when (val result = eval.value.returnValue) {
-                is ResultValue.Value-> throw ScriptEvaluationException("Script $identifier returned a value instead of Unit")
+                is ResultValue.Value -> throw ScriptEvaluationException("Script $identifier returned a value instead of Unit")
                 is ResultValue.Unit -> return (result.scriptInstance as KoremodsKtsScript).transformerHandler
                 is ResultValue.Error -> throw ScriptEvaluationException("Exception in script $identifier", result.error)
                 // this shouldn't ever happen
@@ -108,7 +81,7 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
             }
         }
         is ResultWithDiagnostics.Failure -> {
-            eval.printErrors()
+            LOGGER.logResultErrors(eval)
             throw ScriptEvaluationException("Failed to evaluate script $identifier. See the log for more information")
         }
     }
@@ -118,18 +91,18 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
 @Suppress("DEPRECATION_ERROR")
 fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): ResultWithDiagnostics<EvaluationResult> {
     LOGGER.info("Evaluating script $identifier")
-    
+
     val evaluationConfiguration = createJvmEvaluationConfigurationFromTemplate<KoremodsKtsScript> {
         constructorArgs(identifier, logger)
     }
-    
+
     return internalScriptingRunSuspend { BasicJvmScriptEvaluator().invoke(script, evaluationConfiguration) }
 }
 
 fun Path.loadScriptFromJar(): CompiledScript {
     val (className, entries) = inputStream().use { istream ->
         JarInputStream(istream).use jistream@{
-            val className = it.manifest.mainAttributes.getValue("Main-Class") 
+            val className = it.manifest.mainAttributes.getValue("Main-Class")
                 ?: throw IllegalArgumentException("No Main-Class manifest attribute")
             return@jistream Pair(className, it.readEntries())
         }
@@ -174,7 +147,7 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
 internal class MemoryClassLoader(private val resources: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {
     override fun findClass(name: String): Class<*> {
         val resource = name.replace('.', '/') + ".class"
-        
+
         return resources[resource]?.let { bytes ->
             val protectionDomain = ProtectionDomain(null, null)
             return defineClass(name, bytes, 0, bytes.size, protectionDomain)

@@ -24,10 +24,7 @@
 
 package wtf.gofancy.koremods
 
-import com.google.common.base.Stopwatch
 import com.google.common.collect.ImmutableList
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.script.KOREMODS_SCRIPT_EXTENSION
@@ -35,7 +32,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.concurrent.TimeUnit
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.streams.toList
@@ -51,7 +47,7 @@ data class KoremodsScriptPack internal constructor(val namespace: String, val pa
 data class KoremodsScript internal constructor(val identifier: Identifier, val handler: TransformerHandler)
 
 sealed class LoaderMode(internal val extension: String)
-class CompileEvalLoad(internal vararg val libraries: String) : LoaderMode(KOREMODS_SCRIPT_EXTENSION)
+class CompileEvalLoad(internal val libraries: Array<out String>) : LoaderMode(KOREMODS_SCRIPT_EXTENSION)
 object EvalLoad : LoaderMode("jar")
 
 class KoremodsLoader(private val mode: LoaderMode) {
@@ -89,12 +85,4 @@ class KoremodsLoader(private val mode: LoaderMode) {
             .flatMap(KoremodsScriptPack::scripts)
             .flatMap { it.handler.getTransformers() }
     }
-}
-
-internal fun <T> Logger.measureMillis(level: Level, message: String, block: () -> T): T {
-    val stopwatch = Stopwatch.createStarted()
-    val result = block()
-    val time = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS)
-    log(level, "$message took $time ms")
-    return result
 }

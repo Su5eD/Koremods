@@ -84,7 +84,7 @@ class FieldTransformer(override val scriptIdentifier: Identifier, override val p
 
 class TransformerHandler(private val scriptIdentifier: Identifier) {
     private val transformers = mutableListOf<Transformer<*>>()
-    val props = TransformerPropertiesExtension()
+    private val props = TransformerPropertiesExtension()
         
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
         transformer.invoke(TransformerBuilder(scriptIdentifier, transformers, props))

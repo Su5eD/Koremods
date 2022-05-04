@@ -34,16 +34,19 @@ import org.objectweb.asm.ClassWriter.COMPUTE_FRAMES
 import org.objectweb.asm.ClassWriter.COMPUTE_MAXS
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
-import wtf.gofancy.koremods.dsl.*
-import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
+import wtf.gofancy.koremods.dsl.ClassTransformer
+import wtf.gofancy.koremods.dsl.FieldTransformer
+import wtf.gofancy.koremods.dsl.MethodTransformer
+import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.File
-import kotlin.script.experimental.api.SourceCode
-import kotlin.script.experimental.host.toScriptSource
+import kotlin.io.path.Path
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
+
+private val SCRIPT_DEPS = setOf("asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util", "koffee")
+private const val TEST_CLASS_NAME = "wtf.gofancy.koremods.transform.Person"
 
 class KoremodTransformationTests {
     private val namespace = "unitTests"
@@ -95,55 +98,50 @@ class KoremodTransformationTests {
 
     private fun <T> getFirstTransformer(name: String, cls: Class<T>): T {
         val identifier = Identifier(namespace, name)
-        val script = File("src/test/resources/foo/scripts/$name.core.kts")
+        val path = Path("src/test/resources/foo/scripts/$name.core.kts")
+        val source = readScriptSource(identifier, path)
+        val script = RawScript(identifier, source)
 
         val libraries = listOf(KoremodsKtsScript::class.java, javaClass)
-            .map { File(it.protectionDomain.codeSource.location.toURI()).name } + KoremodsPrelaunch.ASM_DEP_NAMES + "koffee"
-        val handler = compileAndEvalTransformers(identifier, script.toScriptSource(), logger, libraries.toTypedArray())
-        return assertNotNull(handler).getTransformers()
+            .map { File(it.protectionDomain.codeSource.location.toURI()).name } + SCRIPT_DEPS
+
+        val compiled = compileScriptResult(script, libraries.toTypedArray())
+        val handler = evalTransformers(script.identifier, compiled, logger)
+        return handler.getTransformers()
             .filterIsInstance(cls)
             .first()
     }
+}
 
-    private fun transformClass(transformer: Transformer<ClassNode>): Class<*> {
-        return transform(transformer) { it }
-    }
+fun transformClass(transformer: Transformer<ClassNode>): Class<*> {
+    return transform(transformer) { it }
+}
 
-    private fun transformMethod(transformer: MethodTransformer): Class<*> {
-        return transform(transformer) { node ->
-            node.methods
-                .first { it.name == transformer.name && it.desc == transformer.desc }
-        }
-    }
-
-    private fun transformField(transformer: FieldTransformer): Class<*> {
-        return transform(transformer) { node ->
-            node.fields
-                .first { it.name == transformer.name }
-        }
-    }
-
-    private fun <T> transform(transformer: Transformer<T>, finder: (ClassNode) -> T): Class<*> {
-        val className = "wtf.gofancy.koremods.transform.Person"
-        val reader = ClassReader(className)
-
-        val node = ClassNode()
-        reader.accept(node, 0)
-
-        val transformNode = finder(node)
-        applyTransform(node.name, listOf(transformer), transformNode)
-
-        val writer = ClassWriter(reader, COMPUTE_MAXS or COMPUTE_FRAMES)
-        node.accept(writer)
-
-        val cl = RawByteClassLoader(className, writer.toByteArray())
-        return cl.loadClass(className)
+fun transformMethod(transformer: MethodTransformer): Class<*> {
+    return transform(transformer) { node ->
+        node.methods.first { it.name == transformer.name && it.desc == transformer.desc }
     }
 }
 
-internal fun compileAndEvalTransformers(identifier: Identifier, source: SourceCode, logger: Logger, libraries: Array<String>): TransformerHandler {
-    val compiled = compileScriptResult(identifier, source, libraries)
-    return evalTransformers(identifier, compiled, logger)
+fun transformField(transformer: FieldTransformer): Class<*> {
+    return transform(transformer) { node ->
+        node.fields.first { it.name == transformer.name }
+    }
+}
+
+fun <T> transform(transformer: Transformer<T>, finder: (ClassNode) -> T): Class<*> {
+    val reader = ClassReader(TEST_CLASS_NAME)
+    val node = ClassNode()
+    reader.accept(node, 0)
+
+    val transformNode = finder(node)
+    applyTransform(node.name, listOf(transformer), transformNode)
+
+    val writer = ClassWriter(COMPUTE_MAXS or COMPUTE_FRAMES)
+    node.accept(writer)
+
+    val cl = RawByteClassLoader(TEST_CLASS_NAME, writer.toByteArray())
+    return cl.loadClass(TEST_CLASS_NAME)
 }
 
 class RawByteClassLoader(private val className: String, private val data: ByteArray) : ClassLoader() {

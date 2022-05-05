@@ -97,7 +97,7 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
         .toList()
 }
 
-internal fun readScriptSource(identifier: Identifier, path: Path): SourceCode {
+fun readScriptSource(identifier: Identifier, path: Path): SourceCode {
     LOGGER.debug("Reading source for script $identifier")
     return PathScriptSource(path)
 } 

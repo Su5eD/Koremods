@@ -24,6 +24,7 @@
 
 package wtf.gofancy.koremods.script
 
+import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
@@ -31,14 +32,14 @@ import kotlin.script.experimental.jvm.loadDependencies
 
 internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     jvm {
-        baseClassLoader(FilteredClassLoader())
+        baseClassLoader(FilteredClassLoader(KoremodsBlackboard.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
         loadDependencies(false)
     }
 })
 
 class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
 
-private val RESTRICTIONS: List<String> = listOf(
+private val ALLOWED_CLASSES: List<String> = listOf(
     "codes.som.anthony.koffee.",
     "java.lang.",
     "java.util.",
@@ -50,9 +51,9 @@ private val RESTRICTIONS: List<String> = listOf(
     "wtf.gofancy.koremods.dsl.",
 )
 
-internal class FilteredClassLoader : ClassLoader(Thread.currentThread().contextClassLoader) {
+internal class FilteredClassLoader(parent: ClassLoader?) : ClassLoader(parent) {
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {
-        if (name.contains(".") && RESTRICTIONS.isNotEmpty() && RESTRICTIONS.none(name::startsWith)) 
+        if (name.contains(".") && ALLOWED_CLASSES.isNotEmpty() && ALLOWED_CLASSES.none(name::startsWith)) 
             throw ClassNotAvailableInSandboxException(name)
         
         return super.loadClass(name, resolve)

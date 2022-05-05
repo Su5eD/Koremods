@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList
 import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.script.KOREMODS_SCRIPT_EXTENSION
+import java.io.Serializable
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
@@ -36,7 +37,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.streams.toList
 
-data class Identifier internal constructor(val namespace: String, val name: String) {
+data class Identifier internal constructor(val namespace: String, val name: String) : Serializable {
     override fun toString(): String = "$namespace:$name"
 }
 

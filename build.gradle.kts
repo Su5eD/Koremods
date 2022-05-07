@@ -96,13 +96,13 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
     }
     
-    sharedImplementation(group = "org.ow2.asm", name = "asm", version = asmVersion)
-    sharedImplementation(group = "org.ow2.asm", name = "asm-commons", version = asmVersion)
-    sharedImplementation(group = "org.ow2.asm", name = "asm-tree", version = asmVersion)
-    sharedImplementation(group = "org.ow2.asm", name = "asm-analysis", version = asmVersion)
-    sharedImplementation(group = "org.ow2.asm", name = "asm-util", version = asmVersion)
-    sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1")
-    sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1")
+    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm", version = asmVersion))
+    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-commons", version = asmVersion))
+    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-tree", version = asmVersion))
+    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-analysis", version = asmVersion))
+    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-util", version = asmVersion))
+    mavenDep(sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1"))
+    mavenDep(sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1"))
     sharedImplementation(group = "com.google.guava", name = "guava", version = "21.0")
     sharedImplementation(group = "commons-io", name = "commons-io", version = "2.5")
 

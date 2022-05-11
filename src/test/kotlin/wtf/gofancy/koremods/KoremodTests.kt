@@ -122,17 +122,17 @@ class KoremodTransformationTests {
     }
 }
 
-fun transformClass(transformer: Transformer<ClassNode>): Class<*> {
+internal fun transformClass(transformer: ClassTransformer): Class<*> {
     return transform(transformer) { it }
 }
 
-fun transformMethod(transformer: MethodTransformer): Class<*> {
+internal fun transformMethod(transformer: MethodTransformer): Class<*> {
     return transform(transformer) { node ->
         node.methods.first { it.name == transformer.name && it.desc == transformer.desc }
     }
 }
 
-fun transformField(transformer: FieldTransformer): Class<*> {
+internal fun transformField(transformer: FieldTransformer): Class<*> {
     return transform(transformer) { node ->
         node.fields.first { it.name == transformer.name }
     }

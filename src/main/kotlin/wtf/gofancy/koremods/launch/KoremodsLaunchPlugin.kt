@@ -22,10 +22,13 @@
  * SOFTWARE.
  */
 
-package wtf.gofancy.koremods.api
+package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
 
+/**
+ * Launch plugin example doc
+ */
 interface KoremodsLaunchPlugin {
     fun shouldEnableSplashScreen(): Boolean
     

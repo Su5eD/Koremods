@@ -30,16 +30,12 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.loadDependencies
 
-internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
-    jvm {
-        baseClassLoader(FilteredClassLoader(KoremodsBlackboard.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
-        loadDependencies(false)
-    }
-})
-
-class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
-
-private val ALLOWED_CLASSES: List<String> = listOf(
+/**
+ * A list of fully qualified class names and package prefixes allowed to be classloaded in Koremods Scripts
+ *
+ * @see FilteredClassLoader
+ */
+val ALLOWED_CLASSES: List<String> = listOf(
     "codes.som.koffee.",
     "java.lang.",
     "java.util.",
@@ -51,11 +47,35 @@ private val ALLOWED_CLASSES: List<String> = listOf(
     "wtf.gofancy.koremods.dsl.",
 )
 
-internal class FilteredClassLoader(parent: ClassLoader?) : ClassLoader(parent) {
+internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
+    jvm {
+        baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES, KoremodsBlackboard.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
+        loadDependencies(false)
+    }
+})
+
+/**
+ * Thrown when a disallowed class is attempted to be loaded in a restricted sandbox environment
+ *
+ * @param message the detail message
+ */
+class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
+
+/**
+ * Restricts loading classes to names matching [allowedClasses]. Used to isolate Koremods Script environments.
+ *
+ * @param allowedClasses A list of fully qualified class names and package prefixes allowed to be loaded by this classloader
+ * @param parent the parent class loader for delegation
+ */
+internal class FilteredClassLoader(private val allowedClasses: List<String>, parent: ClassLoader?) : ClassLoader(parent) {
+    
+    /**
+     * @throws [ClassNotAvailableInSandboxException] if an unavailable class is attempted to be loaded
+     */
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {
-        if (name.contains(".") && ALLOWED_CLASSES.isNotEmpty() && ALLOWED_CLASSES.none(name::startsWith)) 
+        if (name.contains(".") && (allowedClasses.isNotEmpty() && allowedClasses.none(name::startsWith)))
             throw ClassNotAvailableInSandboxException(name)
-        
+
         return super.loadClass(name, resolve)
     }
 }

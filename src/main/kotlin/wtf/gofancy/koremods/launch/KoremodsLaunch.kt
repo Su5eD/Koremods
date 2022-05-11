@@ -31,7 +31,6 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.LoggerConfig
 import wtf.gofancy.koremods.EvalLoad
 import wtf.gofancy.koremods.KoremodsLoader
-import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch

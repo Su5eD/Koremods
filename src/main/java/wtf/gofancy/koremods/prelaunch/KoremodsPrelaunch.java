@@ -74,6 +74,12 @@ public class KoremodsPrelaunch {
         this.attributes = this.mainJar.getManifest().getMainAttributes();
     }
 
+    /**
+     * Extracts a file from this class' containing jar to the {@link #depsDir} path
+     * 
+     * @param name the jar entry name
+     * @return URL pointing to the extracted file
+     */
     public URL extractDependency(String name) {
         String depName = this.attributes.getValue("Additional-Dependencies-" + name);
         if (depName == null) throw new IllegalArgumentException("Required dependency " + name + " not found");

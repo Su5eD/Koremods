@@ -1,16 +1,24 @@
 import fr.brouillard.oss.jgitver.GitVersionCalculator
 import fr.brouillard.oss.jgitver.Strategies
+import org.jetbrains.dokka.DokkaConfiguration
+import org.jetbrains.dokka.Platform
+import org.jetbrains.dokka.base.DokkaBase
+import org.jetbrains.dokka.base.DokkaBaseConfiguration
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URL
 import java.util.*
 
 buildscript {
     dependencies {
         classpath(group = "fr.brouillard.oss", name = "jgitver", version = "0.14.0")
+        classpath(group = "org.jetbrains.dokka", name = "dokka-base", version = "1.6.21")
     }
 }
 
 plugins {
     kotlin("jvm")
+    id("org.jetbrains.dokka") version "1.6.21"
     id("com.github.johnrengelman.shadow") version "7.1.+"
     id("org.cadixdev.licenser") version "0.6.+"
     `maven-publish`
@@ -41,15 +49,15 @@ configurations {
     apiElements {
         extendsFrom(mavenRuntime)
     }
-    
+
     splash.compileOnlyConfigurationName {
         extendsFrom(lwjglCompile)
     }
-    
+
     splash.implementationConfigurationName {
         extendsFrom(sharedImplementation)
     }
-    
+
     implementation {
         extendsFrom(shade)
         extendsFrom(sharedImplementation)
@@ -72,6 +80,7 @@ java {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven("https://su5ed.jfrog.io/artifactory/maven")
     maven("https://libraries.minecraft.net")
@@ -85,7 +94,7 @@ dependencies {
     mavenDep(implementation(kotlin("stdlib")))
     mavenDep(implementation(kotlin("stdlib-jdk8")))
     implementation(kotlin("reflect"))
-    
+
     compileOnly(splash.output)
 
     mavenDep(shade(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
@@ -95,7 +104,7 @@ dependencies {
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2") {
         exclude(group = "org.jetbrains.kotlin")
     }
-    
+
     mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm", version = asmVersion))
     mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-commons", version = asmVersion))
     mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-tree", version = asmVersion))
@@ -134,7 +143,7 @@ tasks {
     jar {
         from(splash.output)
     }
-    
+
     named<Jar>("sourcesJar") {
         from(splash.allSource)
     }
@@ -173,6 +182,47 @@ tasks {
         kotlinOptions.jvmTarget = javaVersion
     }
 
+    withType<DokkaTask>() {
+        dokkaSourceSets {
+            moduleName.set("Koremods")
+            
+            named("main") {
+                displayName.set("JVM")
+                jdkVersion.set(javaVersion.toInt())
+                platform.set(Platform.jvm)
+                includes.from("docs/Module.md")
+                suppressInheritedMembers.set(true)
+
+                sourceLink {
+                    localDirectory.set(file("src/main/kotlin"))
+                    remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/kotlin"))
+                    remoteLineSuffix.set("#L")
+                }
+
+                sourceLink {
+                    localDirectory.set(file("src/main/java"))
+                    remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/java"))
+                    remoteLineSuffix.set("#L")
+                }
+
+                documentedVisibilities.set(
+                    setOf(
+                        DokkaConfiguration.Visibility.PUBLIC,
+                        DokkaConfiguration.Visibility.PROTECTED,
+                        DokkaConfiguration.Visibility.INTERNAL,
+                        DokkaConfiguration.Visibility.PACKAGE,
+                    )
+                )
+            }
+        }
+
+        pluginConfiguration<DokkaBase, DokkaBaseConfiguration> { 
+            customStyleSheets = listOf(file("docs/logo-styles.css"))
+            customAssets = listOf(file("docs/logo.png"))
+            templatesDir = file("docs/templates") // TODO Swap base.ftl for source_set_selector.ftl with the next dokka release
+        }
+    }
+    
     withType<Wrapper> {
         gradleVersion = "7.4.2"
         distributionType = Wrapper.DistributionType.BIN

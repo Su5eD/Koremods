@@ -32,12 +32,22 @@ public final class KoremodsBlackboard {
     public static final String NAMESPACE = "koremods";
     public static final String CONFIG_FILE = NAMESPACE + ".conf";
     public static final String CONFIG_FILE_LOCATION = "META-INF/" + CONFIG_FILE;
-    
+
+    /**
+     * Used as the base classloader for Koremods scripts.
+     *
+     * @see wtf.gofancy.koremods.script.KoremodsScriptEvaluationConfiguration
+     */
     public static ClassLoader scriptContextClassLoader;
-    
+
+    /**
+     * @param name the logger name suffix
+     * @return a new {@link org.apache.logging.log4j.Logger} instance with the specified name inside the Koremods logger
+     * group. The output is also wired up to the splash screen, if it's enabled.
+     */
     public static Logger createLogger(String name) {
         return LogManager.getLogger(NAME + "." + name);
     }
-    
+
     private KoremodsBlackboard() {}
 }

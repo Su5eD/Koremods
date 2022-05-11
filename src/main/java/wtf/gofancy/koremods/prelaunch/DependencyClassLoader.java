@@ -37,12 +37,15 @@ public class DependencyClassLoader extends URLClassLoader {
     private static final Set<String> EXCLUSIONS = Set.of(
             "wtf.gofancy.koremods.prelaunch."
     );
-    
-    /**
-     * Classes that are preferably loaded by this classloader. If not found, we'll attempt loading them using the parent CL instead of throwing an exception.
-     */
+
     private final List<String> priorityClasses;
 
+    /**
+     * @param urls            the URLs from which to load classes and resources
+     * @param parent          the parent class loader for delegation
+     * @param priorityClasses a list of fully qualified class names or package prefixes. Matching classes are forced
+     *                        to be loaded by this classloader.
+     */
     public DependencyClassLoader(URL[] urls, ClassLoader parent, List<String> priorityClasses) {
         super(urls, parent);
 
@@ -53,14 +56,14 @@ public class DependencyClassLoader extends URLClassLoader {
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> existing = findLoadedClass(name);
         if (existing != null) return existing;
-        
+
         if (EXCLUSIONS.stream().noneMatch(name::startsWith) && this.priorityClasses.stream().anyMatch(name::startsWith)) {
             return findClass(name);
         }
-        
+
         return loadClassFallback(name, resolve);
     }
-    
+
     protected Class<?> loadClassFallback(String name, boolean resolve) throws ClassNotFoundException {
         return super.loadClass(name, resolve);
     }

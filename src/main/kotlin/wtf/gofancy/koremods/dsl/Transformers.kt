@@ -52,7 +52,7 @@ class DefaultProperty<T : Any>(default: T) {
     }
 }
 
-class TransformerBuilder(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
+class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
     fun `class`(name: String, block: ClassNode.() -> Unit) {
         transformers.add(ClassTransformer(scriptIdentifier, props, name, block))
     }
@@ -70,19 +70,7 @@ class TransformerBuilder(private val scriptIdentifier: Identifier, private val t
     }
 }
 
-class ClassTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
-    override fun visit(node: ClassNode) = block(node)
-}
-
-class MethodTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
-    override fun visit(node: MethodNode) = block(node)
-}
-
-class FieldTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
-    override fun visit(node: FieldNode) = block(node)
-}
-
-class TransformerHandler(private val scriptIdentifier: Identifier) {
+class TransformerHandler internal constructor(private val scriptIdentifier: Identifier) {
     private val transformers = mutableListOf<Transformer<*>>()
     private val props = TransformerPropertiesExtension()
         
@@ -91,4 +79,16 @@ class TransformerHandler(private val scriptIdentifier: Identifier) {
     }
     
     fun getTransformers() = transformers.toList()
+}
+
+internal class ClassTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
+    override fun visit(node: ClassNode) = block(node)
+}
+
+internal class MethodTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
+    override fun visit(node: MethodNode) = block(node)
+}
+
+internal class FieldTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
+    override fun visit(node: FieldNode) = block(node)
 }

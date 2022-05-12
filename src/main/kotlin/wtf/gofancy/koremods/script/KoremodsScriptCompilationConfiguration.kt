@@ -28,6 +28,9 @@ package wtf.gofancy.koremods.script
 
 import kotlin.script.experimental.api.*
 
+/**
+ * A list of import expressions which are implicitly added to Koremods scripts
+ */
 private val DEFAULT_IMPORTS: List<String> = listOf(
     "wtf.gofancy.koremods.dsl.*",
     "org.objectweb.asm.tree.ClassNode",

@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
-import wtf.gofancy.koremods.launch.injectSplashLogger
+import wtf.gofancy.koremods.launch.injectKoremodsLogAppender
 import kotlin.concurrent.thread
 
 private val fakeLog = listOf(
@@ -52,7 +52,7 @@ fun main() {
     val splash = KoremodsSplashScreen(LOG)
     splash.setTerminateOnClose(true)
     splash.startOnThread()
-    injectSplashLogger(LogManager.getContext(false) as LoggerContext, splash::log)
+    injectKoremodsLogAppender(LogManager.getContext(false) as LoggerContext, splash::log)
 
     thread(name = "SplashLog") { 
         var fakeLogIndex = 0

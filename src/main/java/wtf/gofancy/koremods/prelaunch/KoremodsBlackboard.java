@@ -27,6 +27,9 @@ package wtf.gofancy.koremods.prelaunch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Holds shared information constants and Koremods environment variables
+ */
 public final class KoremodsBlackboard {
     public static final String NAME = "Koremods";
     public static final String NAMESPACE = "koremods";

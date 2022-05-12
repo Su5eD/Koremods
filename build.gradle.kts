@@ -101,6 +101,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.ow2.asm")
     })
+    // TODO replace with nightconfig
     shade(group = "io.github.config4k", name = "config4k", version = "0.4.2") {
         exclude(group = "org.jetbrains.kotlin")
     }

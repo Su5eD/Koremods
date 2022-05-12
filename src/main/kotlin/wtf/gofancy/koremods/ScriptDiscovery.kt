@@ -68,7 +68,7 @@ fun scanPath(path: Path, scriptExtension: String = KOREMODS_SCRIPT_EXTENSION): R
     }
 }
 
-private fun readScriptPack(parent: Path, configPath: Path, rootPath: Path, extension: String): RawScriptPack<Path>? {
+internal fun readScriptPack(parent: Path, configPath: Path, rootPath: Path, extension: String): RawScriptPack<Path>? {
     val config: KoremodsPackConfig = configPath.bufferedReader().use(::parseConfig)
     LOGGER.info("Loading scripts for pack ${config.namespace}")
 
@@ -82,7 +82,7 @@ private fun readScriptPack(parent: Path, configPath: Path, rootPath: Path, exten
     return if (scripts.isNotEmpty()) RawScriptPack(config.namespace, parent, scripts) else null
 }
 
-private fun locateScripts(namespace: String, scripts: List<String>, rootPath: Path, scriptExt: String): List<RawScript<Path>> {
+internal fun locateScripts(namespace: String, scripts: List<String>, rootPath: Path, scriptExt: String): List<RawScript<Path>> {
     return scripts
         .map { script ->
             val nameWithExt = script.substringAfterLast('/')

@@ -28,9 +28,16 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.appender.AbstractAppender
+import org.apache.logging.log4j.core.config.Property
 
-@Suppress("DEPRECATION")
-class KoremodsLogAppender(name: String, filter: Filter?, private val callback: (Level, String) -> Unit) : AbstractAppender(name, filter, null, true) {
+/**
+ * Simple log appender delegating append calls to [callback].
+ * 
+ * @param name The Appender name.
+ * @param filter The Filter to associate with the Appender.
+ * @param callback Log event appending callback
+ */
+class KoremodsLogAppender(name: String, filter: Filter?, private val callback: (Level, String) -> Unit) : AbstractAppender(name, filter, null, true, Property.EMPTY_ARRAY) {
     override fun append(event: LogEvent) {
         callback(event.level, event.message.formattedMessage)
     }

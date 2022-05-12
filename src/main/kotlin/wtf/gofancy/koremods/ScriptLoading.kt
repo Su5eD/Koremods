@@ -29,10 +29,8 @@ import wtf.gofancy.koremods.dsl.Transformer
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.script.KOREMODS_SCRIPT_EXTENSION
 import java.io.Serializable
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.streams.toList
@@ -55,16 +53,11 @@ class KoremodsLoader(private val mode: LoaderMode) {
     var scriptPacks: List<KoremodsScriptPack> = emptyList()
         private set
 
-    fun loadKoremods(dir: Path, additionalPaths: Array<URL>) {
+    fun loadKoremods(dir: Path, additionalPaths: Iterable<Path>) {
         val paths = Files.walk(dir, 1)
             .filter { !it.isDirectory() && it.name != dir.name }
             .toList()
-        val additional = additionalPaths
-            .map(URL::toURI)
-            .filter { it.scheme == "file" }
-            .map(Paths::get)
-
-        loadKoremods(paths + additional)
+        loadKoremods(paths + additionalPaths)
     }
 
     fun loadKoremods(paths: Iterable<Path>) {

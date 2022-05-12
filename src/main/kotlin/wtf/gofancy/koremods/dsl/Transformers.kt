@@ -40,7 +40,7 @@ interface Transformer<T> {
 
 class TransformerPropertiesExtension internal constructor()
 
-class DefaultProperty<T : Any>(default: T) {
+class SimpleProperty<T : Any>(default: T) {
     private var value: T? = default
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T {

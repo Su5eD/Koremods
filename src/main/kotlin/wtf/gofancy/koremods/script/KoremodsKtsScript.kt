@@ -42,6 +42,8 @@ const val KOREMODS_SCRIPT_EXTENSION = "core.kts"
  * 
  * @param identifier unique script identifier
  * @param logger dedicated logger usable inside the script
+ * 
+ * @see KotlinScript
  */
 @KotlinScript(
     fileExtension = KOREMODS_SCRIPT_EXTENSION,

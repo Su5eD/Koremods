@@ -1,21 +1,28 @@
+import fr.brouillard.oss.jgitver.GitVersionCalculator
+import fr.brouillard.oss.jgitver.Strategies
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
+buildscript {
+    dependencies {
+        // TODO look for alternatives
+        classpath(group = "fr.brouillard.oss", name = "jgitver", version = "_")
+    }
+}
+
 plugins {
     `maven-publish`
-
     kotlin("jvm")
-
-    id("fr.brouillard.oss.gradle.jgitver") // TODO look for alternatives
     id("com.github.johnrengelman.shadow")
     id("org.cadixdev.licenser")
 }
 
 group = "wtf.gofancy.koremods"
+version = getGitVersion()
 
 project.afterEvaluate {
     // this will work for now to get a tag based version, but we should really look for a different plugin
-    println("version: ${project.version}")
+    println("Version: ${project.version}")
 }
 
 /**
@@ -36,7 +43,7 @@ val splashApi: Configuration by configurations.getting
 val sharedImplementation: Configuration by configurations.creating
 
 /**
- * Adds an api dependency to both source sets (main adn splash).
+ * Adds an api dependency to both source sets (main and splash).
  */
 val sharedApi: Configuration by configurations.creating
 
@@ -51,12 +58,14 @@ configurations {
         extendsFrom(shadeImplementation)
         extendsFrom(sharedImplementation)
     }
+    
     splashImplementation.extendsFrom(sharedImplementation)
 
     api {
         extendsFrom(shadeApi)
         extendsFrom(sharedApi)
     }
+    
     splashApi.extendsFrom(sharedApi)
 
     testImplementation {
@@ -114,7 +123,6 @@ dependencies {
     // lwjgl dependencies
     val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
     val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
-
     val platform = platform("org.lwjgl:lwjgl-bom:_")
 
     splashCompileOnly(platform)
@@ -154,7 +162,6 @@ tasks {
         val relocatedPackages = sequenceOf("com.typesafe.config", "io.github.config4k")
 
         dependsOn("classes")
-
         configurations = listOf(shadeImplementation, shadeApi)
         from(splash.output)
         exclude("META-INF/versions/**")
@@ -233,4 +240,12 @@ publishing {
             }
         }
     }
+}
+
+fun getGitVersion(): String {
+    val jgitver = GitVersionCalculator.location(rootDir)
+        .setNonQualifierBranches("master")
+        .setStrategy(Strategies.SCRIPT)
+        .setScript("print \"\${metadata.CURRENT_VERSION_MAJOR};\${metadata.CURRENT_VERSION_MINOR};\${metadata.CURRENT_VERSION_PATCH + metadata.COMMIT_DISTANCE}\"")
+    return jgitver.version
 }

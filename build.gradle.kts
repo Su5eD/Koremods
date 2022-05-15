@@ -1,23 +1,22 @@
-import fr.brouillard.oss.jgitver.GitVersionCalculator
-import fr.brouillard.oss.jgitver.Strategies
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
-buildscript {
-    dependencies {
-        classpath(group = "fr.brouillard.oss", name = "jgitver", version = "0.14.0")
-    }
-}
-
 plugins {
-    kotlin("jvm")
+    `maven-publish`
+
+    kotlin("jvm") version "1.6.10"
+
+    id("fr.brouillard.oss.gradle.jgitver") version "0.10.+" // TODO look for alternatives
     id("com.github.johnrengelman.shadow") version "7.1.+"
     id("org.cadixdev.licenser") version "0.6.+"
-    `maven-publish`
 }
 
 group = "wtf.gofancy.koremods"
-version = getGitVersion()
+
+project.afterEvaluate {
+    // this will work for now to get a tag based version, but we should really look for a different plugin
+    println("version: ${project.version}")
+}
 
 val relocatePackagePath: String by project
 val relocatedPackages = sequenceOf("com.typesafe.config", "io.github.config4k")
@@ -29,39 +28,50 @@ val lwjglVersion: String by project
 val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
 val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
 
+/**
+ * This source set contains the splash screen which gets shown during start up.
+ *
+ * In particular this source set requires several lwjgl dependencies which are not needed by the main source set.
+ */
 val splash: SourceSet by sourceSets.creating
-val lwjglCompile: Configuration by configurations.creating
-val lwjglRuntime: Configuration by configurations.creating
 
-val shade: Configuration by configurations.creating
+// create references to the splash configurations, so we can add dependencies directly to them
+val splashCompileOnly: Configuration by configurations.getting
+val splashImplementation: Configuration by configurations.getting
+val splashApi: Configuration by configurations.getting
+
+/**
+ * Adds an implementation dependency to both source sets (main and splash).
+ */
 val sharedImplementation: Configuration by configurations.creating
-val mavenRuntime: Configuration by configurations.creating
+
+/**
+ * Adds an api dependency to both source sets (main adn splash).
+ */
+val sharedApi: Configuration by configurations.creating
+
+/**
+ * Dependencies in this configuration will be shaded into the final jar.
+ */
+val shadeImplementation: Configuration by configurations.creating
+val shadeApi: Configuration by configurations.creating
 
 configurations {
-    apiElements {
-        extendsFrom(mavenRuntime)
-    }
-    
-    splash.compileOnlyConfigurationName {
-        extendsFrom(lwjglCompile)
-    }
-    
-    splash.implementationConfigurationName {
-        extendsFrom(sharedImplementation)
-    }
-    
     implementation {
-        extendsFrom(shade)
+        extendsFrom(shadeImplementation)
         extendsFrom(sharedImplementation)
     }
+    splashImplementation.extendsFrom(sharedImplementation)
+
+    api {
+        extendsFrom(shadeApi)
+        extendsFrom(sharedApi)
+    }
+    splashApi.extendsFrom(sharedApi)
 
     testImplementation {
         extendsFrom(compileOnly.get())
-        extendsFrom(lwjglCompile)
-    }
-
-    testRuntimeOnly {
-        extendsFrom(lwjglRuntime)
+        extendsFrom(splashCompileOnly)
     }
 }
 
@@ -78,41 +88,47 @@ repositories {
 }
 
 dependencies {
+    // need these in API so that IntelliJ's syntax highlighting works in scripts
+    api(kotlin("stdlib"))
+    api(kotlin("stdlib-jdk8"))
+    api(kotlin("scripting-jvm"))
+    api(kotlin("scripting-jvm-host"))
+
+    implementation(kotlin("reflect"))
     implementation(kotlin("scripting-common"))
     implementation(kotlin("scripting-compiler-embeddable"))
-    mavenDep(implementation(kotlin("scripting-jvm")))
-    mavenDep(implementation(kotlin("scripting-jvm-host")))
-    mavenDep(implementation(kotlin("stdlib")))
-    mavenDep(implementation(kotlin("stdlib-jdk8")))
-    implementation(kotlin("reflect"))
-    
+
     compileOnly(splash.output)
 
-    mavenDep(shade(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
+    shadeApi(group = "dev.su5ed", name = "koffee", version = "8.1.5") {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.ow2.asm")
-    })
-    shade(group = "io.github.config4k", name = "config4k", version = "0.4.2") {
+    }
+    shadeImplementation(group = "io.github.config4k", name = "config4k", version = "0.4.2") {
         exclude(group = "org.jetbrains.kotlin")
     }
-    
-    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm", version = asmVersion))
-    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-commons", version = asmVersion))
-    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-tree", version = asmVersion))
-    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-analysis", version = asmVersion))
-    mavenDep(sharedImplementation(group = "org.ow2.asm", name = "asm-util", version = asmVersion))
-    mavenDep(sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1"))
-    mavenDep(sharedImplementation(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1"))
+
+    // need to be available in the script
+    api(group = "org.ow2.asm", name = "asm", version = asmVersion)
+    api(group = "org.ow2.asm", name = "asm-commons", version = asmVersion)
+    api(group = "org.ow2.asm", name = "asm-tree", version = asmVersion)
+    api(group = "org.ow2.asm", name = "asm-analysis", version = asmVersion)
+    api(group = "org.ow2.asm", name = "asm-util", version = asmVersion)
+    sharedApi(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.17.1")
+    sharedApi(group = "org.apache.logging.log4j", name = "log4j-core", version = "2.17.1")
+
     sharedImplementation(group = "com.google.guava", name = "guava", version = "21.0")
     sharedImplementation(group = "commons-io", name = "commons-io", version = "2.5")
 
+    // lwjgl dependencies
     val platform = platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-    lwjglCompile(platform)
-    lwjglRuntime(platform)
+
+    splashCompileOnly(platform)
+    testRuntimeOnly(platform)
 
     lwjglComponents.forEach { comp ->
-        lwjglCompile("org.lwjgl", comp)
-        lwjglNatives.forEach { os -> lwjglRuntime("org.lwjgl", comp, classifier = os) }
+        splashCompileOnly("org.lwjgl", comp)
+        lwjglNatives.forEach { os -> testRuntimeOnly("org.lwjgl", comp, classifier = os) }
     }
 
     testImplementation(kotlin("test"))
@@ -142,7 +158,7 @@ tasks {
     shadowJar {
         dependsOn("classes")
 
-        configurations = listOf(shade)
+        configurations = listOf(shadeImplementation, shadeApi)
         from(splash.output)
         exclude("META-INF/versions/**")
         relocatedPackages.forEach { relocate(it, "$relocatePackagePath.$it") }
@@ -220,16 +236,4 @@ publishing {
             }
         }
     }
-}
-
-fun mavenDep(dep: Dependency?) {
-    if (dep != null) mavenRuntime.dependencies.add(dep)
-}
-
-fun getGitVersion(): String {
-    val jgitver = GitVersionCalculator.location(rootDir)
-        .setNonQualifierBranches("master")
-        .setStrategy(Strategies.SCRIPT)
-        .setScript("print \"\${metadata.CURRENT_VERSION_MAJOR};\${metadata.CURRENT_VERSION_MINOR};\${metadata.CURRENT_VERSION_PATCH + metadata.COMMIT_DISTANCE}\"")
-    return jgitver.version
 }

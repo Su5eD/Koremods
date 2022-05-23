@@ -212,7 +212,7 @@ publishing {
         
         if (mavenUser != null && mavenToken != null) {
             maven {
-                name = "Garden of Fancy"
+                name = "gofancy"
                 url = uri("https://maven.gofancy.wtf/releases")
 
                 credentials(HttpHeaderCredentials::class) {

@@ -207,35 +207,20 @@ publishing {
     }
 
     repositories {
-        val ciJobToken = System.getenv("CI_JOB_TOKEN")
-        val deployToken = project.findProperty("DEPLOY_TOKEN") as String?
-        if (ciJobToken != null || deployToken != null) {
+        val mavenUser = System.getenv("GOFANCY_MAVEN_USER")
+        val mavenToken = System.getenv("GOFANCY_MAVEN_TOKEN")
+        
+        if (mavenUser != null && mavenToken != null) {
             maven {
-                name = "GitLab"
-                url = uri("https://gitlab.com/api/v4/projects/32090420/packages/maven")
+                name = "Garden of Fancy"
+                url = uri("https://maven.gofancy.wtf/releases")
 
                 credentials(HttpHeaderCredentials::class) {
-                    if (ciJobToken != null) {
-                        name = "Job-Token"
-                        value = ciJobToken
-                    } else {
-                        name = "Deploy-Token"
-                        value = deployToken
-                    }
+                    name = mavenUser
+                    value = mavenToken
                 }
                 authentication {
                     create("header", HttpHeaderAuthentication::class)
-                }
-            }
-        }
-
-        if (project.hasProperty("artifactoryPassword")) {
-            maven {
-                name = "artifactory"
-                url = uri("https://su5ed.jfrog.io/artifactory/maven")
-                credentials {
-                    username = project.properties["artifactoryUser"] as String
-                    password = project.properties["artifactoryPassword"] as String
                 }
             }
         }

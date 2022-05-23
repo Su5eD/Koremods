@@ -215,12 +215,9 @@ publishing {
                 name = "gofancy"
                 url = uri("https://maven.gofancy.wtf/releases")
 
-                credentials(HttpHeaderCredentials::class) {
-                    name = mavenUser
-                    value = mavenToken
-                }
-                authentication {
-                    create("header", HttpHeaderAuthentication::class)
+                credentials {
+                    username = mavenUser
+                    password = mavenToken
                 }
             }
         }

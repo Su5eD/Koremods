@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import codes.som.anthony.koffee.koffee
+import codes.som.koffee.koffee
 
 transformers { 
     `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)

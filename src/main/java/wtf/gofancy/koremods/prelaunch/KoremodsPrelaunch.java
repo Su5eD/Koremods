@@ -40,7 +40,7 @@ import java.util.zip.ZipEntry;
 public class KoremodsPrelaunch {
     private static final Logger LOGGER = KoremodsBlackboard.createLogger("Prelaunch");
     public static final List<String> KOTLIN_DEP_PACKAGES = Arrays.asList(
-            "codes.som.anthony.koffee.",
+            "codes.som.koffee.",
             "gnu.trove.",
             "io.github.config4k.",
             "javaslang.",

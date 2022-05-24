@@ -40,7 +40,7 @@ internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfigura
 class ClassNotAvailableInSandboxException(message: String) : RuntimeException(message)
 
 private val ALLOWED_CLASSES: List<String> = listOf(
-    "codes.som.anthony.koffee.",
+    "codes.som.koffee.",
     "java.lang.",
     "java.util.",
     "kotlin.",

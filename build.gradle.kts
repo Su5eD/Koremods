@@ -82,8 +82,14 @@ java {
 
 repositories {
     mavenCentral()
-    maven("https://su5ed.jfrog.io/artifactory/maven")
-    maven("https://libraries.minecraft.net")
+    maven {
+        name = "Garden of Fancy"
+        url = uri("https://maven.gofancy.wtf/releases")
+    }
+    maven {
+        name = "Minecraft"
+        url = uri("https://libraries.minecraft.net")
+    }
 }
 
 dependencies {

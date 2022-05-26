@@ -1,18 +1,26 @@
 import fr.brouillard.oss.jgitver.GitVersionCalculator
 import fr.brouillard.oss.jgitver.Strategies
+import org.jetbrains.dokka.DokkaConfiguration
+import org.jetbrains.dokka.Platform
+import org.jetbrains.dokka.base.DokkaBase
+import org.jetbrains.dokka.base.DokkaBaseConfiguration
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URL
 import java.util.*
 
 buildscript {
     dependencies {
         // TODO look for alternatives
         classpath(group = "fr.brouillard.oss", name = "jgitver", version = "_")
+        classpath(group = "org.jetbrains.dokka", name = "dokka-base", version = "_")
     }
 }
 
 plugins {
     `maven-publish`
     kotlin("jvm")
+    id("org.jetbrains.dokka")
     id("com.github.johnrengelman.shadow")
     id("org.cadixdev.licenser")
 }
@@ -199,6 +207,47 @@ tasks {
         kotlinOptions.jvmTarget = "11"
     }
 
+    withType<DokkaTask>() {
+        dokkaSourceSets {
+            moduleName.set("Koremods")
+            
+            named("main") {
+                displayName.set("JVM")
+                jdkVersion.set(java.toolchain.languageVersion.map(JavaLanguageVersion::asInt))
+                platform.set(Platform.jvm)
+                includes.from("docs/Module.md")
+                suppressInheritedMembers.set(true)
+
+                sourceLink {
+                    localDirectory.set(file("src/main/kotlin"))
+                    remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/kotlin"))
+                    remoteLineSuffix.set("#L")
+                }
+
+                sourceLink {
+                    localDirectory.set(file("src/main/java"))
+                    remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/java"))
+                    remoteLineSuffix.set("#L")
+                }
+
+                documentedVisibilities.set(
+                    setOf(
+                        DokkaConfiguration.Visibility.PUBLIC,
+                        DokkaConfiguration.Visibility.PROTECTED,
+                        DokkaConfiguration.Visibility.INTERNAL,
+                        DokkaConfiguration.Visibility.PACKAGE,
+                    )
+                )
+            }
+        }
+
+        pluginConfiguration<DokkaBase, DokkaBaseConfiguration> { 
+            customStyleSheets = listOf(file("docs/logo-styles.css"))
+            customAssets = listOf(file("docs/logo.png"))
+            templatesDir = file("docs/templates") // TODO Swap base.ftl for source_set_selector.ftl with the next dokka release
+        }
+    }
+    
     withType<Wrapper> {
         gradleVersion = "7.4.2"
         distributionType = Wrapper.DistributionType.BIN

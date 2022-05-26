@@ -63,10 +63,8 @@ private fun evalTransformers(identifier: Identifier, script: CompiledScript): Tr
         val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
         evalTransformers(identifier, script, engineLogger)
     }
-    if (handler.getTransformers().isEmpty()) {
-        throw RuntimeException("Script $identifier does not define any transformers")
-    }
-    return handler
+    return if (handler.getTransformers().isNotEmpty()) handler 
+    else throw RuntimeException("Script $identifier does not define any transformers")
 }
 
 fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Logger): TransformerHandler {

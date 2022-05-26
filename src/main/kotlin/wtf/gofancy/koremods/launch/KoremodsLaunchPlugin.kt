@@ -22,12 +22,33 @@
  * SOFTWARE.
  */
 
-package wtf.gofancy.koremods.api
+package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
+import java.nio.file.Path
 
+/**
+ * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch] 
+ */
 interface KoremodsLaunchPlugin {
-    fun shouldEnableSplashScreen(): Boolean
     
+    val configDir: Path
+
+    val discoveryDir: Path?
+
+    /**
+     * Whether the Koremods Splash screen is available in the current environment.
+     * Does NOT toggle the state of the screen, that is done by [wtf.gofancy.koremods.KoremodsConfig.enableSplashScreen]
+     */
+    val splashScreenAvailable: Boolean
+
+    /**
+     * Fallback logger appender callback used for [KoremodsLogAppender] when the splash screen is disabled/not avaiable.
+     * 
+     * @param level The logging Level
+     * @param message the message string to be logger
+     * 
+     * @see wtf.gofancy.koremods.prelaunch.KoremodsBlackboard.createLogger
+     */
     fun appendLogMessage(level: Level, message: String)
 }

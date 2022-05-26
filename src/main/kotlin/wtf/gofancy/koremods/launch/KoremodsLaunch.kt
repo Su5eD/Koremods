@@ -29,58 +29,76 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.LoggerConfig
-import wtf.gofancy.koremods.EvalLoad
 import wtf.gofancy.koremods.KoremodsLoader
-import wtf.gofancy.koremods.api.KoremodsLaunchPlugin
+import wtf.gofancy.koremods.LoaderMode
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
 import wtf.gofancy.koremods.splash.KoremodsSplashScreen
-import java.net.URL
+import java.nio.file.Path
 import kotlin.io.path.div
 
+/**
+ * Koremods launch entrypoint, used by frontends to initialize the Koremods discovery & loading process
+ */
 @Suppress("unused")
 object KoremodsLaunch {
-    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
+    /**
+     * `KoremodsLoader` instance created by [launch].
+     * Upon success, loaded script packs will be accessible by frontends by this property.
+     * 
+     * @see KoremodsLoader
+     */
     lateinit var LOADER: KoremodsLoader
         private set
+    
+    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
 
-    fun launch(prelaunch: KoremodsPrelaunch, discoveryUrls: Array<URL>, launchPlugin: KoremodsLaunchPlugin?) {
+    /**
+     * Configures the Koremods scripting environment and initializes the loading process.
+     * A splash screen is created if it's enabled in the [config][wtf.gofancy.koremods.KoremodsConfig]
+     * and compatible with the current environment.
+     *
+     * @param loaderMode the LoaderMode to use with the [LOADER] instance
+     * @param launchPlugin the launch plugin
+     * @param discoveryPaths paths to search for Koremods script packs
+     */
+    fun launch(loaderMode: LoaderMode, launchPlugin: KoremodsLaunchPlugin, discoveryPaths: Iterable<Path>) {
         LOGGER.info("Launching Koremods instance")
 
         KoremodsBlackboard.scriptContextClassLoader = javaClass.classLoader
 
-        val configPath = prelaunch.configDir / KoremodsBlackboard.CONFIG_FILE
+        val configPath = launchPlugin.configDir / KoremodsBlackboard.CONFIG_FILE
         val config = parseMainConfig(configPath)
-        var splash: KoremodsSplashScreen? = null
+        val splash: KoremodsSplashScreen?
         val contexts = mutableSetOf(
             getLoggerContext(KoremodsPrelaunch::class.java.classLoader),
             getLoggerContext(KoremodsBlackboard.scriptContextClassLoader),
         )
 
-        if (launchPlugin != null) {
-            LOGGER.debug("Found launch plugin: ${launchPlugin.javaClass.name}")
-            
-            val callback: (Level, String) -> Unit
-            val os = System.getProperty("os.name").lowercase()
+        LOGGER.info("Found launch plugin: ${launchPlugin.javaClass.name}")
+        val callback: (Level, String) -> Unit
+        val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
 
-            if (config.enableSplashScreen && launchPlugin.shouldEnableSplashScreen() && !os.contains("mac")) {
-                LOGGER.info("Creating splash screen")
-                splash = createSplashScreen()
-                callback = splash::log
+        if (config.enableSplashScreen && launchPlugin.splashScreenAvailable && !isMacOS) {
+            LOGGER.info("Creating splash screen")
+            splash = createSplashScreen()
+            callback = splash::log
 
-                contexts.add(getLoggerContext(splash.javaClass.classLoader))
-            } else {
-                callback = launchPlugin::appendLogMessage
-            }
-
-            LOGGER.debug("Injecting splash screen log appenders")
-            contexts.forEach { ctx -> injectSplashLogger(ctx, callback) }
+            contexts.add(getLoggerContext(splash.javaClass.classLoader))
+            splash.startOnThread()
+        } else {
+            splash = null
+            callback = launchPlugin::appendLogMessage
         }
 
+        LOGGER.debug("Injecting splash screen log appenders")
+        contexts.forEach { ctx -> injectKoremodsLogAppender(ctx, callback) }
+
         try {
-            LOADER = KoremodsLoader(EvalLoad).apply {
-                loadKoremods(prelaunch.modsDir, discoveryUrls)
+            LOADER = KoremodsLoader(loaderMode).apply {
+                if (launchPlugin.discoveryDir != null) loadKoremods(launchPlugin.discoveryDir!!, discoveryPaths)
+                else loadKoremods(discoveryPaths)
             }
 
             LOGGER.info("Discovering Koremods finished successfully")
@@ -93,16 +111,16 @@ object KoremodsLaunch {
     }
 }
 
-private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
-    return LogManager.getContext(classLoader, false) as LoggerContext
-}
-
-private fun createSplashScreen(): KoremodsSplashScreen {
-    val logger = KoremodsBlackboard.createLogger("Splash")
-    return KoremodsSplashScreen(logger).apply(KoremodsSplashScreen::startOnThread)
-}
-
-internal fun injectSplashLogger(context: LoggerContext, callback: (Level, String) -> Unit) {
+/**
+ * Injects a new [KoremodsLogAppender] to the specified [context], delegating all
+ * append calls to the [callback] function
+ *
+ * @param context The logger context to inject into
+ * @param callback Log appender callback
+ *
+ * @see KoremodsLogAppender
+ */
+internal fun injectKoremodsLogAppender(context: LoggerContext, callback: (Level, String) -> Unit) {
     val config = context.configuration
 
     val appender = KoremodsLogAppender("KoremodsAppender", null, callback)
@@ -117,4 +135,13 @@ internal fun injectSplashLogger(context: LoggerContext, callback: (Level, String
     config.addLogger(KoremodsBlackboard.NAME, loggerConfig)
 
     context.updateLoggers()
+}
+
+private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
+    return LogManager.getContext(classLoader, false) as LoggerContext
+}
+
+private fun createSplashScreen(): KoremodsSplashScreen {
+    val logger = KoremodsBlackboard.createLogger("Splash")
+    return KoremodsSplashScreen(logger)
 }

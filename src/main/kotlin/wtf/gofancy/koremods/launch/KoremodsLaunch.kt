@@ -33,7 +33,6 @@ import wtf.gofancy.koremods.KoremodsLoader
 import wtf.gofancy.koremods.LoaderMode
 import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
-import wtf.gofancy.koremods.prelaunch.KoremodsPrelaunch
 import wtf.gofancy.koremods.splash.KoremodsSplashScreen
 import java.nio.file.Path
 import kotlin.io.path.div
@@ -61,18 +60,20 @@ object KoremodsLaunch {
      *
      * @param loaderMode the LoaderMode to use with the [LOADER] instance
      * @param launchPlugin the launch plugin
-     * @param discoveryPaths paths to search for Koremods script packs
+     * @param configDir path to the directory containing the main koremods config file
+     * @param discoveryDir optional directory containing koremods script packs
+     * @param discoveryPaths additional paths to search for Koremods script packs
      */
-    fun launch(loaderMode: LoaderMode, launchPlugin: KoremodsLaunchPlugin, discoveryPaths: Iterable<Path>) {
+    fun launch(loaderMode: LoaderMode, launchPlugin: KoremodsLaunchPlugin, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
         LOGGER.info("Launching Koremods instance")
 
         KoremodsBlackboard.scriptContextClassLoader = javaClass.classLoader
 
-        val configPath = launchPlugin.configDir / KoremodsBlackboard.CONFIG_FILE
+        val configPath = configDir / KoremodsBlackboard.CONFIG_FILE
         val config = parseMainConfig(configPath)
         val splash: KoremodsSplashScreen?
         val contexts = mutableSetOf(
-            getLoggerContext(KoremodsPrelaunch::class.java.classLoader),
+            getLoggerContext(Thread.currentThread().contextClassLoader),
             getLoggerContext(KoremodsBlackboard.scriptContextClassLoader),
         )
 
@@ -97,7 +98,7 @@ object KoremodsLaunch {
 
         try {
             LOADER = KoremodsLoader(loaderMode).apply {
-                if (launchPlugin.discoveryDir != null) loadKoremods(launchPlugin.discoveryDir!!, discoveryPaths)
+                if (discoveryDir != null) loadKoremods(discoveryDir, discoveryPaths)
                 else loadKoremods(discoveryPaths)
             }
 

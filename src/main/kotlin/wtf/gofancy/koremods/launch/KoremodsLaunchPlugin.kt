@@ -25,16 +25,11 @@
 package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
-import java.nio.file.Path
 
 /**
  * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch] 
  */
 interface KoremodsLaunchPlugin {
-    
-    val configDir: Path
-
-    val discoveryDir: Path?
 
     /**
      * Whether the Koremods Splash screen is available in the current environment.

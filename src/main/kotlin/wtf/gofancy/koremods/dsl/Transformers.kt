@@ -81,14 +81,14 @@ class TransformerHandler internal constructor(private val scriptIdentifier: Iden
     fun getTransformers() = transformers.toList()
 }
 
-internal class ClassTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
+class ClassTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
     override fun visit(node: ClassNode) = block(node)
 }
 
-internal class MethodTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
+class MethodTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
     override fun visit(node: MethodNode) = block(node)
 }
 
-internal class FieldTransformer(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
+class FieldTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
     override fun visit(node: FieldNode) = block(node)
 }

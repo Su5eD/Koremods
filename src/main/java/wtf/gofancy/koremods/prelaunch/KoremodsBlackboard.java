@@ -33,6 +33,7 @@ import org.apache.logging.log4j.Logger;
 public final class KoremodsBlackboard {
     public static final String NAME = "Koremods";
     public static final String NAMESPACE = "koremods";
+    public static final String LOGGER_GROUP = "wtf.gofancy.koremods";
     public static final String CONFIG_FILE = NAMESPACE + ".conf";
     public static final String CONFIG_FILE_LOCATION = "META-INF/" + CONFIG_FILE;
 
@@ -49,7 +50,7 @@ public final class KoremodsBlackboard {
      * group. The output is also wired up to the splash screen, if it's enabled.
      */
     public static Logger createLogger(String name) {
-        return LogManager.getLogger(NAME + "." + name);
+        return LogManager.getLogger(LOGGER_GROUP + "." + name);
     }
 
     private KoremodsBlackboard() {}

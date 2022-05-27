@@ -133,7 +133,7 @@ internal fun injectKoremodsLogAppender(context: LoggerContext, callback: (Level,
         "true", emptyArray(), null, config, null
     )
     loggerConfig.addAppender(appender, Level.ALL, null)
-    config.addLogger(KoremodsBlackboard.NAME, loggerConfig)
+    config.addLogger(KoremodsBlackboard.LOGGER_GROUP, loggerConfig)
 
     context.updateLoggers()
 }

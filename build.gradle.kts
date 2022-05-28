@@ -66,14 +66,14 @@ configurations {
         extendsFrom(shadeImplementation)
         extendsFrom(sharedImplementation)
     }
-    
+
     splashImplementation.extendsFrom(sharedImplementation)
 
     api {
         extendsFrom(shadeApi)
         extendsFrom(sharedApi)
     }
-    
+
     splashApi.extendsFrom(sharedApi)
 
     testImplementation {
@@ -166,7 +166,7 @@ tasks {
     jar {
         from(splash.output)
     }
-    
+
     named<Jar>("sourcesJar") {
         from(splash.allSource)
     }
@@ -210,7 +210,7 @@ tasks {
     withType<DokkaTask>() {
         dokkaSourceSets {
             moduleName.set("Koremods")
-            
+
             named("main") {
                 displayName.set("JVM")
                 jdkVersion.set(java.toolchain.languageVersion.map(JavaLanguageVersion::asInt))
@@ -241,13 +241,13 @@ tasks {
             }
         }
 
-        pluginConfiguration<DokkaBase, DokkaBaseConfiguration> { 
+        pluginConfiguration<DokkaBase, DokkaBaseConfiguration> {
             customStyleSheets = listOf(file("docs/logo-styles.css"))
             customAssets = listOf(file("docs/logo.png"))
             templatesDir = file("docs/templates") // TODO Swap base.ftl for source_set_selector.ftl with the next dokka release
         }
     }
-    
+
     withType<Wrapper> {
         gradleVersion = "7.4.2"
         distributionType = Wrapper.DistributionType.BIN
@@ -256,7 +256,7 @@ tasks {
 
 publishing {
     publications {
-        create<MavenPublication>(project.name) {
+        create<MavenPublication>("java") {
             from(components["java"])
         }
     }
@@ -264,11 +264,21 @@ publishing {
     repositories {
         val mavenUser = System.getenv("GOFANCY_MAVEN_USER")
         val mavenToken = System.getenv("GOFANCY_MAVEN_TOKEN")
-        
+
         if (mavenUser != null && mavenToken != null) {
             maven {
-                name = "gofancy"
+                name = "gofancyReleases"
                 url = uri("https://maven.gofancy.wtf/releases")
+
+                credentials {
+                    username = mavenUser
+                    password = mavenToken
+                }
+            }
+
+            maven {
+                name = "gofancySnapshots"
+                url = uri("https://maven.gofancy.wtf/snapshots")
 
                 credentials {
                     username = mavenUser

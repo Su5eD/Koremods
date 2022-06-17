@@ -45,7 +45,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
-private val SCRIPT_DEPS = setOf("asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util", "koffee")
+private val SCRIPT_DEPS = setOf("asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util", "koffee", "log4j-api", "log4j-core")
 private const val TEST_CLASS_NAME = "wtf.gofancy.koremods.transform.Person"
 
 class KoremodTransformationTests {
@@ -67,6 +67,15 @@ class KoremodTransformationTests {
     @Test
     fun testClassTransformer() {
         val transformer = getFirstTransformer("transformClass", ClassTransformer::class.java)
+
+        val cls = transformClass(transformer)
+        val fooBar = assertDoesNotThrow { cls.getDeclaredField("fooBar") }
+        assertEquals(String::class.java, fooBar.type)
+    }
+
+    @Test
+    fun testImportedClassTransformer() {
+        val transformer = getFirstTransformer("transformClassImported", ClassTransformer::class.java)
 
         val cls = transformClass(transformer)
         val fooBar = assertDoesNotThrow { cls.getDeclaredField("fooBar") }
@@ -114,7 +123,7 @@ class KoremodTransformationTests {
         val source = readScriptSource(identifier, path)
         val script = RawScript(identifier, source)
 
-        val compiled = compileScriptResult(script, scriptLibraries)
+        val compiled = script.compileScriptResult(scriptLibraries)
         val handler = evalTransformers(script.identifier, compiled, logger)
         return handler.getTransformers()
             .filterIsInstance(cls)

@@ -22,21 +22,24 @@
  * SOFTWARE.
  */
 
-@file:Suppress("DEPRECATION")
-
 package wtf.gofancy.koremods.script
 
+import java.io.File
 import kotlin.script.experimental.api.*
+import kotlin.script.experimental.host.FileBasedScriptSource
+import kotlin.script.experimental.host.FileScriptSource
+import kotlin.script.experimental.util.filterByAnnotationType
 
 /**
  * A list of import expressions which are implicitly added to Koremods scripts
  */
 private val DEFAULT_IMPORTS: List<String> = listOf(
+    "wtf.gofancy.koremods.script.ImportScript",
     "wtf.gofancy.koremods.dsl.*",
     "org.objectweb.asm.tree.ClassNode",
     "org.objectweb.asm.tree.MethodNode",
     "org.objectweb.asm.tree.FieldNode",
-    "org.objectweb.asm.Opcodes.*",
+    "org.objectweb.asm.Opcodes.*"
 )
 
 internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfiguration({
@@ -44,4 +47,42 @@ internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfigu
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
+    refineConfiguration {
+        onAnnotations(ImportScript::class, handler = KoremodsScriptConfigurator)
+    }
 })
+
+object KoremodsScriptConfigurator : RefineScriptCompilationConfigurationHandler {
+    override operator fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
+        val diagnostics = mutableListOf<ScriptDiagnostic>()
+        val annotations = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)
+            ?.takeIf(List<*>::isNotEmpty)
+            ?: return context.compilationConfiguration.asSuccess()
+
+        val scriptDir = (context.script as? FileBasedScriptSource)?.file?.parentFile
+        val importedSources = mutableMapOf<String, Pair<File, String>>()
+        annotations
+            .filterByAnnotationType<ImportScript>()
+            .forEach { scriptAnnotation ->
+                scriptAnnotation.annotation.paths.forEach { sourceName ->
+                    val file = (scriptDir?.resolve(sourceName) ?: File(sourceName)).normalize()
+                    val prevImport = importedSources.put(file.absolutePath, file to sourceName)
+                    if (prevImport != null) {
+                        diagnostics.add(
+                            ScriptDiagnostic(
+                                ScriptDiagnostic.unspecifiedError, "Duplicate imports: \"${prevImport.second}\" and \"$sourceName\"",
+                                sourcePath = context.script.locationId, location = scriptAnnotation.location?.locationInText
+                            )
+                        )
+                    }
+                }
+            }
+        
+        return if (diagnostics.isNotEmpty()) ResultWithDiagnostics.Failure(diagnostics)
+        else context.compilationConfiguration.with {
+            if (importedSources.isNotEmpty()) {
+                importScripts.append(importedSources.values.map { FileScriptSource(it.first) })
+            }
+        }.asSuccess()
+    }
+}

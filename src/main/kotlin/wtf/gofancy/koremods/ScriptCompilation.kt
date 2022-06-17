@@ -28,13 +28,17 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
+import java.io.File
 import java.io.Serializable
 import java.net.URL
+import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.extension
+import kotlin.io.path.pathString
 import kotlin.io.path.readText
 import kotlin.script.experimental.api.*
+import kotlin.script.experimental.host.FileScriptSource
 import kotlin.script.experimental.impl.internalScriptingRunSuspend
 import kotlin.script.experimental.jvm.dependenciesFromCurrentContext
 import kotlin.script.experimental.jvm.jvm
@@ -48,15 +52,15 @@ internal fun compileScriptPacks(packs: Collection<RawScriptPack<SourceCode>>, li
 
     return packs.map { pack ->
         val compiledScripts = pack.scripts.map compile@{ script ->
-            val compiled = compileScriptResult(script, libraries)
+            val compiled = script.compileScriptResult(libraries)
             return@compile RawScript(script.identifier, compiled)
         }
         return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
     }
 }
 
-fun compileScriptResult(script: RawScript<SourceCode>, libraries: Array<out String>): CompiledScript { // TODO RawScript instance method?
-    return compileScriptResult(script.identifier, script.source) {
+fun RawScript<SourceCode>.compileScriptResult(libraries: Array<out String>): CompiledScript {
+    return compileScriptResult(identifier, source) {
         jvm {
             dependenciesFromCurrentContext(libraries = libraries)
         }
@@ -99,7 +103,8 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
 
 fun readScriptSource(identifier: Identifier, path: Path): SourceCode {
     LOGGER.debug("Reading source for script $identifier")
-    return PathScriptSource(path)
+    return if (path.fileSystem == FileSystems.getDefault()) FileScriptSource(File(path.pathString))
+    else PathScriptSource(path)
 } 
 
 internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<CompiledScript>> {
@@ -120,7 +125,7 @@ internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<R
         .toList()
 }
 
-open class PathScriptSource(private val path: Path) : ExternalSourceCode, Serializable {
+class PathScriptSource(private val path: Path) : ExternalSourceCode, Serializable {
     override val externalLocation: URL = path.toUri().toURL()
     
     override val text: String by lazy(path::readText)

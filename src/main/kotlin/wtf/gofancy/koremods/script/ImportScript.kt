@@ -22,38 +22,9 @@
  * SOFTWARE.
  */
 
-@file:Suppress("unused")
-
 package wtf.gofancy.koremods.script
 
-import org.apache.logging.log4j.Logger
-import wtf.gofancy.koremods.Identifier
-import wtf.gofancy.koremods.dsl.TransformerBuilder
-import wtf.gofancy.koremods.dsl.TransformerHandler
-import kotlin.script.experimental.annotations.KotlinScript
-
-/**
- * The file extension used by Koremods script source files
- */
-const val KOREMODS_SCRIPT_EXTENSION = "core.kts"
-
-/**
- * Main Koremods Kotlin Script definition
- *
- * @param identifier unique script identifier
- * @param logger dedicated logger usable inside the script
- *
- * @see KotlinScript
- */
-@KotlinScript(
-    fileExtension = KOREMODS_SCRIPT_EXTENSION,
-    compilationConfiguration = KoremodsScriptCompilationConfiguration::class,
-    evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
-)
-abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
-    val transformerHandler = TransformerHandler(identifier)
-
-    fun transformers(configuration: TransformerBuilder.() -> Unit) {
-        transformerHandler.transformers(configuration)
-    }
-}
+@Target(AnnotationTarget.FILE)
+@Repeatable
+@Retention(AnnotationRetention.SOURCE)
+annotation class ImportScript(vararg val paths: String)

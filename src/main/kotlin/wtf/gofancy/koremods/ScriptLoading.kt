@@ -36,6 +36,32 @@ import kotlin.io.path.name
 import kotlin.streams.toList
 
 data class Identifier internal constructor(val namespace: String, val name: String) : Serializable {
+    companion object {
+        /**
+         * Identifier [namespace]s follow a lower_snake_case format, and must:
+         * - Start with a lowercase letter
+         * - Only contain lowercase characters, numbers and underscores
+         * - Be max. 64 characters long
+         */
+        val NAMESPACE_PATTERN = "^[a-z][a-z0-9_]{1,63}\$".toRegex()
+        /**
+         * Identifier [name]s follow a camelCase format, and must:
+         * - Start with a lowercase letter
+         * - Only contain alphanumeric characters
+         * - Be max. 64 characters long
+         */
+        val NAME_PATTERN = "^[a-z][a-zA-Z0-9]{1,63}\$".toRegex()
+    }
+    
+    init {
+        if (!namespace.matches(NAMESPACE_PATTERN)) {
+            throw IllegalArgumentException("Identifier namespace '$namespace' does not match the pattern /$NAMESPACE_PATTERN/")
+        }
+        if (!name.matches(NAME_PATTERN)) {
+            throw IllegalArgumentException("Identifier name '$name' does not match the pattern /$NAME_PATTERN/")
+        }
+    }
+    
     override fun toString(): String = "$namespace:$name"
 }
 

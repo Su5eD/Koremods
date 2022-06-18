@@ -35,7 +35,6 @@ import kotlin.io.path.*
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discovery")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
-private val SCRIPT_NAME_PATTERN = "^[a-zA-Z0-9]*\$".toRegex()
 
 fun scanPaths(paths: Iterable<Path>, scriptExtension: String): List<RawScriptPack<Path>> {
     LOGGER.debug("Scanning paths for Koremods script packs")
@@ -92,16 +91,11 @@ internal fun locateScripts(namespace: String, scripts: List<String>, rootPath: P
                 LOGGER.error("Script $nameWithExt has an invalid extension '$extension', expected '.core.kts'")
                 throw IllegalArgumentException("Invalid script extension '$extension'")
             }
-
+            
             val name = nameWithExt.substring(0, index)
-            if (!name.matches(SCRIPT_NAME_PATTERN)) {
-                LOGGER.error("Script name '$name' does not match the pattern /$SCRIPT_NAME_PATTERN/")
-                throw IllegalArgumentException("Invalid script name '$name'")
-            }
-
-            val adjustedPath = script.replace(KOREMODS_SCRIPT_EXTENSION, scriptExt)
             val identifier = Identifier(namespace, name)
             LOGGER.debug("Locating script $identifier")
+            val adjustedPath = script.replace(KOREMODS_SCRIPT_EXTENSION, scriptExt)
             val scriptPath = rootPath.resolve(adjustedPath)
             if (scriptPath.notExists()) {
                 throw IllegalArgumentException("Script $identifier file $adjustedPath not found")

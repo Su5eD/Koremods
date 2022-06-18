@@ -24,12 +24,12 @@
 
 import codes.som.koffee.koffee
 
-transformers { 
+transformers {
     `class`("wtf.gofancy.koremods.transform.Person", ::addFieldToClass)
 }
 
 fun addFieldToClass(node: ClassNode) {
-    node.koffee { 
+    node.koffee {
         field(public, "fooBar", String::class)
     }
 }

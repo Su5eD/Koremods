@@ -22,25 +22,15 @@
  * SOFTWARE.
  */
 
-package wtf.gofancy.koremods.transform;
+package wtf.gofancy.koremods.dsl
 
-import java.util.ArrayList;
-import java.util.List;
+import codes.som.koffee.insns.InstructionAssembly
+import codes.som.koffee.types.TypeLike
+import codes.som.koffee.types.coerceType
+import codes.som.koffee.util.constructMethodDescriptor
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.MethodInsnNode
 
-public class Person {
-    private final String name = "John Doe";
-
-    public boolean isTransformed() {
-        return false;
-    }
-
-    public static List<String> filterList(List<String> list) {
-        List<String> filtered = new ArrayList<>();
-        for (String str : list) {
-            if (str.contains("o")) {
-                filtered.add(str);
-            }
-        }
-        return filtered;
-    }
+fun InstructionAssembly.invokestatic(owner: TypeLike, name: String, returnType: TypeLike, vararg parameterTypes: TypeLike, isInterface: Boolean = false) {
+    instructions.add(MethodInsnNode(Opcodes.INVOKESTATIC, coerceType(owner).internalName, name, constructMethodDescriptor(returnType, *parameterTypes), isInterface))
 }

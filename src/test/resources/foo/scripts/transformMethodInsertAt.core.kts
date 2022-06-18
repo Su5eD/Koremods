@@ -22,25 +22,27 @@
  * SOFTWARE.
  */
 
-package wtf.gofancy.koremods.transform;
+import codes.som.koffee.insns.jvm.aload_3
+import codes.som.koffee.insns.jvm.invokevirtual
+import codes.som.koffee.insns.jvm.ldc
+import codes.som.koffee.insns.jvm.pop
+import codes.som.koffee.util.constructMethodDescriptor
+import org.objectweb.asm.tree.InsnNode
 
-import java.util.ArrayList;
-import java.util.List;
+transformers {
+    method("wtf.gofancy.koremods.transform.Person", "filterList", constructMethodDescriptor(List::class, List::class), ::modifyMethod)
+}
 
-public class Person {
-    private final String name = "John Doe";
-
-    public boolean isTransformed() {
-        return false;
+fun modifyMethod(node: MethodNode) {
+    val target = target(1) {
+        aload_3
+        ldc("o")
+        invokevirtual(String::class, "contains", boolean, CharSequence::class)
+        instructions.add(InsnNode(IFEQ)) // Matching jump instruction by opcode
     }
-
-    public static List<String> filterList(List<String> list) {
-        List<String> filtered = new ArrayList<>();
-        for (String str : list) {
-            if (str.contains("o")) {
-                filtered.add(str);
-            }
-        }
-        return filtered;
+    
+    node.insertAt(target) {
+        pop
+        ldc("m")
     }
 }

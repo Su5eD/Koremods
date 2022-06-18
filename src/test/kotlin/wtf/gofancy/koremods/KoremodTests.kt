@@ -42,6 +42,7 @@ import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.test.assertContains
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
@@ -49,7 +50,7 @@ private val SCRIPT_DEPS = setOf("asm", "asm-analysis", "asm-commons", "asm-tree"
 private const val TEST_CLASS_NAME = "wtf.gofancy.koremods.transform.Person"
 
 class KoremodTransformationTests {
-    private val namespace = "unitTests"
+    private val namespace = "unit_tests"
     private val logger: Logger = LogManager.getLogger()
     private val scriptLibraries: Array<String> = listOf(KoremodsKtsScript::class.java, javaClass)
         .map { File(it.protectionDomain.codeSource.location.toURI()).name }
@@ -92,6 +93,18 @@ class KoremodTransformationTests {
         val result = isTransformed.invoke(person) as Boolean
 
         assert(result)
+    }
+
+    @Test
+    fun testMethodInsertAt() {
+        val transformer = getFirstTransformer("transformMethodInsertAt", MethodTransformer::class.java)
+
+        val cls = transformMethod(transformer)
+        val isTransformed = cls.getDeclaredMethod("filterList", List::class.java)
+        val list = listOf("lorem", "ipsum", "dolor", "sit", "amet")
+        val result = isTransformed.invoke(null, list) as List<String>
+        
+        assertContentEquals(listOf("lorem", "ipsum", "amet"), result)
     }
 
     @Test

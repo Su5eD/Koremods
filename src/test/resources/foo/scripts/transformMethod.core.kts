@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-import codes.som.koffee.util.constructMethodDescriptor
 import org.objectweb.asm.tree.InsnNode
 
 transformers { 

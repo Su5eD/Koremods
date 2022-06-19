@@ -26,7 +26,6 @@ import codes.som.koffee.insns.jvm.aload_3
 import codes.som.koffee.insns.jvm.invokevirtual
 import codes.som.koffee.insns.jvm.ldc
 import codes.som.koffee.insns.jvm.pop
-import codes.som.koffee.util.constructMethodDescriptor
 import org.objectweb.asm.tree.InsnNode
 
 transformers {

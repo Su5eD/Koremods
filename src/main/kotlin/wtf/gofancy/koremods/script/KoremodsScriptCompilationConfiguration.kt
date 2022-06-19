@@ -47,6 +47,7 @@ internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfigu
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
+    compilerOptions(listOf("-jvm-target", "11"))
     refineConfiguration {
         onAnnotations(ImportScript::class, handler = KoremodsScriptConfigurator)
     }

@@ -113,7 +113,7 @@ dependencies {
 
     compileOnly(splash.output)
 
-    shadeApi(group = "dev.su5ed", name = "koffee", version = "_") {
+    shadeApi(group = "codes.som", name = "koffee", version = "_") {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.ow2.asm")
     }

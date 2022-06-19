@@ -218,7 +218,6 @@ class KoremodsSplashScreen(private val logger: Logger) {
         renderText.log(level, message)
     }
 
-    @Suppress("UNUSED_PARAMETER")
     private fun cursorPosCallback(window: Long, x: Double, y: Double) {
         if (mousePress) {
             val offsetCursorX = (x - cursorX.get()).toInt()

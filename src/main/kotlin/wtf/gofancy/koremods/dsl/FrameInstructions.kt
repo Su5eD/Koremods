@@ -22,32 +22,38 @@
  * SOFTWARE.
  */
 
-@file:JvmName("0__Assertions_Internal_")
+package wtf.gofancy.koremods.dsl
 
-package wtf.gofancy.koremods.internal
+import codes.som.koffee.insns.InstructionAssembly
+import codes.som.koffee.labels.LabelLike
+import codes.som.koffee.labels.coerceLabel
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.FrameNode
 
-internal inline fun <reified T : Throwable> assertThrowsWithCause(noinline executable: () -> Unit): T =
-    assertThrowsWithCause(T::class.java, executable)
-
-internal fun <T: Throwable> assertThrowsWithCause(expectedCause: Class<T>, executable: () -> Unit): T {
-    try {
-        executable()
-    } catch (actualException: Throwable) {
-        return findCause(expectedCause, actualException)
-    }
-    
-    val cause = String.format("Expected %s to be thrown, but nothing was thrown.", expectedCause.canonicalName)
-    throw RuntimeException(cause)
+fun InstructionAssembly.label(label: LabelLike) {
+    instructions.add(coerceLabel(label))
 }
 
-@Suppress("UNCHECKED_CAST")
-internal fun <T: Throwable> findCause(expectedCause: Class<T>, throwable: Throwable): T {
-    return if (expectedCause.isInstance(throwable)) throwable as T
-    else throwable.cause?.let { cause -> findCause(expectedCause, cause) } 
-        ?: throw RuntimeException("expected <${expectedCause.name}> but was <${throwable.javaClass.name}>".prefix("Unexpected exception type thrown"), throwable)
+fun InstructionAssembly.f_new(nLocal: Int, local: Array<Any>, nStack: Int, stack: Array<Any>) {
+    instructions.add(FrameNode(Opcodes.F_NEW, nLocal, local, nStack, stack))
 }
 
-private fun String.prefix(str: String?): String {
-    val prefixed = str?.plus(" ==> ") ?: ""
-    return prefixed + this
+fun InstructionAssembly.f_full(nLocal: Int, local: Array<Any>, nStack: Int, stack: Array<Any>) {
+    instructions.add(FrameNode(Opcodes.F_FULL, nLocal, local, nStack, stack))
+}
+
+fun InstructionAssembly.f_append(nLocal: Int, local: Array<Any>) {
+    instructions.add(FrameNode(Opcodes.F_APPEND, nLocal, local, 0, null))
+}
+
+fun InstructionAssembly.f_chop(nLocal: Int) {
+    instructions.add(FrameNode(Opcodes.F_CHOP, nLocal, null, 0, null))
+}
+
+val InstructionAssembly.f_same: Unit get() {
+    instructions.add(FrameNode(Opcodes.F_SAME, 0, null, 0, null))
+}
+
+fun InstructionAssembly.f_same1(stack: Array<Any>) {
+    instructions.add(FrameNode(Opcodes.F_SAME1, 0, null, 0, stack))
 }

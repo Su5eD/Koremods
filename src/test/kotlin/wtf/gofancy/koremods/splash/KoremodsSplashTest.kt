@@ -29,6 +29,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import wtf.gofancy.koremods.launch.injectKoremodsLogAppender
+import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import kotlin.concurrent.thread
 
 private val fakeLog = listOf(
@@ -46,7 +47,7 @@ private val fakeLog = listOf(
     Pair(Level.ERROR, "Script example:exampleTransformer does not define any transformers")
 )
 
-private val LOG: Logger = LogManager.getLogger("Koremods.Splash")
+private val LOG: Logger = KoremodsBlackboard.createLogger("Splash")
 
 fun main() {
     val splash = KoremodsSplashScreen(LOG)

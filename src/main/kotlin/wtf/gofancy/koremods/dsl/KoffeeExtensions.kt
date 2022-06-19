@@ -24,16 +24,58 @@
 
 package wtf.gofancy.koremods.dsl
 
+import codes.som.koffee.BlockAssembly
 import codes.som.koffee.insns.InstructionAssembly
 import codes.som.koffee.types.TypeLike
 import codes.som.koffee.types.coerceType
-import codes.som.koffee.util.constructMethodDescriptor
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
+import org.objectweb.asm.tree.AbstractInsnNode
+import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
+import org.objectweb.asm.tree.MethodNode
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
+    return Type.getMethodDescriptor(coerceType(returnType),
+            *parameterTypes.map(::coerceType).toTypedArray())
+}
 
 /**
  * Used to invoke a static method.
  */
 fun InstructionAssembly.invokestatic(owner: TypeLike, name: String, returnType: TypeLike, vararg parameterTypes: TypeLike, isInterface: Boolean = false) {
     instructions.add(MethodInsnNode(Opcodes.INVOKESTATIC, coerceType(owner).internalName, name, constructMethodDescriptor(returnType, *parameterTypes), isInterface))
+}
+
+/**
+ * Create an [InsnList] used to represent an instruction list, using a [BlockAssembly].
+ */
+fun assemble(routine: BlockAssembly.() -> Unit): InsnList {
+    val blockAssembly = BlockAssembly(InsnList(), mutableListOf())
+    routine(blockAssembly)
+    return blockAssembly.instructions
+}
+
+/**
+ * Insert instructions into this method **after** the specified target, or at the beginning if the target is `null`.
+ * 
+ * @param target the target to insert at
+ * @param routine instruction assembly callback
+ */
+fun MethodNode.insert(target: AbstractInsnNode? = null, routine: BlockAssembly.() -> Unit) {
+    val list = assemble(routine)
+    target
+        ?.run { instructions.insert(target, list) } 
+        ?: instructions.insert(list)
+}
+
+/**
+ * Insert instructions into this method **before** the specified target.
+ * 
+ * @param target the target to insert before
+ * @param routine instruction assembly callback
+ */
+fun MethodNode.insertBefore(target: AbstractInsnNode, routine: BlockAssembly.() -> Unit) {
+    instructions.insertBefore(target, assemble(routine))
 }

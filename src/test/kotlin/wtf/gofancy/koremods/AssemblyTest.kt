@@ -24,13 +24,13 @@
 
 package wtf.gofancy.koremods
 
-import codes.som.koffee.assemble
 import codes.som.koffee.insns.jvm.*
 import codes.som.koffee.insns.sugar.construct
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.InsnNode
 import org.objectweb.asm.tree.LdcInsnNode
+import wtf.gofancy.koremods.dsl.assemble
 import wtf.gofancy.koremods.dsl.invokestatic
 import wtf.gofancy.koremods.dsl.target
 import kotlin.test.assertEquals

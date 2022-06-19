@@ -25,7 +25,6 @@
 package wtf.gofancy.koremods.dsl
 
 import codes.som.koffee.BlockAssembly
-import codes.som.koffee.assemble
 import org.objectweb.asm.tree.*
 
 /**
@@ -126,14 +125,6 @@ fun MethodNode.insertAt(target: InsnTarget, failIfNotFound: Boolean = true, rout
     insertOnTarget(target, failIfNotFound, routine, InsnList::insert)
 }
 
-private fun MethodNode.insertOnTarget(target: InsnTarget, failIfNotFound: Boolean, routine: BlockAssembly.() -> Unit, callback: (InsnList, AbstractInsnNode, InsnList) -> Unit) {
-    val targetInsn = target.find(instructions)
-        ?: if (failIfNotFound) throw RuntimeException("Could not find target")
-        else return
-    val list = assemble(routine)
-    callback(instructions, targetInsn, list)
-}
-
 /**
  * Used as a replacement for ASM's missing `equals` implementation on [AbstractInsnNode] and its subclasses.
  * This is used along with [InsnTarget] to match bytecode instructions in lists, and therefore only supports
@@ -228,4 +219,12 @@ inline fun <T> Iterable<T>.allIndexed(predicate: (Int, T) -> Boolean): Boolean {
     if (this is Collection && isEmpty()) return true
     for ((index, element) in withIndex()) if (!predicate(index, element)) return false
     return true
+}
+
+private fun MethodNode.insertOnTarget(target: InsnTarget, failIfNotFound: Boolean, routine: BlockAssembly.() -> Unit, callback: (InsnList, AbstractInsnNode, InsnList) -> Unit) {
+    val targetInsn = target.find(instructions)
+        ?: if (failIfNotFound) throw RuntimeException("Could not find target")
+        else return
+    val list = assemble(routine)
+    callback(instructions, targetInsn, list)
 }

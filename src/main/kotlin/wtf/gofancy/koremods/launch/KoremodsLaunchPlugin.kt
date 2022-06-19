@@ -25,6 +25,7 @@
 package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
+import java.nio.file.Path
 
 /**
  * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch] 
@@ -46,4 +47,6 @@ interface KoremodsLaunchPlugin {
      * @see wtf.gofancy.koremods.prelaunch.KoremodsBlackboard.createLogger
      */
     fun appendLogMessage(level: Level, message: String)
+    
+    fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader
 }

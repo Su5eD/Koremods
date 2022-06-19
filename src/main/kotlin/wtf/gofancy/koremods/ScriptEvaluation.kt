@@ -27,6 +27,7 @@ package wtf.gofancy.koremods
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.TransformerHandler
+import wtf.gofancy.koremods.launch.KoremodsLaunch
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.InputStream
@@ -98,14 +99,13 @@ fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): 
 }
 
 fun Path.loadScriptFromJar(): CompiledScript {
-    val (className, entries) = inputStream().use { istream ->
+    val className = inputStream().use { istream ->
         JarInputStream(istream).use jistream@{
-            val className = it.manifest.mainAttributes.getValue("Main-Class")
+            return@jistream it.manifest.mainAttributes.getValue("Main-Class")
                 ?: throw IllegalArgumentException("No Main-Class manifest attribute")
-            return@jistream Pair(className, it.readEntries())
         }
     }
-    return KJvmCompiledScriptLoadedFromJar(className, entries)
+    return KJvmCompiledScriptLoadedFromJar(className, this)
 }
 
 fun JarInputStream.readEntries(): Map<String, ByteArray> {
@@ -113,17 +113,18 @@ fun JarInputStream.readEntries(): Map<String, ByteArray> {
         .associate { Pair(it.name, readAllBytes()) }
 }
 
-internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String, private val entries: Map<String, ByteArray>) : CompiledScript {
+internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String, private val path: Path) : CompiledScript {
     private var loadedScript: KJvmCompiledScript? = null
 
     private fun getScriptOrFail(): KJvmCompiledScript = loadedScript ?: throw RuntimeException("Compiled script is not loaded yet")
 
     override suspend fun getClass(scriptEvaluationConfiguration: ScriptEvaluationConfiguration?): ResultWithDiagnostics<KClass<*>> {
         if (loadedScript == null) {
-            val actualEvaluationConfiguration = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
-            val baseClassLoader = actualEvaluationConfiguration[ScriptEvaluationConfiguration.jvm.baseClassLoader]
+            val actualEvalConfig = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
+            val baseClassLoader = actualEvalConfig[ScriptEvaluationConfiguration.jvm.baseClassLoader]
                 ?: Thread.currentThread().contextClassLoader
-            val classLoader = MemoryClassLoader(entries, baseClassLoader)
+            val classLoader = KoremodsLaunch.PLUGIN?.createCompiledScriptClassLoader(path, baseClassLoader)
+                ?: createScriptMemoryClassLoader(baseClassLoader)
             loadedScript = createScriptFromClassLoader(scriptClassFQName, classLoader)
         }
         return getScriptOrFail().getClass(scriptEvaluationConfiguration)
@@ -140,6 +141,12 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
 
     override val resultField: Pair<String, KotlinType>?
         get() = getScriptOrFail().resultField
+    
+    private fun createScriptMemoryClassLoader(parent: ClassLoader?): ClassLoader {
+        val entries: Map<String, ByteArray> = path.inputStream()
+            .use { istream -> JarInputStream(istream).use(JarInputStream::readEntries) }
+        return MemoryClassLoader(entries, parent)
+    }
 }
 
 internal class MemoryClassLoader(private val resources: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {

@@ -24,7 +24,7 @@
 
 package wtf.gofancy.koremods.script
 
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
+import wtf.gofancy.koremods.launch.KoremodsLaunch
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.scriptsInstancesSharing
 import kotlin.script.experimental.jvm.baseClassLoader
@@ -51,7 +51,7 @@ val ALLOWED_CLASSES: List<String> = listOf(
 
 internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     jvm {
-        baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES, KoremodsBlackboard.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
+        baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES, KoremodsLaunch.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
         loadDependencies(false)
         scriptsInstancesSharing(true)
     }

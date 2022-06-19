@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Holds shared information constants and Koremods environment variables
+ * Holds shared information constants
  */
 public final class KoremodsBlackboard {
     public static final String NAME = "Koremods";
@@ -45,13 +45,6 @@ public final class KoremodsBlackboard {
      * Path to a script pack's configuration file relative to its root
      */
     public static final String CONFIG_FILE_LOCATION = "META-INF/" + CONFIG_FILE;
-
-    /**
-     * Used as the base classloader for Koremods scripts.
-     *
-     * @see wtf.gofancy.koremods.script.KoremodsScriptEvaluationConfiguration
-     */
-    public static ClassLoader scriptContextClassLoader;
 
     /**
      * @param name the logger name suffix

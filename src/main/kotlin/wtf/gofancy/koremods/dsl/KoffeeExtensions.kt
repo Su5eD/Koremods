@@ -35,8 +35,7 @@ import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
 import org.objectweb.asm.tree.MethodNode
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
+fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
     return Type.getMethodDescriptor(coerceType(returnType),
             *parameterTypes.map(::coerceType).toTypedArray())
 }

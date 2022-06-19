@@ -48,7 +48,18 @@ object KoremodsLaunch {
      * 
      * @see KoremodsLoader
      */
-    lateinit var LOADER: KoremodsLoader
+    var LOADER: KoremodsLoader? = null
+        private set
+    
+    var PLUGIN: KoremodsLaunchPlugin? = null
+        private set
+
+    /**
+     * Used as the base classloader for Koremods scripts.
+     *
+     * @see wtf.gofancy.koremods.script.KoremodsScriptEvaluationConfiguration
+     */
+    var scriptContextClassLoader: ClassLoader? = null
         private set
     
     private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
@@ -65,16 +76,19 @@ object KoremodsLaunch {
      * @param discoveryPaths additional paths to search for Koremods script packs
      */
     fun launch(loaderMode: LoaderMode, launchPlugin: KoremodsLaunchPlugin, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
+        if (LOADER != null) throw IllegalStateException("Koremods has already been launched")
+        
         LOGGER.info("Launching Koremods instance")
 
-        KoremodsBlackboard.scriptContextClassLoader = javaClass.classLoader
+        PLUGIN = launchPlugin
+        scriptContextClassLoader = javaClass.classLoader
 
         val configPath = configDir / KoremodsBlackboard.CONFIG_FILE
         val config = parseMainConfig(configPath)
         val splash: KoremodsSplashScreen?
         val contexts = mutableSetOf(
             getLoggerContext(Thread.currentThread().contextClassLoader),
-            getLoggerContext(KoremodsBlackboard.scriptContextClassLoader),
+            getLoggerContext(scriptContextClassLoader!!),
         )
 
         LOGGER.info("Found launch plugin: ${launchPlugin.javaClass.name}")

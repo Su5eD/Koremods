@@ -31,6 +31,9 @@ import codes.som.koffee.util.constructMethodDescriptor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.MethodInsnNode
 
+/**
+ * Used to invoke a static method.
+ */
 fun InstructionAssembly.invokestatic(owner: TypeLike, name: String, returnType: TypeLike, vararg parameterTypes: TypeLike, isInterface: Boolean = false) {
     instructions.add(MethodInsnNode(Opcodes.INVOKESTATIC, coerceType(owner).internalName, name, constructMethodDescriptor(returnType, *parameterTypes), isInterface))
 }

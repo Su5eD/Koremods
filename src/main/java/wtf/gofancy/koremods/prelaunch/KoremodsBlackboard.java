@@ -33,8 +33,17 @@ import org.apache.logging.log4j.Logger;
 public final class KoremodsBlackboard {
     public static final String NAME = "Koremods";
     public static final String NAMESPACE = "koremods";
+    /**
+     * Logger name prefix used by Koremods logger instances
+     */
     public static final String LOGGER_GROUP = "wtf.gofancy.koremods";
+    /**
+     * File name used by both global and script pack config files
+     */
     public static final String CONFIG_FILE = NAMESPACE + ".conf";
+    /**
+     * Path to a script pack's configuration file relative to its root
+     */
     public static final String CONFIG_FILE_LOCATION = "META-INF/" + CONFIG_FILE;
 
     /**

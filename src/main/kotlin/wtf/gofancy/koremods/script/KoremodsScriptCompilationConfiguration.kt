@@ -52,6 +52,9 @@ internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfigu
     }
 })
 
+/**
+ * Processes Kotlin Script source annotations prior to compilation
+ */
 object KoremodsScriptConfigurator : RefineScriptCompilationConfigurationHandler {
     override operator fun invoke(context: ScriptConfigurationRefinementContext): ResultWithDiagnostics<ScriptCompilationConfiguration> {
         val diagnostics = mutableListOf<ScriptDiagnostic>()

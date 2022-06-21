@@ -33,14 +33,14 @@ transformers {
 }
 
 fun modifyMethod(node: MethodNode) {
-    val target = target(1) {
+    val target = node.findTarget {
         aload_3
         ldc("o")
         invokevirtual(String::class, "contains", boolean, CharSequence::class)
         instructions.add(InsnNode(IFEQ)) // Matching jump instruction by opcode
     }
     
-    node.insertAt(target) {
+    target.insert(1) {
         pop
         ldc("m")
     }

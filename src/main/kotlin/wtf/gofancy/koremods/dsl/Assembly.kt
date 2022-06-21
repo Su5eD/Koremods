@@ -28,13 +28,15 @@ import codes.som.koffee.BlockAssembly
 import org.objectweb.asm.tree.*
 
 /**
- * Used for targeting a specific sequence of bytecode instructions in an [InsnList].
+ * Used for manipulating bytecode around a target sequence of bytecode instructions in an [InsnList].
  * Because ASM's instruction classes don't implement `equals`, a custom method is used for matching instructions,
  * which currently supports most of them. See [insnEquals] for a full list.
  * 
+ * Use [InsnList.findTarget] or one of its overloaded functions to create
+ * an appropriate implementation of this interface.
+ *
  * Example usage:
  * ```kotlin
- * // Suppose we have a method that prints a local variable which you want to swap out for another
  * val method = MethodNode().koffee {
  *     ldc("Hello World")
  *     astore_0
@@ -46,83 +48,99 @@ import org.objectweb.asm.tree.*
  *     aload_0
  *     invokevirtual("java/io/PrintStream", "println", "(Ljava/lang/String;)V")
  * }
- * // Locate the sequence of printing instructions, then offset the result by one
- * val target = target(1) {
+ * // Locate the sequence of printing instructions
+ * val target = method.findTarget {
  *     getstatic("java/lang/System", "out", "java/io/PrintStream")
- *     aload_0                                                      // <- Offset 1
+ *     aload_0 // <- Offset 1
  *     invokevirtual("java/io/PrintStream", "println", "(Ljava/lang/String;)V")
  * }
  * // Replace the loaded variable on the stack
- * method.insertAt(target) {
+ * target.insert(1) {
  *     pop
  *     aload_1
  * }
  * ```
  *
- * @param target the instructions to find
- * @param offset offset the located insn node index. Useful in cases where
- * you're matching some instructions before your target node, too.
- * @see insertAt
- * @see insertBeforeAt
+ * @see InsnList.findTarget
  * @see insnEquals
  */
-class InsnTarget(private val target: InsnList, private val offset: Int) {
-    /**
-     * Find a sequence of instructions matching the [target] in a method's instructions.
-     */
-    fun find(method: MethodNode): AbstractInsnNode? =
-        find(method.instructions)
-
-    /**
-     * Find a sequence of instructions matching the [target] in an InsnList, then return a reference to the first
-     * matched node with the specified [offset].
-     * 
-     * @param insns the InsnList to search in
-     * @return if a sequence of instructions matching [target] is found, return the [AbstractInsnNode] at the first
-     * matching position offset by [offset], otherwise return `null`.
-     */
-    fun find(insns: InsnList): AbstractInsnNode? {
-        insns.forEachIndexed { i, _ ->
-            val matches = target.allIndexed { j, targetNode ->
-                insns[i + j].insnEquals(targetNode)
-            }
-            if (matches) return insns[i + offset]
+sealed interface InsnTarget {
+    fun insertBefore(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    
+    fun insert(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    
+    fun insertAfter(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    
+    fun find(offset: Int): AbstractInsnNode
+    
+    class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
+        override fun insertBefore(offset: Int, block: BlockAssembly.() -> Unit) {
+            val insns = assemble(block)
+            insert(first, offset, insns, origin::insertBefore)
         }
-        return null
+
+        override fun insert(offset: Int, block: BlockAssembly.() -> Unit) {
+            val insns = assemble(block)
+            insert(first, offset, insns, origin::insert)
+        }
+
+        override fun insertAfter(offset: Int, block: BlockAssembly.() -> Unit) {
+            val insns = assemble(block)
+            insert(last, offset, insns, origin::insert)
+        }
+
+        override fun find(offset: Int): AbstractInsnNode {
+            return origin[origin.indexOf(first) + offset]
+        }
+
+        private fun insert(at: AbstractInsnNode, offset: Int, insns: InsnList, action: (AbstractInsnNode, InsnList) -> Unit) {
+            val target = if (offset != 0) origin[origin.indexOf(at) + offset]
+            else at
+            action(target, insns)
+        }
+    }
+    
+    object NotFound : InsnTarget {
+        override fun insertBefore(offset: Int, block: BlockAssembly.() -> Unit) {}
+
+        override fun insert(offset: Int, block: BlockAssembly.() -> Unit) {}
+
+        override fun insertAfter(offset: Int, block: BlockAssembly.() -> Unit) {}
+
+        override fun find(offset: Int): AbstractInsnNode = throw UnsupportedOperationException()
     }
 }
 
+fun MethodNode.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() -> Unit): InsnTarget =
+    instructions.findTarget(failIfNotFound, block)
+
+fun InsnList.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() -> Unit): InsnTarget {
+    val assembly = assemble(block)
+    return findTarget(assembly, failIfNotFound)
+}
+
 /**
- * A functional wrapper for creating an [InsnTarget]
+ * Find a sequence of instructions matching [insns] in this InsnList.
+ *
+ * @param insns the InsnList to search in
+ * @param failIfNotFound throw an exception if the target can not be found
+ * @return an operational implementation of [InsnTarget], or a NOOP implementation
+ * if the target can not be found and failIfNotFound is `false`
  * 
  * @see InsnTarget
  */
-fun target(offset: Int = 0, block: BlockAssembly.() -> Unit): InsnTarget {
-    val assembly = BlockAssembly(InsnList(), mutableListOf())
-    block(assembly)
-    return InsnTarget(assembly.instructions, offset)
-}
+fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTarget {
+    forEachIndexed { i, node ->
+        val matches = insns.allIndexed { j, targetNode ->
+            this[i + j].insnEquals(targetNode)
+        }
+        if (matches) {
+            return InsnTarget.Found(this, node, this[i + insns.size() - 1])
+        }
+    }
 
-/**
- * Insert instructions to a MethodNode **before** a specified target
- * 
- * @param target the target to find
- * @param failIfNotFound throw an exception if the target can not be found
- * @param routine callback for inserting instructions to the method
- */
-fun MethodNode.insertBeforeAt(target: InsnTarget, failIfNotFound: Boolean = true, routine: BlockAssembly.() -> Unit) {
-    insertOnTarget(target, failIfNotFound, routine, InsnList::insertBefore)
-}
-
-/**
- * Insert instructions to a MethodNode **after** a specified target
- * 
- * @param target the target to find
- * @param failIfNotFound throw an exception if the target can not be found
- * @param routine callback for inserting instructions to the method
- */
-fun MethodNode.insertAt(target: InsnTarget, failIfNotFound: Boolean = true, routine: BlockAssembly.() -> Unit) {
-    insertOnTarget(target, failIfNotFound, routine, InsnList::insert)
+    return if (failIfNotFound) throw RuntimeException("Target not found")
+    else InsnTarget.NotFound
 }
 
 /**
@@ -219,12 +237,4 @@ inline fun <T> Iterable<T>.allIndexed(predicate: (Int, T) -> Boolean): Boolean {
     if (this is Collection && isEmpty()) return true
     for ((index, element) in withIndex()) if (!predicate(index, element)) return false
     return true
-}
-
-private fun MethodNode.insertOnTarget(target: InsnTarget, failIfNotFound: Boolean, routine: BlockAssembly.() -> Unit, callback: (InsnList, AbstractInsnNode, InsnList) -> Unit) {
-    val targetInsn = target.find(instructions)
-        ?: if (failIfNotFound) throw RuntimeException("Could not find target")
-        else return
-    val list = assemble(routine)
-    callback(instructions, targetInsn, list)
 }

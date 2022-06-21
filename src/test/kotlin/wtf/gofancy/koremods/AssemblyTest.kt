@@ -27,15 +27,15 @@ package wtf.gofancy.koremods
 import codes.som.koffee.insns.jvm.*
 import codes.som.koffee.insns.sugar.construct
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.InsnNode
 import org.objectweb.asm.tree.LdcInsnNode
 import wtf.gofancy.koremods.dsl.assemble
+import wtf.gofancy.koremods.dsl.findTarget
 import wtf.gofancy.koremods.dsl.invokestatic
-import wtf.gofancy.koremods.dsl.target
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 
 class AssemblyTest {
     private val methodInsns = assemble {
@@ -84,28 +84,27 @@ class AssemblyTest {
 
     @Test
     fun testValidTarget() {
-        val target = target(1) {
+        val target = methodInsns.findTarget {
             aload_3
             ldc("o")
             invokevirtual(String::class, "contains", boolean, CharSequence::class)
             instructions.add(InsnNode(Opcodes.IFEQ)) // Matching jump instruction by opcode
         }
 
-        val node = target.find(methodInsns)
+        val node = target.find(1)
         assertIs<LdcInsnNode>(node)
         assertEquals("o", node.cst, "Expected constant to be 'o'")
     }
 
     @Test
     fun testInvalidTarget() {
-        val target = target {
+        val target = assemble {
             aload_2
             ldc("d")
             invokevirtual(String::class, "contains", boolean, CharSequence::class)
             instructions.add(InsnNode(Opcodes.IFNE)) // Matching jump instruction by opcode
         }
 
-        val node = target.find(methodInsns)
-        assertNull(node)
+        assertThrows<RuntimeException> { methodInsns.findTarget(target) }
     }
 }

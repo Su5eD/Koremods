@@ -27,21 +27,38 @@ package wtf.gofancy.koremods.dsl
 import codes.som.koffee.BlockAssembly
 import codes.som.koffee.TryCatchContainer
 import codes.som.koffee.insns.InstructionAssembly
-import codes.som.koffee.labels.LabelRegistry
-import codes.som.koffee.labels.LabelScope
+import codes.som.koffee.labels.KoffeeLabel
 import codes.som.koffee.sugar.ModifiersAccess
 import codes.som.koffee.sugar.TypesAccess
 import org.objectweb.asm.tree.*
 
-class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, val target: AbstractInsnNode)
-    : InstructionAssembly, TryCatchContainer, LabelScope, ModifiersAccess, TypesAccess {
-    override val L: LabelRegistry = LabelRegistry(this)
+class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, 
+                       labels: MutableMap<String, LabelNode>, val target: AbstractInsnNode)
+    : InstructionAssembly, TryCatchContainer, ModifiersAccess, TypesAccess {
+    val L: SharedLabelRegistry = SharedLabelRegistry(labels, this)
+}
+
+class SharedLabelRegistry(private val labels: MutableMap<String, LabelNode>, private val insns: InstructionAssembly) {
+    /**
+     * Get a label by an [index].
+     */
+    operator fun get(index: Int): KoffeeLabel = this["label_$index"]
+
+    /**
+     * Get a label by [name].
+     */
+    operator fun get(name: String): KoffeeLabel {
+        return KoffeeLabel(insns, labels.getOrPut(name, ::LabelNode))
+    }
 }
 
 /**
  * Used for manipulating bytecode around a target sequence of bytecode instructions in an [InsnList].
  * Because ASM's instruction classes don't implement `equals`, a custom method is used for matching instructions,
  * which currently supports most of them. See [insnEquals] for a full list.
+ * 
+ * Provides a shared label registry through [TargetedAssembly] for sharing labels across insertions
+ * within the same target.
  * 
  * Use [InsnList.findTarget] or one of its overloaded functions to create
  * an appropriate implementation of this interface.
@@ -85,6 +102,8 @@ sealed interface InsnTarget {
     fun find(offset: Int): AbstractInsnNode
     
     class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
+        private val labels: MutableMap<String, LabelNode> = mutableMapOf()
+        
         override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {
             insert(first, offset, block, origin::insertBefore)
         }
@@ -101,10 +120,9 @@ sealed interface InsnTarget {
             return origin[origin.indexOf(first) + offset]
         }
 
-        private fun insert(at: AbstractInsnNode, offset: Int, block: TargetedAssembly.() -> Unit, action: (AbstractInsnNode, InsnList) -> Unit) {
-            val target = if (offset != 0) origin[origin.indexOf(at) + offset]
-            else at
-            val assembly = TargetedAssembly(InsnList(), mutableListOf(), target)
+        private inline fun insert(at: AbstractInsnNode, offset: Int, block: TargetedAssembly.() -> Unit, action: (AbstractInsnNode, InsnList) -> Unit) {
+            val target = if (offset != 0) origin[origin.indexOf(at) + offset] else at
+            val assembly = TargetedAssembly(InsnList(), mutableListOf(), labels, target)
             block(assembly)
             action(target, assembly.instructions)
         }
@@ -140,23 +158,15 @@ fun InsnList.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() 
  * @see InsnTarget
  */
 fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTarget {
-    forEachIndexed { i, node ->
-        val matches = insns.allIndexed { j, targetNode ->
-            this[i + j].insnEquals(targetNode)
-        }
-        if (matches) {
-            return InsnTarget.Found(this, node, this[i + insns.size() - 1])
-        }
-    }
-
-    return if (failIfNotFound) throw RuntimeException("Target not found")
-    else InsnTarget.NotFound
+    return locateTargetOrNull(insns)
+        ?: if (failIfNotFound) throw RuntimeException("Target not found") 
+        else InsnTarget.NotFound
 }
 
 /**
  * Used as a replacement for ASM's missing `equals` implementation on [AbstractInsnNode] and its subclasses.
  * This is used along with [InsnTarget] to match bytecode instructions in lists, and therefore only supports
- * necessary attributes. Array and [LabelNode] attributes are not supported.
+ * necessary attributes. [LabelNode]s, [LineNumberNode]s and [FrameNode]s are not supported.
  * 
  * Full list of supported attributes:
  * - All Opcodes
@@ -184,12 +194,7 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
             && name == other.name
             && desc == other.desc
         }
-        is FrameNode -> {
-            other as FrameNode
-            type == other.type
-            // local
-            // stack
-        }
+        // FrameNode
         is IincInsnNode -> {
             other as IincInsnNode
             `var` == other.`var` 
@@ -238,13 +243,18 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
     }
 }
 
-/**
- * Enhanced version of kotlin's [Iterable.all] with an indexed predicate.
- * 
- * @return `true` if all entries match the given predicate.
- */
-inline fun <T> Iterable<T>.allIndexed(predicate: (Int, T) -> Boolean): Boolean {
-    if (this is Collection && isEmpty()) return true
-    for ((index, element) in withIndex()) if (!predicate(index, element)) return false
-    return true
+fun InsnList.locateTargetOrNull(list: InsnList): InsnTarget? {
+    outer@for (primary in this) {
+        if (primary is LabelNode || primary is LineNumberNode || primary is FrameNode) continue
+        
+        var current: AbstractInsnNode? = primary
+        for (secondary in list) {
+            while (current is LabelNode || current is LineNumberNode || current is FrameNode) current = current.next
+
+            if (current != null && current.insnEquals(secondary)) current = current.next
+            else continue@outer
+        }
+        return InsnTarget.Found(this, primary, current!!.previous)
+    }
+    return null
 }

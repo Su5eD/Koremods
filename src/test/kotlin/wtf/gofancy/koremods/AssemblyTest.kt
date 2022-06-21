@@ -84,16 +84,20 @@ class AssemblyTest {
 
     @Test
     fun testValidTarget() {
-        val target = methodInsns.findTarget {
+        val insnTarget = methodInsns.findTarget {
             aload_3
             ldc("o")
             invokevirtual(String::class, "contains", boolean, CharSequence::class)
             instructions.add(InsnNode(Opcodes.IFEQ)) // Matching jump instruction by opcode
         }
 
-        val node = target.find(1)
+        val node = insnTarget.find(1)
         assertIs<LdcInsnNode>(node)
         assertEquals("o", node.cst, "Expected constant to be 'o'")
+        
+        insnTarget.insert(1) {
+            assertEquals(node, target)
+        }
     }
 
     @Test

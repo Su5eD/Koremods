@@ -25,7 +25,18 @@
 package wtf.gofancy.koremods.dsl
 
 import codes.som.koffee.BlockAssembly
+import codes.som.koffee.TryCatchContainer
+import codes.som.koffee.insns.InstructionAssembly
+import codes.som.koffee.labels.LabelRegistry
+import codes.som.koffee.labels.LabelScope
+import codes.som.koffee.sugar.ModifiersAccess
+import codes.som.koffee.sugar.TypesAccess
 import org.objectweb.asm.tree.*
+
+class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, val target: AbstractInsnNode)
+    : InstructionAssembly, TryCatchContainer, LabelScope, ModifiersAccess, TypesAccess {
+    override val L: LabelRegistry = LabelRegistry(this)
+}
 
 /**
  * Used for manipulating bytecode around a target sequence of bytecode instructions in an [InsnList].
@@ -65,47 +76,46 @@ import org.objectweb.asm.tree.*
  * @see insnEquals
  */
 sealed interface InsnTarget {
-    fun insertBefore(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    fun insertBefore(offset: Int = 0, block: TargetedAssembly.() -> Unit)
     
-    fun insert(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    fun insert(offset: Int = 0, block: TargetedAssembly.() -> Unit)
     
-    fun insertAfter(offset: Int = 0, block: BlockAssembly.() -> Unit)
+    fun insertAfter(offset: Int = 0, block: TargetedAssembly.() -> Unit)
     
     fun find(offset: Int): AbstractInsnNode
     
     class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
-        override fun insertBefore(offset: Int, block: BlockAssembly.() -> Unit) {
-            val insns = assemble(block)
-            insert(first, offset, insns, origin::insertBefore)
+        override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {
+            insert(first, offset, block, origin::insertBefore)
         }
 
-        override fun insert(offset: Int, block: BlockAssembly.() -> Unit) {
-            val insns = assemble(block)
-            insert(first, offset, insns, origin::insert)
+        override fun insert(offset: Int, block: TargetedAssembly.() -> Unit) {
+            insert(first, offset, block, origin::insert)
         }
 
-        override fun insertAfter(offset: Int, block: BlockAssembly.() -> Unit) {
-            val insns = assemble(block)
-            insert(last, offset, insns, origin::insert)
+        override fun insertAfter(offset: Int, block: TargetedAssembly.() -> Unit) {
+            insert(last, offset, block, origin::insert)
         }
 
         override fun find(offset: Int): AbstractInsnNode {
             return origin[origin.indexOf(first) + offset]
         }
 
-        private fun insert(at: AbstractInsnNode, offset: Int, insns: InsnList, action: (AbstractInsnNode, InsnList) -> Unit) {
+        private fun insert(at: AbstractInsnNode, offset: Int, block: TargetedAssembly.() -> Unit, action: (AbstractInsnNode, InsnList) -> Unit) {
             val target = if (offset != 0) origin[origin.indexOf(at) + offset]
             else at
-            action(target, insns)
+            val assembly = TargetedAssembly(InsnList(), mutableListOf(), target)
+            block(assembly)
+            action(target, assembly.instructions)
         }
     }
     
     object NotFound : InsnTarget {
-        override fun insertBefore(offset: Int, block: BlockAssembly.() -> Unit) {}
+        override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {}
 
-        override fun insert(offset: Int, block: BlockAssembly.() -> Unit) {}
+        override fun insert(offset: Int, block: TargetedAssembly.() -> Unit) {}
 
-        override fun insertAfter(offset: Int, block: BlockAssembly.() -> Unit) {}
+        override fun insertAfter(offset: Int, block: TargetedAssembly.() -> Unit) {}
 
         override fun find(offset: Int): AbstractInsnNode = throw UnsupportedOperationException()
     }

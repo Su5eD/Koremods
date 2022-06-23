@@ -134,7 +134,7 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
         get() = getScriptOrFail().compilationConfiguration
 
     override val sourceLocationId: String?
-        get() = getScriptOrFail().sourceLocationId
+        get() = loadedScript?.sourceLocationId
 
     override val otherScripts: List<CompiledScript>
         get() = getScriptOrFail().otherScripts

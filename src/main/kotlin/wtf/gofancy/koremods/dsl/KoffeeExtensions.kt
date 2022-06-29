@@ -35,6 +35,13 @@ import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodInsnNode
 import org.objectweb.asm.tree.MethodNode
 
+/**
+ * Construct a method descriptor
+ * 
+ * @param returnType the return type of the method
+ * @param parameterTypes the parameter types of the method
+ * @return the method's descriptor string
+ */
 fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
     return Type.getMethodDescriptor(coerceType(returnType),
             *parameterTypes.map(::coerceType).toTypedArray())

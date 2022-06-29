@@ -32,6 +32,9 @@ import codes.som.koffee.sugar.ModifiersAccess
 import codes.som.koffee.sugar.TypesAccess
 import org.objectweb.asm.tree.*
 
+/**
+ * An extended version of [BlockAssembly] with information about the [target] node we're inserting bytecode at.
+ */
 class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, 
                        labels: MutableMap<String, LabelNode>, val target: AbstractInsnNode)
     : InstructionAssembly, TryCatchContainer, ModifiersAccess, TypesAccess {
@@ -93,13 +96,36 @@ class SharedLabelRegistry(private val labels: MutableMap<String, LabelNode>, pri
  * @see insnEquals
  */
 sealed interface InsnTarget {
+    /**
+     * Insert instructions before the target.
+     * 
+     * @param offset offset the insertion target node index
+     * @param block bytecode assembly routine
+     */
     fun insertBefore(offset: Int = 0, block: TargetedAssembly.() -> Unit)
-    
+
+    /**
+     * Insert instructions at the first insn node in this target.
+     *
+     * @param offset offset the insertion target node index
+     * @param block bytecode assembly routine
+     */
     fun insert(offset: Int = 0, block: TargetedAssembly.() -> Unit)
-    
+
+    /**
+     * Insert instructions after the last insn node in this target.
+     *
+     * @param offset offset the insertion target node index
+     * @param block bytecode assembly routine
+     */
     fun insertAfter(offset: Int = 0, block: TargetedAssembly.() -> Unit)
-    
-    fun find(offset: Int): AbstractInsnNode
+
+    /**
+     * Find an insn node in this target at a specific index
+     * 
+     * @param index the relating index of the insn node to find
+     */
+    fun find(index: Int): AbstractInsnNode
     
     class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
         private val labels: MutableMap<String, LabelNode> = mutableMapOf()
@@ -116,8 +142,8 @@ sealed interface InsnTarget {
             insert(last, offset, block, origin::insert)
         }
 
-        override fun find(offset: Int): AbstractInsnNode {
-            return origin[origin.indexOf(first) + offset]
+        override fun find(index: Int): AbstractInsnNode {
+            return origin[origin.indexOf(first) + index]
         }
 
         private inline fun insert(at: AbstractInsnNode, offset: Int, block: TargetedAssembly.() -> Unit, action: (AbstractInsnNode, InsnList) -> Unit) {
@@ -135,7 +161,7 @@ sealed interface InsnTarget {
 
         override fun insertAfter(offset: Int, block: TargetedAssembly.() -> Unit) {}
 
-        override fun find(offset: Int): AbstractInsnNode = throw UnsupportedOperationException()
+        override fun find(index: Int): AbstractInsnNode = throw UnsupportedOperationException()
     }
 }
 
@@ -243,6 +269,11 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
     }
 }
 
+/**
+ * Find a sequence of bytecode instructions matching [list] in this InsnList
+ * 
+ * @return if found, an InsnTarget ranging from the first to last matching insn node, otherwise null
+ */
 fun InsnList.locateTargetOrNull(list: InsnList): InsnTarget? {
     outer@for (primary in this) {
         if (primary is LabelNode || primary is LineNumberNode || primary is FrameNode) continue

@@ -31,10 +31,18 @@ import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
 
-fun <T : Transformer<U>, U> applyTransform(name: Any, transformers: List<T>, node: U): Collection<TransformerPropertiesExtension> {
+/**
+ * Transform an ASM node using Koremods [Transformer]s
+ * 
+ * @param identifier an arbirtary object used to identify the transformed object in logs
+ * @param transformers a list of transformers to use
+ * @param node the node being transformed
+ * @return the [TransformerPropertiesExtension]s of transformers which ran successfully
+ */
+fun <T : Transformer<U>, U> applyTransform(identifier: Any, transformers: List<T>, node: U): Collection<TransformerPropertiesExtension> {
     return transformers
         .filter { transformer ->
-            LOGGER.debug("Transforming $name with transformer script ${transformer.scriptIdentifier}")
+            LOGGER.debug("Transforming $identifier with transformer script ${transformer.scriptIdentifier}")
             try {
                 transformer.visit(node)
                 return@filter true

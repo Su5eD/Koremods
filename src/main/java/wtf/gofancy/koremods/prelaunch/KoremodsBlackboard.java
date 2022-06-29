@@ -49,7 +49,7 @@ public final class KoremodsBlackboard {
     /**
      * @param name the logger name suffix
      * @return a new {@link org.apache.logging.log4j.Logger} instance with the specified name inside the Koremods logger
-     * group. The output is also wired up to the splash screen, if it's enabled.
+     * group. The output is also wired up to the splash screen if it's enabled.
      */
     public static Logger createLogger(String name) {
         return LogManager.getLogger(LOGGER_GROUP + "." + name);

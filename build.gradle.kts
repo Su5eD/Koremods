@@ -1,7 +1,6 @@
 import fr.brouillard.oss.jgitver.GitVersionCalculator
 import fr.brouillard.oss.jgitver.Strategies
 import org.jetbrains.dokka.DokkaConfiguration
-import org.jetbrains.dokka.Platform
 import org.jetbrains.dokka.base.DokkaBase
 import org.jetbrains.dokka.base.DokkaBaseConfiguration
 import org.jetbrains.dokka.gradle.DokkaTask
@@ -41,9 +40,9 @@ project.afterEvaluate {
 val splash: SourceSet by sourceSets.creating
 
 // create references to the splash configurations, so we can add dependencies directly to them
-val splashCompileOnly: Configuration by configurations.getting
-val splashImplementation: Configuration by configurations.getting
-val splashApi: Configuration by configurations.getting
+val splashCompileOnly: Configuration by configurations
+val splashImplementation: Configuration by configurations
+val splashApi: Configuration by configurations
 
 /**
  * Adds an implementation dependency to both source sets (main and splash).

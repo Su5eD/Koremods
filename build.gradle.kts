@@ -94,10 +94,6 @@ repositories {
         name = "Garden of Fancy"
         url = uri("https://maven.gofancy.wtf/releases")
     }
-    maven {
-        name = "Minecraft"
-        url = uri("https://libraries.minecraft.net")
-    }
 }
 
 dependencies {

@@ -24,6 +24,7 @@
 
 package wtf.gofancy.koremods.dsl
 
+import codes.som.koffee.types.TypeLike
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
@@ -55,6 +56,14 @@ class SimpleProperty<T : Any>(default: T) {
 class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
     fun `class`(name: String, block: ClassNode.() -> Unit) {
         transformers.add(ClassTransformer(scriptIdentifier, props, name, block))
+    }
+
+    fun method(owner: String, name: String, returnType: TypeLike, block: MethodNode.() -> Unit) {
+        method(owner, name, constructMethodDescriptor(returnType), block)
+    }
+
+    fun method(owner: String, name: String, returnType: TypeLike, parameterTypes: Array<TypeLike> = emptyArray(), block: MethodNode.() -> Unit) {
+        method(owner, name, constructMethodDescriptor(returnType, parameterTypes), block)
     }
     
     fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {

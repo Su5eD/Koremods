@@ -25,7 +25,7 @@
 import org.objectweb.asm.tree.InsnNode
 
 transformers { 
-    method("wtf.gofancy.koremods.transform.Person", "isTransformed", constructMethodDescriptor(Boolean::class), ::setPersonTransformed)
+    method("wtf.gofancy.koremods.transform.Person", "isTransformed", Boolean::class, ::setPersonTransformed)
 }
 
 fun setPersonTransformed(node: MethodNode) {

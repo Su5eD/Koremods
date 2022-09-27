@@ -193,7 +193,7 @@ class KoremodsSplashScreen(private val logger: Logger) {
 
     private fun setWindowIcon() {
         loadImage(WINDOW_ICON, false) { stack, width, height, image ->
-            val glfwImages = GLFWImage.mallocStack(1, stack)
+            val glfwImages = GLFWImage.malloc(1, stack)
 
             glfwImages.position(0)
             glfwImages.width(width.get(0))

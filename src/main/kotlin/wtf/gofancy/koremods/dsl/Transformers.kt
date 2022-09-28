@@ -29,13 +29,14 @@ import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
 import wtf.gofancy.koremods.Identifier
+import wtf.gofancy.koremods.launch.KoremodsLaunch
 import kotlin.reflect.KProperty
 
 interface Transformer<T> {
     val scriptIdentifier: Identifier
     val props: TransformerPropertiesExtension
     val targetClassName: String
-    
+
     fun visit(node: T)
 }
 
@@ -55,25 +56,31 @@ class SimpleProperty<T : Any>(default: T) {
 
 class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
     fun `class`(name: String, block: ClassNode.() -> Unit) {
-        transformers.add(ClassTransformer(scriptIdentifier, props, name, block))
+        val params = ClassTransformerParams(name)
+        val mapped = KoremodsLaunch.PLUGIN?.mapClassTransformer(params) ?: params
+        transformers.add(ClassTransformer(scriptIdentifier, props, mapped.name, block))
     }
 
     fun method(owner: String, name: String, returnType: TypeLike, block: MethodNode.() -> Unit) {
         method(owner, name, constructMethodDescriptor(returnType), block)
     }
 
-    fun method(owner: String, name: String, returnType: TypeLike, parameterTypes: Array<TypeLike> = emptyArray(), block: MethodNode.() -> Unit) {
-        method(owner, name, constructMethodDescriptor(returnType, parameterTypes), block)
+    fun method(owner: String, name: String, returnType: TypeLike, parameterTypes: Array<TypeLike>, block: MethodNode.() -> Unit) {
+        method(owner, name, constructMethodDescriptor(returnType, *parameterTypes), block)
     }
-    
+
     fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
-        transformers.add(MethodTransformer(scriptIdentifier, props, owner, name, desc, block)) 
+        val params = MethodTransformerParams(owner, name, desc)
+        val mapped = KoremodsLaunch.PLUGIN?.mapMethodTransformer(params) ?: params
+        transformers.add(MethodTransformer(scriptIdentifier, props, mapped.owner, mapped.name, mapped.desc, block))
     }
-    
+
     fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
-        transformers.add(FieldTransformer(scriptIdentifier, props, owner, name, block))
+        val params = FieldTransformerParams(owner, name)
+        val mapped = KoremodsLaunch.PLUGIN?.mapFieldTransformer(params) ?: params
+        transformers.add(FieldTransformer(scriptIdentifier, props, mapped.owner, mapped.name, block))
     }
-    
+
     fun ext(block: TransformerPropertiesExtension.() -> Unit) {
         block(props)
     }
@@ -82,11 +89,11 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
 class TransformerHandler internal constructor(private val scriptIdentifier: Identifier) {
     private val transformers = mutableListOf<Transformer<*>>()
     private val props = TransformerPropertiesExtension()
-        
+
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
         transformer.invoke(TransformerBuilder(scriptIdentifier, transformers, props))
     }
-    
+
     fun getTransformers() = transformers.toList()
 }
 
@@ -101,3 +108,7 @@ class MethodTransformer internal constructor(override val scriptIdentifier: Iden
 class FieldTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
     override fun visit(node: FieldNode) = block(node)
 }
+
+data class ClassTransformerParams internal constructor(val name: String)
+data class MethodTransformerParams internal constructor(val owner: String, val name: String, val desc: String)
+data class FieldTransformerParams internal constructor(val owner: String, val name: String)

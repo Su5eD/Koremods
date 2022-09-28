@@ -25,6 +25,9 @@
 package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
+import wtf.gofancy.koremods.dsl.ClassTransformerParams
+import wtf.gofancy.koremods.dsl.FieldTransformerParams
+import wtf.gofancy.koremods.dsl.MethodTransformerParams
 import java.nio.file.Path
 
 /**
@@ -49,4 +52,8 @@ interface KoremodsLaunchPlugin {
     fun appendLogMessage(level: Level, message: String)
     
     fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader
+    
+    fun mapClassTransformer(params: ClassTransformerParams): ClassTransformerParams = params
+    fun mapMethodTransformer(params: MethodTransformerParams): MethodTransformerParams = params
+    fun mapFieldTransformer(params: FieldTransformerParams): FieldTransformerParams = params
 }

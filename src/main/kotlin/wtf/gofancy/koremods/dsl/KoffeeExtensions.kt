@@ -44,7 +44,7 @@ import org.objectweb.asm.tree.MethodNode
  */
 fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
     return Type.getMethodDescriptor(coerceType(returnType),
-            *parameterTypes.map(::coerceType).toTypedArray())
+        *parameterTypes.map(::coerceType).toTypedArray())
 }
 
 /**

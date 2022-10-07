@@ -35,8 +35,7 @@ import org.objectweb.asm.tree.*
 /**
  * An extended version of [BlockAssembly] with information about the [target] node we're inserting bytecode at.
  */
-class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, 
-                       labels: MutableMap<String, LabelNode>, val target: AbstractInsnNode)
+class TargetedAssembly(override val instructions: InsnList, override val tryCatchBlocks: MutableList<TryCatchBlockNode>, labels: MutableMap<String, LabelNode>, val target: AbstractInsnNode)
     : InstructionAssembly, TryCatchContainer, ModifiersAccess, TypesAccess {
     val L: SharedLabelRegistry = SharedLabelRegistry(labels, this)
 }

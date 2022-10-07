@@ -31,7 +31,7 @@ import wtf.gofancy.koremods.dsl.MethodTransformerParams
 import java.nio.file.Path
 
 /**
- * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch] 
+ * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch]
  */
 interface KoremodsLaunchPlugin {
 
@@ -43,17 +43,47 @@ interface KoremodsLaunchPlugin {
 
     /**
      * Fallback logger appender callback used for [KoremodsLogAppender] when the splash screen is disabled/not avaiable.
-     * 
+     *
      * @param level The logging Level
      * @param message the message string to be logger
-     * 
+     *
      * @see wtf.gofancy.koremods.prelaunch.KoremodsBlackboard.createLogger
      */
     fun appendLogMessage(level: Level, message: String)
-    
-    fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader
-    
+
+    /**
+     * Create a custom ClassLoader that will be used to load compiled scripts from Script Packs.
+     *
+     * @param path Path to the script .jar file
+     * @param parent The parent ClassLoader
+     * @return A new ClassLoader, or `null` to use the default [wtf.gofancy.koremods.MemoryClassLoader] provided by Koremods.
+     */
+    fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader?
+
+    /**
+     * Allows changing the input parameters of class Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]
+     * before they're finalized.
+     *
+     * @param params Input transformer parameters
+     * @return The processed parameters
+     */
     fun mapClassTransformer(params: ClassTransformerParams): ClassTransformerParams = params
+
+    /**
+     * Allows changing the input parameters of method Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]
+     * before they're finalized.
+     *
+     * @param params Input transformer parameters
+     * @return The processed parameters
+     */
     fun mapMethodTransformer(params: MethodTransformerParams): MethodTransformerParams = params
+
+    /**
+     * Allows changing the input parameters of field Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]
+     * before they're finalized.
+     *
+     * @param params Input transformer parameters
+     * @return The processed parameters
+     */
     fun mapFieldTransformer(params: FieldTransformerParams): FieldTransformerParams = params
 }

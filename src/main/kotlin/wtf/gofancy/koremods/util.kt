@@ -31,6 +31,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.api.ScriptDiagnostic
 
+/**
+ * Measure and log code execution time in milliseconds.
+ *
+ * @param level the log level
+ * @param message the action performed
+ * @param block the function to run
+ */
 fun <T> Logger.measureMillis(level: Level, message: String, block: () -> T): T {
     val stopwatch = Stopwatch.createStarted()
     val result = block()
@@ -39,6 +46,9 @@ fun <T> Logger.measureMillis(level: Level, message: String, block: () -> T): T {
     return result
 }
 
+/**
+ * Dump errors from a [ResultWithDiagnostics] to a Log4J [Logger].
+ */
 fun Logger.logResultErrors(result: ResultWithDiagnostics.Failure) {
     result.reports.forEach { report ->
         report.exception
@@ -47,7 +57,7 @@ fun Logger.logResultErrors(result: ResultWithDiagnostics.Failure) {
     }
 }
 
-fun ScriptDiagnostic.Severity.toLogLevel(): Level {
+private fun ScriptDiagnostic.Severity.toLogLevel(): Level {
     return when (this) {
         ScriptDiagnostic.Severity.FATAL -> Level.FATAL
         ScriptDiagnostic.Severity.ERROR -> Level.ERROR

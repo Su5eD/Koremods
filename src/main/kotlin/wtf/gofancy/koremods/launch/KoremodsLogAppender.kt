@@ -33,8 +33,8 @@ import org.apache.logging.log4j.core.config.Property
 /**
  * Simple log appender delegating append calls to [callback].
  * 
- * @param name The Appender name.
- * @param filter The Filter to associate with the Appender.
+ * @param name The Appender name
+ * @param filter The Filter to associate with the Appender
  * @param callback Log event appending callback
  */
 class KoremodsLogAppender(name: String, filter: Filter?, private val callback: (Level, String) -> Unit) : AbstractAppender(name, filter, null, true, Property.EMPTY_ARRAY) {

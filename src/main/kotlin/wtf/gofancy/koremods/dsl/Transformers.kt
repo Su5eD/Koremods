@@ -30,7 +30,7 @@ import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
 import wtf.gofancy.koremods.Identifier
 import wtf.gofancy.koremods.launch.KoremodsLaunch
-import kotlin.reflect.KProperty
+import kotlin.script.experimental.util.PropertiesCollection
 
 /**
  * Represents an arbitrary transformer that belongs to a Script.
@@ -46,7 +46,7 @@ interface Transformer<T> {
     /**
      * Additional transformer properties
      */
-    val props: TransformerPropertiesExtension
+    val props: TransformerPropertiesStore
 
     /**
      * The name of the class to select for transformation
@@ -61,26 +61,39 @@ interface Transformer<T> {
     fun visit(node: T)
 }
 
-@Deprecated(message = "")
-class TransformerPropertiesExtension internal constructor()
+/**
+ * Common extension point for Transformer extension properties.
+ */
+interface TransformerPropertyKeys
 
-@Deprecated(message = "")
-class SimpleProperty<T : Any>(default: T) {
-    private var value: T? = default
+/**
+ * Stores configured transformer properties.
+ * 
+ * @param baseConfigurations Parent properties to apply to this store
+ * @param body Property builder function
+ */
+open class TransformerPropertiesStore internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>, body: Builder.() -> Unit)
+    : PropertiesCollection(Builder(baseConfigurations).apply(body).data) {
+    
+    constructor(body: Builder.() -> Unit = {}) : this(emptyList(), body)
+    
+    companion object : TransformerPropertyKeys
+    
+    object Default : TransformerPropertiesStore()
 
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
-        return value ?: throw IllegalStateException("Property ${property.name} should be initialized before get.")
-    }
-
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-        this.value = value
-    }
+    /**
+     * Used to configure initial store values.
+     */
+    class Builder internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>)
+        : TransformerPropertyKeys, PropertiesCollection.Builder(baseConfigurations)
 }
 
 /**
- * Allows the easy creation of Transformers
+ * Allows the easy creation of Transformers.
  */
-class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>, private val props: TransformerPropertiesExtension) {
+class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>) {
+    internal var props: TransformerPropertiesStore = TransformerPropertiesStore.Default
+        private set
     
     /**
      * Add a class transformer.
@@ -146,57 +159,72 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
         transformers.add(FieldTransformer(scriptIdentifier, props, mapped.owner, mapped.name, block))
     }
 
-    fun ext(block: TransformerPropertiesExtension.() -> Unit) {
-        block(props)
+    /**
+     * Configure the extra properties of this script.
+     */
+    fun props(block: TransformerPropertiesStore.Builder.() -> Unit) {
+        props = TransformerPropertiesStore(block)
     }
 }
 
 /**
- * Stores the Script's transformers
+ * Stores the script's transformers.
+ * 
+ * @property scriptIdentifier The script's identifier
  */
 class TransformerHandler internal constructor(private val scriptIdentifier: Identifier) {
     private val transformers = mutableListOf<Transformer<*>>()
-    private val props = TransformerPropertiesExtension()
+    private var props: TransformerPropertiesStore = TransformerPropertiesStore.Default
 
+    /**
+     * Invoke the transformer builder DSL that allows adding transformers to this handler.
+     * 
+     * @param transformer The builder function
+     */
     fun transformers(transformer: TransformerBuilder.() -> Unit) {
-        transformer.invoke(TransformerBuilder(scriptIdentifier, transformers, props))
+        val builder = TransformerBuilder(scriptIdentifier, transformers)
+        transformer.invoke(builder)
+        props = builder.props
     }
 
-    fun getTransformers() = transformers.toList()
+    /**
+     * Get all transformers of this script.
+     */
+    fun getTransformers(): List<Transformer<*>> = transformers.toList()
 }
 
 /**
- * Applies transformations to a Class
+ * Applies transformations to a Class.
  */
-class ClassTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
+class ClassTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesStore, override val targetClassName: String, private val block: ClassNode.() -> Unit) : Transformer<ClassNode> {
     override fun visit(node: ClassNode) = block(node)
 }
 
 /**
- * Applies transformations to a Method
+ * Applies transformations to a Method.
  */
-class MethodTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
+class MethodTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesStore, override val targetClassName: String, val name: String, val desc: String, private val block: MethodNode.() -> Unit) : Transformer<MethodNode> {
     override fun visit(node: MethodNode) = block(node)
 }
 
 /**
- * Applies transformations to a Field
+ * Applies transformations to a Field.
  */
-class FieldTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesExtension, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
+class FieldTransformer internal constructor(override val scriptIdentifier: Identifier, override val props: TransformerPropertiesStore, override val targetClassName: String, val name: String, private val block: FieldNode.() -> Unit) : Transformer<FieldNode> {
     override fun visit(node: FieldNode) = block(node)
 }
 
 /**
- * Stores Class Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapClassTransformer]
+ * Stores Class Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapClassTransformer].
  */
 data class ClassTransformerParams internal constructor(val name: String)
 
 /**
- * Stores Method Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapMethodTransformer]
+ * Stores Method Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapMethodTransformer].
  */
 data class MethodTransformerParams internal constructor(val owner: String, val name: String, val desc: String)
 
 /**
- * Stores Field Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapFieldTransformer]
+ * Stores Field Transformer parameters for mapping with [wtf.gofancy.koremods.launch.KoremodsLaunchPlugin.mapFieldTransformer].
  */
 data class FieldTransformerParams internal constructor(val owner: String, val name: String)

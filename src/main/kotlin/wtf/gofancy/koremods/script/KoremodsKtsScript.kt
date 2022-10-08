@@ -53,6 +53,11 @@ const val KOREMODS_SCRIPT_EXTENSION = "core.kts"
 abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
     val transformerHandler = TransformerHandler(identifier)
 
+    /**
+     * Configure the script's transformers.
+     * 
+     * @param configuration The configuration function
+     */
     fun transformers(configuration: TransformerBuilder.() -> Unit) {
         transformerHandler.transformers(configuration)
     }

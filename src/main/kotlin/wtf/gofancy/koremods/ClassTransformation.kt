@@ -26,7 +26,7 @@ package wtf.gofancy.koremods
 
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.Transformer
-import wtf.gofancy.koremods.dsl.TransformerPropertiesExtension
+import wtf.gofancy.koremods.dsl.TransformerPropertiesStore
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
@@ -37,9 +37,9 @@ private val LOGGER: Logger = KoremodsBlackboard.createLogger("Transformer")
  * @param identifier an arbirtary object used to identify the transformed object in logs
  * @param transformers a list of transformers to use
  * @param node the node being transformed
- * @return the [TransformerPropertiesExtension]s of transformers which ran successfully
+ * @return the [TransformerPropertiesStore]s of transformers which ran successfully
  */
-fun <T : Transformer<U>, U> applyTransform(identifier: Any, transformers: List<T>, node: U): Collection<TransformerPropertiesExtension> {
+fun <T : Transformer<U>, U> applyTransform(identifier: Any, transformers: List<T>, node: U): Collection<TransformerPropertiesStore> {
     return transformers
         .filter { transformer ->
             LOGGER.debug("Transforming $identifier with transformer script ${transformer.scriptIdentifier}")

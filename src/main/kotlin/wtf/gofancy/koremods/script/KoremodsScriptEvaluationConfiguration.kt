@@ -71,7 +71,6 @@ class ClassNotAvailableInSandboxException(message: String) : RuntimeException(me
  * @param parent the parent class loader for delegation
  */
 internal class FilteredClassLoader(private val allowedClasses: List<String>, parent: ClassLoader?) : ClassLoader(parent) {
-    
     /**
      * @throws [ClassNotAvailableInSandboxException] if an unavailable class is attempted to be loaded
      */

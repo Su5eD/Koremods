@@ -31,7 +31,9 @@ import org.apache.logging.log4j.Logger;
  * Holds shared information constants
  */
 public final class KoremodsBlackboard {
-    public static final String NAME = "Koremods";
+    /**
+     * Koremods self identifier.
+     */
     public static final String NAMESPACE = "koremods";
     /**
      * Logger name prefix used by Koremods logger instances

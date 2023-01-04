@@ -58,7 +58,7 @@ interface KoremodsLaunchPlugin {
      * @param parent The parent ClassLoader
      * @return A new ClassLoader, or `null` to use the default [wtf.gofancy.koremods.MemoryClassLoader] provided by Koremods.
      */
-    fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader?
+    fun createCompiledScriptClassLoader(path: Path, parent: ClassLoader?): ClassLoader? = null
 
     /**
      * Allows changing the input parameters of class Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]

@@ -1,5 +1,3 @@
-import fr.brouillard.oss.jgitver.GitVersionCalculator
-import fr.brouillard.oss.jgitver.Strategies
 import org.jetbrains.dokka.DokkaConfiguration
 import org.jetbrains.dokka.Platform
 import org.jetbrains.dokka.base.DokkaBase
@@ -11,8 +9,6 @@ import java.util.*
 
 buildscript {
     dependencies {
-        // TODO look for alternatives
-        classpath(group = "fr.brouillard.oss", name = "jgitver", version = "_")
         classpath(group = "org.jetbrains.dokka", name = "dokka-base", version = "_")
     }
 }
@@ -23,15 +19,11 @@ plugins {
     id("org.jetbrains.dokka")
     id("com.github.johnrengelman.shadow")
     id("org.cadixdev.licenser")
+    id("me.qoomon.git-versioning")
 }
 
 group = "wtf.gofancy.koremods"
-version = getGitVersion()
-
-project.afterEvaluate {
-    // this will work for now to get a tag based version, but we should really look for a different plugin
-    println("Version: ${project.version}")
-}
+version = "0.0.0-SNAPSHOT"
 
 /**
  * This source set contains the splash screen which gets shown during start up.
@@ -60,6 +52,12 @@ val sharedApi: Configuration by configurations.creating
  */
 val shadeImplementation: Configuration by configurations.creating
 val shadeApi: Configuration by configurations.creating
+
+gitVersioning.apply {
+    rev {
+        version = "\${describe.tag.version.major}.\${describe.tag.version.minor}.\${describe.tag.version.patch.plus.describe.distance}"
+    }
+}
 
 configurations {
     implementation {
@@ -203,7 +201,7 @@ tasks {
         kotlinOptions.jvmTarget = "11"
     }
 
-    withType<DokkaTask>() {
+    withType<DokkaTask> {
         dokkaSourceSets {
             moduleName.set("Koremods")
 
@@ -246,7 +244,7 @@ tasks {
     }
 
     withType<Wrapper> {
-        gradleVersion = "7.4.2"
+        gradleVersion = "7.5.1"
         distributionType = Wrapper.DistributionType.BIN
     }
 }
@@ -284,12 +282,4 @@ publishing {
             }
         }
     }
-}
-
-fun getGitVersion(): String {
-    val jgitver = GitVersionCalculator.location(rootDir)
-        .setNonQualifierBranches("master")
-        .setStrategy(Strategies.SCRIPT)
-        .setScript("print \"\${metadata.CURRENT_VERSION_MAJOR};\${metadata.CURRENT_VERSION_MINOR};\${metadata.CURRENT_VERSION_PATCH + metadata.COMMIT_DISTANCE}\"")
-    return jgitver.version
 }

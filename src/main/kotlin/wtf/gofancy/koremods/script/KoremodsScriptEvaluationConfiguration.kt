@@ -51,7 +51,7 @@ val ALLOWED_CLASSES: List<String> = listOf(
 
 internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     jvm {
-        baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES, KoremodsLaunch.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
+        baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES.plus(KoremodsLaunch.PLUGIN?.allowedClasses ?: emptyList()), KoremodsLaunch.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))
         loadDependencies(false)
         scriptsInstancesSharing(true)
     }

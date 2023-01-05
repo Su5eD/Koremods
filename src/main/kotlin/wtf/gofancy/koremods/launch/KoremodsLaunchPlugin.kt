@@ -42,6 +42,12 @@ interface KoremodsLaunchPlugin {
     val splashScreenAvailable: Boolean
 
     /**
+     * A list of fully qualified class names and package prefixes allowed to be classloaded in Koremods Scripts,
+     * in addition to [wtf.gofancy.koremods.script.ALLOWED_CLASSES]
+     */
+    val allowedClasses: List<String>
+
+    /**
      * Fallback logger appender callback used for [KoremodsLogAppender] when the splash screen is disabled/not avaiable.
      *
      * @param level The logging Level

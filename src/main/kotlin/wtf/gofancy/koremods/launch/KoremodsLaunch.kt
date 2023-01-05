@@ -35,6 +35,7 @@ import wtf.gofancy.koremods.parseMainConfig
 import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.splash.KoremodsSplashScreen
 import java.nio.file.Path
+import java.util.*
 import kotlin.io.path.div
 
 /**
@@ -42,6 +43,8 @@ import kotlin.io.path.div
  */
 @Suppress("unused")
 object KoremodsLaunch {
+    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
+
     /**
      * `KoremodsLoader` instance created by [launch].
      * Upon success, loaded script packs will be accessible by frontends by this property.
@@ -51,8 +54,11 @@ object KoremodsLaunch {
     var LOADER: KoremodsLoader? = null
         private set
     
-    var PLUGIN: KoremodsLaunchPlugin? = null
-        private set
+    val PLUGIN: KoremodsLaunchPlugin =
+        ServiceLoader.load(KoremodsLaunchPlugin::class.java, KoremodsLaunchPlugin::class.java.classLoader)
+            .firstOrNull()
+            ?.also { plugin -> LOGGER.info("Found launch plugin: ${plugin.javaClass.name}") }
+            ?: DummyKoremodsLaunchPlugin
 
     /**
      * Used as the base classloader for Koremods scripts.
@@ -61,8 +67,6 @@ object KoremodsLaunch {
      */
     var scriptContextClassLoader: ClassLoader? = null
         private set
-    
-    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
 
     /**
      * Configures the Koremods scripting environment and initializes the loading process.
@@ -70,17 +74,15 @@ object KoremodsLaunch {
      * and compatible with the current environment.
      *
      * @param loaderMode the LoaderMode to use with the [LOADER] instance
-     * @param launchPlugin the launch plugin
      * @param configDir path to the directory containing the main koremods config file
      * @param discoveryDir optional directory containing koremods script packs
      * @param discoveryPaths additional paths to search for Koremods script packs
      */
-    fun launch(loaderMode: LoaderMode, launchPlugin: KoremodsLaunchPlugin, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
+    fun launch(loaderMode: LoaderMode, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
         if (LOADER != null) throw IllegalStateException("Koremods has already been launched")
         
         LOGGER.info("Launching Koremods instance")
 
-        PLUGIN = launchPlugin
         scriptContextClassLoader = javaClass.classLoader
 
         val configPath = configDir / KoremodsBlackboard.CONFIG_FILE
@@ -91,11 +93,10 @@ object KoremodsLaunch {
             getLoggerContext(scriptContextClassLoader!!),
         )
 
-        LOGGER.info("Found launch plugin: ${launchPlugin.javaClass.name}")
         val callback: (Level, String) -> Unit
         val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
 
-        if (config.enableSplashScreen && launchPlugin.splashScreenAvailable && !isMacOS) {
+        if (config.enableSplashScreen && PLUGIN.splashScreenAvailable && !isMacOS) {
             LOGGER.info("Creating splash screen")
             splash = createSplashScreen()
             callback = splash::log
@@ -104,7 +105,7 @@ object KoremodsLaunch {
             splash.startOnThread()
         } else {
             splash = null
-            callback = launchPlugin::appendLogMessage
+            callback = PLUGIN::appendLogMessage
         }
 
         LOGGER.debug("Injecting splash screen log appenders")

@@ -123,7 +123,7 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
             val actualEvalConfig = scriptEvaluationConfiguration ?: ScriptEvaluationConfiguration()
             val baseClassLoader = actualEvalConfig[ScriptEvaluationConfiguration.jvm.baseClassLoader]
                 ?: Thread.currentThread().contextClassLoader
-            val classLoader = KoremodsLaunch.PLUGIN?.createCompiledScriptClassLoader(path, baseClassLoader)
+            val classLoader = KoremodsLaunch.PLUGIN.createCompiledScriptClassLoader(path, baseClassLoader)
                 ?: createScriptMemoryClassLoader(baseClassLoader)
             loadedScript = createScriptFromClassLoader(scriptClassFQName, classLoader)
         }

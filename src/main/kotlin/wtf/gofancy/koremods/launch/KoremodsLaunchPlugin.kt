@@ -46,6 +46,8 @@ interface KoremodsLaunchPlugin {
      * in addition to [wtf.gofancy.koremods.script.ALLOWED_CLASSES]
      */
     val allowedClasses: List<String>
+    
+    val defaultImports: List<String>
 
     /**
      * Fallback logger appender callback used for [KoremodsLogAppender] when the splash screen is disabled/not avaiable.

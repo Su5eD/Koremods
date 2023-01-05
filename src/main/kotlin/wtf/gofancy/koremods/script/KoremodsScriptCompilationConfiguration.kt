@@ -24,6 +24,7 @@
 
 package wtf.gofancy.koremods.script
 
+import wtf.gofancy.koremods.launch.KoremodsLaunch
 import java.io.File
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.FileBasedScriptSource
@@ -43,7 +44,7 @@ private val DEFAULT_IMPORTS: List<String> = listOf(
 )
 
 internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfiguration({
-    defaultImports(DEFAULT_IMPORTS)
+    defaultImports(DEFAULT_IMPORTS.plus(KoremodsLaunch.PLUGIN.defaultImports))
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }

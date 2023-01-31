@@ -31,7 +31,7 @@ import wtf.gofancy.koremods.dsl.MethodTransformerParams
 import java.nio.file.Path
 
 /**
- * Implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch]
+ * A java service interface implemented by frontends for additional configuration of [wtf.gofancy.koremods.launch.KoremodsLaunch].
  */
 interface KoremodsLaunchPlugin {
 
@@ -46,7 +46,11 @@ interface KoremodsLaunchPlugin {
      * in addition to [wtf.gofancy.koremods.script.ALLOWED_CLASSES]
      */
     val allowedClasses: List<String>
-    
+
+    /**
+     * A list of import expressions to be implicitly added to Koremods Scripts.
+     * Syntax for these is the same as for regular `import` statements.
+     */
     val defaultImports: List<String>
 
     /**

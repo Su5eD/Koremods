@@ -51,6 +51,12 @@ data class KoremodsPackConfig(val namespace: String, val scripts: List<String>)
  */
 data class KoremodsConfig(val enableSplashScreen: Boolean = false)
 
+/**
+ * Parses a config object from a raw data stream.
+ *
+ * @param reader the data source
+ * @return parsed config object instance
+ */
 inline fun <reified T> parseConfig(reader: Reader): T {
     return ConfigFactory.parseReader(reader).extract()
 }

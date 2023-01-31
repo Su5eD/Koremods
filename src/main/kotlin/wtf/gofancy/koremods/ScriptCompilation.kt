@@ -47,48 +47,13 @@ import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromT
 
 private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
 
-internal fun compileScriptPacks(packs: Collection<RawScriptPack<SourceCode>>, libraries: Array<out String> = emptyArray()): List<RawScriptPack<CompiledScript>> {
-    LOGGER.info("Compiling script packs")
-
-    return packs.map { pack ->
-        val compiledScripts = pack.scripts.map compile@{ script ->
-            val compiled = script.compileScriptResult(libraries)
-            return@compile RawScript(script.identifier, compiled)
-        }
-        return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
-    }
-}
-
-fun RawScript<SourceCode>.compileScriptResult(libraries: Array<out String>): CompiledScript {
-    return compileScriptResult(identifier, source) {
-        jvm {
-            dependenciesFromCurrentContext(libraries = libraries)
-        }
-    }
-}
-
-fun compileScriptResult(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): CompiledScript {
-    val result = LOGGER.measureMillis(Level.DEBUG, "Compiling script $identifier") {
-        compileScript(identifier, source, configBuilder)
-    }
-    return when (result) {
-        is ResultWithDiagnostics.Success -> result.value
-        is ResultWithDiagnostics.Failure -> {
-            LOGGER.logResultErrors(result)
-            throw ScriptEvaluationException("Failed to compile script $identifier. See the log for more information")
-        }
-    }
-}
-
-@Suppress("DEPRECATION_ERROR")
-fun compileScript(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): ResultWithDiagnostics<CompiledScript> {
-    LOGGER.info("Compiling script $identifier")
-    val compiler = JvmScriptCompiler()
-    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript>(body = configBuilder)
-    return internalScriptingRunSuspend { compiler.invoke(source, compilationConfiguration) }
-}
-
-internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<SourceCode>> {
+/**
+ * Read the Source Code contents of pack scripts.
+ *
+ * @param packs the Script Packs to read the contents of
+ * @return a list of script packs containing their scripts' [SourceCode]
+ */
+fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<SourceCode>> {
     LOGGER.info("Reading script sources from packs")
 
     return packs.map { pack ->
@@ -101,12 +66,24 @@ internal fun readScriptSources(packs: Collection<RawScriptPack<Path>>): List<Raw
         .toList()
 }
 
+/**
+ * Read the contents of a script from a [Path] and return its [SourceCode].
+ *
+ * @param identifier the script's name
+ * @param path path to the script's source code file
+ * @return [SourceCode] representation of the script file's contents
+ */
 fun readScriptSource(identifier: Identifier, path: Path): SourceCode {
     LOGGER.debug("Reading source for script $identifier")
     return if (path.fileSystem == FileSystems.getDefault()) FileScriptSource(File(path.pathString))
     else PathScriptSource(path)
-} 
+}
 
+/**
+ * Read the bytecode contents of compiled scripts from script packs.
+ *
+ * @param packs the Script Packs to read the contents of
+ */
 internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<RawScriptPack<CompiledScript>> {
     LOGGER.info("Reading compiled scripts")
 
@@ -125,6 +102,83 @@ internal fun readCompiledScripts(packs: Collection<RawScriptPack<Path>>): List<R
         .toList()
 }
 
+/**
+ * Process and compile scripts from each script pack,
+ * returning a new list of packs with the compiled results.
+ *
+ * @param packs script packs to compile
+ * @param libraries file names of additional libraries to use during compilation
+ * @return a list of script packs with the resulting compile contents
+ */
+internal fun compileScriptPacks(packs: Collection<RawScriptPack<SourceCode>>, libraries: Array<out String> = emptyArray()): List<RawScriptPack<CompiledScript>> {
+    LOGGER.info("Compiling script packs")
+
+    return packs.map { pack ->
+        val compiledScripts = pack.scripts.map compile@{ script ->
+            val compiled = script.compileScriptResult(libraries)
+            return@compile RawScript(script.identifier, compiled)
+        }
+        return@map RawScriptPack(pack.namespace, pack.path, compiledScripts)
+    }
+}
+
+/**
+ * Compile a Source script with additional configuration and return the compilation result.
+ *
+ * @param libraries file names of additional libraries to use during compilation
+ * @return the compiled script result
+ */
+fun RawScript<SourceCode>.compileScriptResult(libraries: Array<out String>): CompiledScript {
+    return compileScriptResult(identifier, source) {
+        jvm {
+            dependenciesFromCurrentContext(libraries = libraries)
+        }
+    }
+}
+
+/**
+ * Compile a source script and ensure the process was successful.
+ *
+ * @param identifier the script's name
+ * @param source source code to compile
+ * @param configBuilder additional configuration
+ * @return the compilation result
+ * @throws ScriptEvaluationException if compilation fails
+ */
+fun compileScriptResult(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): CompiledScript {
+    val result = LOGGER.measureMillis(Level.DEBUG, "Compiling script $identifier") {
+        compileScript(identifier, source, configBuilder)
+    }
+    return when (result) {
+        is ResultWithDiagnostics.Success -> result.value
+        is ResultWithDiagnostics.Failure -> {
+            LOGGER.logResultErrors(result)
+            throw ScriptEvaluationException("Failed to compile script $identifier. See the log for more information")
+        }
+    }
+}
+
+/**
+ * Invoke the kotlin script compiler.
+ *
+ * @param identifier the script's name
+ * @param source source code to compile
+ * @param configBuilder additional configuration
+ * @return compiler diagnostic result
+ */
+@Suppress("DEPRECATION_ERROR")
+fun compileScript(identifier: Identifier, source: SourceCode, configBuilder: ScriptCompilationConfiguration.Builder.() -> Unit): ResultWithDiagnostics<CompiledScript> {
+    LOGGER.info("Compiling script $identifier")
+    val compiler = JvmScriptCompiler()
+    val compilationConfiguration = createJvmCompilationConfigurationFromTemplate<KoremodsKtsScript>(body = configBuilder)
+    return internalScriptingRunSuspend { compiler.invoke(source, compilationConfiguration) }
+}
+
+/**
+ * A Script Source that points to a java NIO [Path].
+ *
+ * @param path path to the script's source code file
+ */
 class PathScriptSource(private val path: Path) : ExternalSourceCode, Serializable {
     override val externalLocation: URL = path.toUri().toURL()
     

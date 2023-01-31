@@ -46,14 +46,20 @@ object KoremodsLaunch {
     private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
 
     /**
-     * `KoremodsLoader` instance created by [launch].
+     * [KoremodsLoader] instance created by [launch].
      * Upon success, loaded script packs will be accessible by frontends by this property.
      * 
      * @see KoremodsLoader
      */
     var LOADER: KoremodsLoader? = null
         private set
-    
+
+    /**
+     * Global [KoremodsLaunchPlugin] service instance located using the [ServiceLoader].
+     * If none can be found on the classpath, [DummyKoremodsLaunchPlugin] will be used instead.
+     *
+     * @see KoremodsLaunchPlugin
+     */
     val PLUGIN: KoremodsLaunchPlugin =
         ServiceLoader.load(KoremodsLaunchPlugin::class.java, KoremodsLaunchPlugin::class.java.classLoader)
             .firstOrNull()

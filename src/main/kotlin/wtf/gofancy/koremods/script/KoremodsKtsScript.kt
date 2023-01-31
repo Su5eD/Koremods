@@ -51,6 +51,9 @@ const val KOREMODS_SCRIPT_EXTENSION = "core.kts"
     evaluationConfiguration = KoremodsScriptEvaluationConfiguration::class,
 )
 abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
+    /**
+     * Stores the instance's configured transformers.
+     */
     val transformerHandler = TransformerHandler(identifier)
 
     /**

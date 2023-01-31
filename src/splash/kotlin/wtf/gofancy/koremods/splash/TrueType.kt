@@ -94,7 +94,7 @@ class TrueType(font: String, val fontHeight: Float, private val windowSize: Pair
             val pCodePoint = stack.mallocInt(1)
             val x = stack.floats(0.0f)
             val y = stack.floats(0.0f)
-            val quad = STBTTAlignedQuad.mallocStack(stack)
+            val quad = STBTTAlignedQuad.malloc(stack)
             var i = 0
             val to = text.length
             while (i < to) {

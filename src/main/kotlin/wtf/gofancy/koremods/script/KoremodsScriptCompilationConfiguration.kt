@@ -43,6 +43,9 @@ private val DEFAULT_IMPORTS: List<String> = listOf(
     "org.objectweb.asm.Opcodes.*"
 )
 
+/**
+ * Koremods Script compilation configuration
+ */
 internal class KoremodsScriptCompilationConfiguration : ScriptCompilationConfiguration({
     defaultImports(DEFAULT_IMPORTS.plus(KoremodsLaunch.PLUGIN.defaultImports))
     ide {

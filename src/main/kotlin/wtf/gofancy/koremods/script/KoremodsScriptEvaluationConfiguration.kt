@@ -49,6 +49,9 @@ val ALLOWED_CLASSES: List<String> = listOf(
     "wtf.gofancy.koremods.dsl.",
 )
 
+/**
+ * Koremods Script evaluation configuration
+ */
 internal class KoremodsScriptEvaluationConfiguration : ScriptEvaluationConfiguration({
     jvm {
         baseClassLoader(FilteredClassLoader(ALLOWED_CLASSES.plus(KoremodsLaunch.PLUGIN.allowedClasses), KoremodsLaunch.scriptContextClassLoader ?: Thread.currentThread().contextClassLoader))

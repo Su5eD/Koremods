@@ -26,6 +26,9 @@ package wtf.gofancy.koremods.launch
 
 import org.apache.logging.log4j.Level
 
+/**
+ * A no-op launch plugin implementation, used as a replacement when no other plugins are found.
+ */
 object DummyKoremodsLaunchPlugin : KoremodsLaunchPlugin {
     override val splashScreenAvailable: Boolean = true
     

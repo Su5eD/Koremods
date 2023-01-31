@@ -40,6 +40,9 @@ class TargetedAssembly(override val instructions: InsnList, override val tryCatc
     val L: SharedLabelRegistry = SharedLabelRegistry(labels, this)
 }
 
+/**
+ * Stores labels that can be shared between assemblies
+ */
 class SharedLabelRegistry(private val labels: MutableMap<String, LabelNode>, private val insns: InstructionAssembly) {
     /**
      * Get a label by an [index].

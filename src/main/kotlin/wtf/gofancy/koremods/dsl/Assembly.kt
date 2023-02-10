@@ -31,6 +31,7 @@ import codes.som.koffee.labels.KoffeeLabel
 import codes.som.koffee.sugar.ModifiersAccess
 import codes.som.koffee.sugar.TypesAccess
 import org.objectweb.asm.tree.*
+import java.util.*
 
 /**
  * An extended version of [BlockAssembly] with information about the [target] node we're inserting bytecode at.
@@ -207,15 +208,18 @@ fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTa
  * - [JumpInsnNode] - Matches opcode only
  * - [LabelNode] - Not supported
  * - [LdcInsnNode] - Matches all attributes
- * - [LineNumberNode] - Not supported
+ * - [LineNumberNode] - Matches all attributes
+ * - [LookupSwitchInsnNode] - Matches all attributes
  * - [MethodInsnNode] - Matches all attributes
  * - [MultiANewArrayInsnNode] - Matches all attributes
- * - [TableSwitchInsnNode] - Matches opcode only
+ * - [TableSwitchInsnNode] - Matches all attributes
  * - [TypeInsnNode] - Matches all attributes
  * - [VarInsnNode] - Matches all attributes
  */
+// Improved by Mini's instructionsEqual function
+// https://git.sleeping.town/unascribed/NilLoader/src/commit/49ee5be0c24a21f5a31e256994ba5bf2bfc02172/src/main/java/nilloader/api/lib/mini/PatchContext.java#L407
 fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
-    return opcode == other.opcode && when(this) {
+    return this == other || opcode == other.opcode && when(this) {
         is FieldInsnNode -> {
             other as FieldInsnNode
             owner == other.owner
@@ -228,6 +232,7 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
             `var` == other.`var` 
             && incr == other.incr
         }
+        // InsnNode
         is IntInsnNode -> {
             other as IntInsnNode
             operand == other.operand
@@ -237,7 +242,7 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
             name == other.name
             && desc == other.desc
             && bsm == other.bsm
-            // bsmArgs
+            && Arrays.equals(bsmArgs, other.bsmArgs)
         }
         // JumpInsnNode
         // LabelNode
@@ -245,7 +250,18 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
             other as LdcInsnNode
             cst == other.cst
         }
-        // LineNumberNode
+        is LineNumberNode -> {
+            other as LineNumberNode
+            line == other.line
+            && start.insnEquals(other.start)
+        }
+        is LookupSwitchInsnNode -> {
+            other as LookupSwitchInsnNode
+            dflt.insnEquals(other.dflt)
+            && keys == other.keys
+            && labels.size == other.labels.size
+            && labels.zip(other.labels).all { (one, two) -> one.insnEquals(two) }
+        }
         is MethodInsnNode -> {
             other as MethodInsnNode
             owner == other.owner 
@@ -258,7 +274,14 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
             desc == other.desc
             && dims == other.dims
         }
-        // TableSwitchInsnNode
+        is TableSwitchInsnNode -> {
+            other as TableSwitchInsnNode
+            min == other.min
+            && max == other.max
+            && dflt.insnEquals(other.dflt)
+            && labels.size == other.labels.size
+            && labels.zip(other.labels).all { (one, two) -> one.insnEquals(two) }
+        }
         is TypeInsnNode -> {
             other as TypeInsnNode
             desc == other.desc

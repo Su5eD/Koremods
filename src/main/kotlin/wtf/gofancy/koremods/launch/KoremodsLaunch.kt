@@ -126,7 +126,7 @@ object KoremodsLaunch {
             LOGGER.info("Discovering script packs finished successfully")
             splash?.close(true)
         } catch (t: Throwable) {
-            LOGGER.fatal("An error has occured while discovering script packs")
+            LOGGER.fatal("An error has occured while discovering script packs", t)
             splash?.close(false)
             throw t
         }

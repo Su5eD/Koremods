@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Level
 import wtf.gofancy.koremods.dsl.ClassTransformerParams
 import wtf.gofancy.koremods.dsl.FieldTransformerParams
 import wtf.gofancy.koremods.dsl.MethodTransformerParams
+import wtf.gofancy.koremods.dsl.TransformerPropertiesStore
 import java.nio.file.Path
 
 /**
@@ -79,7 +80,7 @@ interface KoremodsLaunchPlugin {
      * @param params Input transformer parameters
      * @return The processed parameters
      */
-    fun mapClassTransformer(params: ClassTransformerParams): ClassTransformerParams = params
+    fun mapClassTransformer(params: ClassTransformerParams, props: TransformerPropertiesStore): ClassTransformerParams = params
 
     /**
      * Allows changing the input parameters of method Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]
@@ -88,7 +89,7 @@ interface KoremodsLaunchPlugin {
      * @param params Input transformer parameters
      * @return The processed parameters
      */
-    fun mapMethodTransformer(params: MethodTransformerParams): MethodTransformerParams = params
+    fun mapMethodTransformer(params: MethodTransformerParams, props: TransformerPropertiesStore): MethodTransformerParams = params
 
     /**
      * Allows changing the input parameters of field Transformers built using [wtf.gofancy.koremods.dsl.TransformerBuilder]
@@ -97,5 +98,5 @@ interface KoremodsLaunchPlugin {
      * @param params Input transformer parameters
      * @return The processed parameters
      */
-    fun mapFieldTransformer(params: FieldTransformerParams): FieldTransformerParams = params
+    fun mapFieldTransformer(params: FieldTransformerParams, props: TransformerPropertiesStore): FieldTransformerParams = params
 }

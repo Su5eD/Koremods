@@ -101,7 +101,7 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
      */
     fun `class`(name: String, block: ClassNode.() -> Unit) {
         val params = ClassTransformerParams(name)
-        val mapped = KoremodsLaunch.PLUGIN.mapClassTransformer(params)
+        val mapped = KoremodsLaunch.PLUGIN.mapClassTransformer(params, props)
         transformers.add(ClassTransformer(scriptIdentifier, props, mapped.name, block))
     }
 
@@ -140,7 +140,7 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
      */
     fun method(owner: String, name: String, desc: String, block: MethodNode.() -> Unit) {
         val params = MethodTransformerParams(owner, name, desc)
-        val mapped = KoremodsLaunch.PLUGIN.mapMethodTransformer(params)
+        val mapped = KoremodsLaunch.PLUGIN.mapMethodTransformer(params, props)
         transformers.add(MethodTransformer(scriptIdentifier, props, mapped.owner, mapped.name, mapped.desc, block))
     }
 
@@ -153,7 +153,7 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
      */
     fun field(owner: String, name: String, block: FieldNode.() -> Unit) {
         val params = FieldTransformerParams(owner, name)
-        val mapped = KoremodsLaunch.PLUGIN.mapFieldTransformer(params)
+        val mapped = KoremodsLaunch.PLUGIN.mapFieldTransformer(params, props)
         transformers.add(FieldTransformer(scriptIdentifier, props, mapped.owner, mapped.name, block))
     }
 

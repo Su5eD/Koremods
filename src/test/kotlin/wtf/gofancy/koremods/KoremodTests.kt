@@ -102,7 +102,7 @@ class KoremodTransformationTests {
         val cls = transformMethod(transformer)
         val isTransformed = cls.getDeclaredMethod("filterList", List::class.java)
         val list = listOf("lorem", "ipsum", "dolor", "sit", "amet")
-        val result = isTransformed.invoke(null, list) as List<String>
+        val result = isTransformed.invoke(null, list) as List<*>
         
         assertContentEquals(listOf("lorem", "ipsum", "amet"), result)
     }
@@ -177,7 +177,7 @@ fun <T> transform(transformer: Transformer<T>, finder: (ClassNode) -> T): Class<
 
 class RawByteClassLoader(private val className: String, private val data: ByteArray) : ClassLoader() {
     override fun loadClass(name: String, resolve: Boolean): Class<*>? {
-        if (this.className == name) return defineClass(name, data, 0, data.size)
-        return super.loadClass(name, resolve)
+        return if (this.className == name) defineClass(name, data, 0, data.size)
+        else super.loadClass(name, resolve)
     }
 }

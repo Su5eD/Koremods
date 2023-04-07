@@ -30,8 +30,6 @@ import org.apache.logging.log4j.Level
  * A no-op launch plugin implementation, used as a replacement when no other plugins are found.
  */
 internal object DummyKoremodsLaunchPlugin : KoremodsLaunchPlugin {
-    override val splashScreenAvailable: Boolean = true
-
     override val allowedClasses: List<String> = emptyList()
 
     override val defaultImports: List<String> = emptyList()

@@ -37,12 +37,6 @@ import java.nio.file.Path
 interface KoremodsLaunchPlugin {
 
     /**
-     * Whether the Koremods Splash screen is available in the current environment.
-     * Does NOT toggle the state of the screen, that is done by [wtf.gofancy.koremods.KoremodsConfig.enableSplashScreen]
-     */
-    val splashScreenAvailable: Boolean
-
-    /**
      * A list of fully qualified class names and package prefixes allowed to be classloaded in Koremods Scripts,
      * in addition to [wtf.gofancy.koremods.script.ALLOWED_CLASSES]
      */
@@ -55,7 +49,7 @@ interface KoremodsLaunchPlugin {
     val defaultImports: List<String>
 
     /**
-     * Fallback logger appender callback used for [KoremodsLogAppender] when the splash screen is disabled/not avaiable.
+     * Additional log appender callback for scripts.
      *
      * @param level The logging Level
      * @param message the message string to be logger

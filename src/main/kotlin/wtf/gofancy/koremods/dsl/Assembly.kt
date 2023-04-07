@@ -200,13 +200,13 @@ fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTa
  * Full list of supported attributes:
  * - All Opcodes
  * - [FieldInsnNode] - Matches all attributes
- * - [FrameNode] - Matches [type][FrameNode.type]
+ * - [FrameNode] - Matches [type][FrameNode.type] only
  * - [IincInsnNode] - Matches all attributes
  * - [IntInsnNode] - Matches all attributes
  * - [InvokeDynamicInsnNode] - Matches [name][InvokeDynamicInsnNode.name], [desc][InvokeDynamicInsnNode.desc]
  * and [bsm][InvokeDynamicInsnNode.bsm]
  * - [JumpInsnNode] - Matches opcode only
- * - [LabelNode] - Not supported
+ * - [LabelNode] - Matches opcode only
  * - [LdcInsnNode] - Matches all attributes
  * - [LineNumberNode] - Matches all attributes
  * - [LookupSwitchInsnNode] - Matches all attributes

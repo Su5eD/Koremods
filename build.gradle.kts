@@ -26,28 +26,6 @@ group = "wtf.gofancy.koremods"
 version = "0.0.0-SNAPSHOT"
 
 /**
- * This source set contains the splash screen which gets shown during start up.
- *
- * In particular this source set requires several lwjgl dependencies which are not needed by the main source set.
- */
-val splash: SourceSet by sourceSets.creating
-
-// create references to the splash configurations, so we can add dependencies directly to them
-val splashCompileOnly: Configuration by configurations
-val splashImplementation: Configuration by configurations
-val splashApi: Configuration by configurations
-
-/**
- * Adds an implementation dependency to both source sets (main and splash).
- */
-val sharedImplementation: Configuration by configurations.creating
-
-/**
- * Adds an api dependency to both source sets (main and splash).
- */
-val sharedApi: Configuration by configurations.creating
-
-/**
  * Dependencies in this configuration will be shaded into the final jar.
  */
 val shadeImplementation: Configuration by configurations.creating
@@ -62,21 +40,14 @@ gitVersioning.apply {
 configurations {
     implementation {
         extendsFrom(shadeImplementation)
-        extendsFrom(sharedImplementation)
     }
-
-    splashImplementation.extendsFrom(sharedImplementation)
 
     api {
         extendsFrom(shadeApi)
-        extendsFrom(sharedApi)
     }
-
-    splashApi.extendsFrom(sharedApi)
 
     testImplementation {
         extendsFrom(compileOnly.get())
-        extendsFrom(splashCompileOnly)
     }
 }
 
@@ -105,8 +76,6 @@ dependencies {
     implementation(kotlin("scripting-common"))
     implementation(kotlin("scripting-compiler-embeddable"))
 
-    compileOnly(splash.output)
-
     shadeApi(group = "codes.som", name = "koffee", version = "_") {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.ow2.asm")
@@ -122,24 +91,11 @@ dependencies {
     api(group = "org.ow2.asm", name = "asm-tree")
     api(group = "org.ow2.asm", name = "asm-analysis")
     api(group = "org.ow2.asm", name = "asm-util")
-    sharedApi(group = "org.apache.logging.log4j", name = "log4j-api", version = "_")
-    sharedApi(group = "org.apache.logging.log4j", name = "log4j-core", version = "_")
+    api(group = "org.apache.logging.log4j", name = "log4j-api", version = "_")
+    api(group = "org.apache.logging.log4j", name = "log4j-core", version = "_")
 
-    sharedImplementation(group = "com.google.guava", name = "guava", version = "_")
-    sharedImplementation(group = "commons-io", name = "commons-io", version = "_")
-
-    // lwjgl dependencies
-    val lwjglComponents = listOf("lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-stb")
-    val lwjglNatives = listOf("natives-windows", "natives-linux", "natives-macos")
-    val lwjglPlatform = platform("org.lwjgl:lwjgl-bom:_")
-
-    splashCompileOnly(lwjglPlatform)
-    testRuntimeOnly(lwjglPlatform)
-
-    lwjglComponents.forEach { comp ->
-        splashCompileOnly(group = "org.lwjgl", name = comp)
-        lwjglNatives.forEach { os -> testRuntimeOnly(group = "org.lwjgl", name = comp, classifier = os) }
-    }
+    implementation(group = "com.google.guava", name = "guava", version = "_")
+    implementation(group = "commons-io", name = "commons-io", version = "_")
 
     testImplementation(kotlin("test"))
 }
@@ -152,26 +108,15 @@ license {
         set("name", "Garden of Fancy")
         set("app", "Koremods")
     }
-
-    exclude("wtf/gofancy/koremods/splash/math/Matrix4f.kt")
 }
 
 tasks {
-    jar {
-        from(splash.output)
-    }
-
-    named<Jar>("sourcesJar") {
-        from(splash.allSource)
-    }
-
     shadowJar {
         val relocatePackagePath: String by project
         val relocatedPackages = sequenceOf("com.typesafe.config", "io.github.config4k")
 
         dependsOn("classes")
         configurations = listOf(shadeImplementation, shadeApi)
-        from(splash.output)
         exclude("META-INF/versions/**")
         relocatedPackages.forEach { relocate(it, "$relocatePackagePath.$it") }
 
@@ -215,12 +160,6 @@ tasks {
                 sourceLink {
                     localDirectory.set(file("src/main/kotlin"))
                     remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/kotlin"))
-                    remoteLineSuffix.set("#L")
-                }
-
-                sourceLink {
-                    localDirectory.set(file("src/main/java"))
-                    remoteUrl.set(URL("https://gitlab.com/gofancy/koremods/koremods/-/tree/master/src/main/java"))
                     remoteLineSuffix.set("#L")
                 }
 

@@ -30,10 +30,8 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.LoggerConfig
 import wtf.gofancy.koremods.*
-import wtf.gofancy.koremods.splash.KoremodsSplashScreen
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.div
 
 /**
  * Koremods launch entrypoint, used by frontends to initialize the Koremods discovery & loading process
@@ -73,60 +71,31 @@ object KoremodsLaunch {
 
     /**
      * Configures the Koremods scripting environment and initializes the loading process.
-     * A splash screen is created if it's enabled in the [config][wtf.gofancy.koremods.KoremodsConfig]
-     * and compatible with the current environment.
      *
      * @param loaderMode the LoaderMode to use with the [LOADER] instance
-     * @param configDir path to the directory containing the main koremods config file
      * @param discoveryDir optional directory containing koremods script packs
      * @param discoveryPaths additional paths to search for Koremods script packs
      */
-    fun launch(loaderMode: LoaderMode, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
+    fun launch(loaderMode: LoaderMode, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
         if (LOADER != null) throw IllegalStateException("Koremods has already been launched")
 
         LOGGER.info("Launching Koremods instance")
 
         scriptContextClassLoader = javaClass.classLoader
 
-        val configPath = configDir / CONFIG_FILE
-        val config = parseMainConfig(configPath)
-        val splash: KoremodsSplashScreen?
         val contexts = mutableSetOf(
             getLoggerContext(Thread.currentThread().contextClassLoader),
             getLoggerContext(scriptContextClassLoader!!),
         )
 
-        val callback: (Level, String) -> Unit
-        val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
+        LOGGER.debug("Injecting plugin screen log appenders")
+        contexts.forEach { ctx -> injectKoremodsLogAppender(ctx, PLUGIN::appendLogMessage) }
 
-        if (config.enableSplashScreen && PLUGIN.splashScreenAvailable && !isMacOS) {
-            LOGGER.info("Creating splash screen")
-            splash = createSplashScreen()
-            callback = splash::log
-
-            contexts.add(getLoggerContext(splash.javaClass.classLoader))
-            splash.startOnThread()
-        } else {
-            splash = null
-            callback = PLUGIN::appendLogMessage
+        LOADER = KoremodsLoader(loaderMode).apply {
+            if (discoveryDir != null) loadKoremods(discoveryDir, discoveryPaths)
+            else loadKoremods(discoveryPaths)
         }
-
-        LOGGER.debug("Injecting splash screen log appenders")
-        contexts.forEach { ctx -> injectKoremodsLogAppender(ctx, callback) }
-
-        try {
-            LOADER = KoremodsLoader(loaderMode).apply {
-                if (discoveryDir != null) loadKoremods(discoveryDir, discoveryPaths)
-                else loadKoremods(discoveryPaths)
-            }
-
-            LOGGER.info("Discovering script packs finished successfully")
-            splash?.close(true)
-        } catch (t: Throwable) {
-            LOGGER.fatal("An error has occured while discovering script packs", t)
-            splash?.close(false)
-            throw t
-        }
+        LOGGER.info("Discovering script packs finished successfully")
     }
 }
 
@@ -158,9 +127,4 @@ internal fun injectKoremodsLogAppender(context: LoggerContext, callback: (Level,
 
 private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
     return LogManager.getContext(classLoader, false) as LoggerContext
-}
-
-private fun createSplashScreen(): KoremodsSplashScreen {
-    val logger = createLogger("Splash")
-    return KoremodsSplashScreen(logger)
 }

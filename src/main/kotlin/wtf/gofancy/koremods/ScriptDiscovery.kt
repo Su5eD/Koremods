@@ -27,13 +27,12 @@ package wtf.gofancy.koremods
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.Marker
 import org.apache.logging.log4j.MarkerManager
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KOREMODS_SCRIPT_EXTENSION
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.*
 
-private val LOGGER: Logger = KoremodsBlackboard.createLogger("Discovery")
+private val LOGGER: Logger = createLogger("Discovery")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
 fun scanPaths(paths: Iterable<Path>, scriptExtension: String): List<RawScriptPack<Path>> {
@@ -48,7 +47,7 @@ fun scanPath(path: Path, scriptExtension: String = KOREMODS_SCRIPT_EXTENSION): R
     if (path.isDirectory()) {
         LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.relativeTo(path.parent.parent.parent)}")
 
-        val conf = path.resolve(KoremodsBlackboard.CONFIG_FILE_LOCATION)
+        val conf = path.resolve(CONFIG_FILE_LOCATION)
         if (conf.exists()) {
             pack = readScriptPack(path, conf, path, scriptExtension)
         }
@@ -56,7 +55,7 @@ fun scanPath(path: Path, scriptExtension: String = KOREMODS_SCRIPT_EXTENSION): R
         LOGGER.debug(SCRIPT_SCAN, "Scanning ${path.name}")
 
         val zipFs = FileSystems.newFileSystem(path, null)
-        val conf = zipFs.getPath(KoremodsBlackboard.CONFIG_FILE_LOCATION)
+        val conf = zipFs.getPath(CONFIG_FILE_LOCATION)
         if (conf.exists()) {
             pack = readScriptPack(path, conf, zipFs.getPath(""), scriptExtension)
         }
@@ -91,7 +90,7 @@ internal fun locateScripts(namespace: String, scripts: List<String>, rootPath: P
                 LOGGER.error("Script $nameWithExt has an invalid extension '$extension', expected '.core.kts'")
                 throw IllegalArgumentException("Invalid script extension '$extension'")
             }
-            
+
             val name = nameWithExt.substring(0, index)
             val identifier = Identifier(namespace, name)
             LOGGER.debug("Locating script $identifier")

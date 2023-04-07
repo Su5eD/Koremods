@@ -27,7 +27,7 @@ package wtf.gofancy.koremods.script
 /**
  * Allows importing other source script files to access their members.
  * Imported [paths] must be unique, scripts with duplicate imports will fail to compile.
- * 
+ *
  * @param paths paths to scripts to be imported, relative to the current script's location
  */
 @Target(AnnotationTarget.FILE)

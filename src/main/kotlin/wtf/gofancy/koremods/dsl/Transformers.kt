@@ -55,7 +55,7 @@ interface Transformer<T> {
 
     /**
      * Transform an arbitrary object of this transformer's type.
-     * 
+     *
      * @param node The object being transformed
      */
     fun visit(node: T)
@@ -68,24 +68,22 @@ interface TransformerPropertyKeys
 
 /**
  * Stores configured transformer properties.
- * 
+ *
  * @param baseConfigurations Parent properties to apply to this store
  * @param body Property builder function
  */
-open class TransformerPropertiesStore internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>, body: Builder.() -> Unit)
-    : PropertiesCollection(Builder(baseConfigurations).apply(body).data) {
-    
+open class TransformerPropertiesStore internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>, body: Builder.() -> Unit) : PropertiesCollection(Builder(baseConfigurations).apply(body).data) {
+
     constructor(body: Builder.() -> Unit = {}) : this(emptyList(), body)
-    
+
     companion object : TransformerPropertyKeys
-    
+
     object Default : TransformerPropertiesStore()
 
     /**
      * Used to configure initial store values.
      */
-    class Builder internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>)
-        : TransformerPropertyKeys, PropertiesCollection.Builder(baseConfigurations)
+    class Builder internal constructor(baseConfigurations: Iterable<TransformerPropertiesStore>) : TransformerPropertyKeys, PropertiesCollection.Builder(baseConfigurations)
 }
 
 /**
@@ -94,10 +92,10 @@ open class TransformerPropertiesStore internal constructor(baseConfigurations: I
 class TransformerBuilder internal constructor(private val scriptIdentifier: Identifier, private val transformers: MutableList<Transformer<*>>) {
     internal var props: TransformerPropertiesStore = TransformerPropertiesStore.Default
         private set
-    
+
     /**
      * Add a class transformer.
-     * 
+     *
      * @param name The fully qualified target class name
      * @param block The transformer function
      */
@@ -169,7 +167,7 @@ class TransformerBuilder internal constructor(private val scriptIdentifier: Iden
 
 /**
  * Stores the script's transformers.
- * 
+ *
  * @property scriptIdentifier The script's identifier
  */
 class TransformerHandler internal constructor(private val scriptIdentifier: Identifier) {
@@ -178,7 +176,7 @@ class TransformerHandler internal constructor(private val scriptIdentifier: Iden
 
     /**
      * Invoke the transformer builder DSL that allows adding transformers to this handler.
-     * 
+     *
      * @param transformer The builder function
      */
     fun transformers(transformer: TransformerBuilder.() -> Unit) {

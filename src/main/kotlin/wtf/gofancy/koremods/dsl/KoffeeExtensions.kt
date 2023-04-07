@@ -37,14 +37,16 @@ import org.objectweb.asm.tree.MethodNode
 
 /**
  * Construct a method descriptor
- * 
+ *
  * @param returnType the return type of the method
  * @param parameterTypes the parameter types of the method
  * @return the method's descriptor string
  */
 fun constructMethodDescriptor(returnType: TypeLike, vararg parameterTypes: TypeLike): String {
-    return Type.getMethodDescriptor(coerceType(returnType),
-        *parameterTypes.map(::coerceType).toTypedArray())
+    return Type.getMethodDescriptor(
+        coerceType(returnType),
+        *parameterTypes.map(::coerceType).toTypedArray()
+    )
 }
 
 /**
@@ -65,20 +67,20 @@ fun assemble(routine: BlockAssembly.() -> Unit): InsnList {
 
 /**
  * Insert instructions into this method **after** the specified target, or at the beginning if the target is `null`.
- * 
+ *
  * @param target the target to insert at
  * @param routine instruction assembly callback
  */
 fun MethodNode.insert(target: AbstractInsnNode? = null, routine: BlockAssembly.() -> Unit) {
     val list = assemble(routine)
     target
-        ?.run { instructions.insert(target, list) } 
+        ?.run { instructions.insert(target, list) }
         ?: instructions.insert(list)
 }
 
 /**
  * Insert instructions into this method **before** the specified target.
- * 
+ *
  * @param target the target to insert before
  * @param routine instruction assembly callback
  */

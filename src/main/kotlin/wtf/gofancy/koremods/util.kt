@@ -26,10 +26,40 @@ package wtf.gofancy.koremods
 
 import com.google.common.base.Stopwatch
 import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.util.concurrent.TimeUnit
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.api.ScriptDiagnostic
+
+/**
+ * Koremods self identifier.
+ */
+const val NAMESPACE = "koremods"
+
+/**
+ * Logger name prefix used by Koremods logger instances
+ */
+const val LOGGER_GROUP = "wtf.gofancy.koremods"
+
+/**
+ * File name used by both global and script pack config files
+ */
+const val CONFIG_FILE = "$NAMESPACE.conf"
+
+/**
+ * Path to a script pack's configuration file relative to its root
+ */
+const val CONFIG_FILE_LOCATION = "META-INF/$CONFIG_FILE"
+
+/**
+ * @param name the logger name suffix
+ * @return a new [org.apache.logging.log4j.Logger] instance with the specified name inside the Koremods logger
+ * group. The output is also wired up to the splash screen if it's enabled.
+ */
+fun createLogger(name: String): Logger {
+    return LogManager.getLogger("$LOGGER_GROUP.$name")
+}
 
 /**
  * Measure and log code execution time in milliseconds.

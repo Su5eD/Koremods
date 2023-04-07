@@ -28,7 +28,6 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import io.github.config4k.extract
 import io.github.config4k.toConfig
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import java.io.Reader
 import java.nio.file.Path
 import kotlin.io.path.bufferedReader
@@ -38,7 +37,7 @@ import kotlin.io.path.writeText
 
 /**
  * Dedicated Koremods script pack config
- * 
+ *
  * @param namespace the script pack namespace
  * @param scripts a list of script paths relative to the script pack root
  */
@@ -46,7 +45,7 @@ data class KoremodsPackConfig(val namespace: String, val scripts: List<String>)
 
 /**
  * Global Koremods configuration
- * 
+ *
  * @param enableSplashScreen enables the [Koremods splash screen][wtf.gofancy.koremods.splash.KoremodsSplashScreen] (defaults to `false`)
  */
 data class KoremodsConfig(val enableSplashScreen: Boolean = false)
@@ -64,22 +63,22 @@ inline fun <reified T> parseConfig(reader: Reader): T {
 /**
  * Parses the global Koremods configuration from the given [path].
  * If it doesn't exist, a new one is created from default values of the [config class][KoremodsConfig].
- * 
+ *
  * @param path the Path to the config file
  */
 fun parseMainConfig(path: Path): KoremodsConfig {
     if (path.notExists()) {
         val koremodsConfig = KoremodsConfig()
-        val obj = koremodsConfig.toConfig(KoremodsBlackboard.NAMESPACE).getObject(KoremodsBlackboard.NAMESPACE)
+        val obj = koremodsConfig.toConfig(NAMESPACE).getObject(NAMESPACE)
         val options = ConfigRenderOptions.defaults()
             .setOriginComments(false)
             .setJson(false)
         val render = obj.render(options)
-        
+
         path.parent.createDirectories()
         path.writeText(render)
         return koremodsConfig
     }
-    
+
     return parseConfig(path.bufferedReader())
 }

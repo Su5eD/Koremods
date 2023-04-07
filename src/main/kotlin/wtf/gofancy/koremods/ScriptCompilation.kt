@@ -26,7 +26,6 @@ package wtf.gofancy.koremods
 
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.File
 import java.io.Serializable
@@ -45,7 +44,7 @@ import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.JvmScriptCompiler
 import kotlin.script.experimental.jvmhost.createJvmCompilationConfigurationFromTemplate
 
-private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
+private val LOGGER: Logger = createLogger("ScriptCompilation")
 
 /**
  * Read the Source Code contents of pack scripts.
@@ -181,7 +180,7 @@ fun compileScript(identifier: Identifier, source: SourceCode, configBuilder: Scr
  */
 class PathScriptSource(private val path: Path) : ExternalSourceCode, Serializable {
     override val externalLocation: URL = path.toUri().toURL()
-    
+
     override val text: String by lazy(path::readText)
     override val name: String = path.fileName.toString()
     override val locationId: String = path.toString()

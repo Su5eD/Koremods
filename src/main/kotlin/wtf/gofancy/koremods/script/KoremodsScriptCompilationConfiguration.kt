@@ -85,7 +85,7 @@ object KoremodsScriptConfigurator : RefineScriptCompilationConfigurationHandler 
                     }
                 }
             }
-        
+
         return if (diagnostics.isNotEmpty()) ResultWithDiagnostics.Failure(diagnostics)
         else context.compilationConfiguration.with {
             if (importedSources.isNotEmpty()) {

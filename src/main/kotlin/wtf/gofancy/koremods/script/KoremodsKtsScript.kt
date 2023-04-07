@@ -58,7 +58,7 @@ abstract class KoremodsKtsScript(identifier: Identifier, val logger: Logger) {
 
     /**
      * Configure the script's transformers.
-     * 
+     *
      * @param configuration The configuration function
      */
     fun transformers(configuration: TransformerBuilder.() -> Unit) {

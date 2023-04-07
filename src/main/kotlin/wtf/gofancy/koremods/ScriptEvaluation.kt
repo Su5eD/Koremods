@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.launch.KoremodsLaunch
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.InputStream
 import java.nio.file.Path
@@ -45,7 +44,7 @@ import kotlin.script.experimental.jvm.impl.createScriptFromClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTemplate
 
-private val LOGGER: Logger = KoremodsBlackboard.createLogger("ScriptCompilation")
+private val LOGGER: Logger = createLogger("ScriptCompilation")
 
 class ScriptEvaluationException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
@@ -61,10 +60,10 @@ internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScr
 
 private fun evalTransformers(identifier: Identifier, script: CompiledScript): TransformerHandler {
     val handler = LOGGER.measureMillis(Level.DEBUG, "Evaluating script $identifier") {
-        val engineLogger = KoremodsBlackboard.createLogger("${identifier.namespace}/${identifier.name}")
+        val engineLogger = createLogger("${identifier.namespace}/${identifier.name}")
         evalTransformers(identifier, script, engineLogger)
     }
-    return if (handler.getTransformers().isNotEmpty()) handler 
+    return if (handler.getTransformers().isNotEmpty()) handler
     else throw RuntimeException("Script $identifier does not define any transformers")
 }
 
@@ -79,6 +78,7 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
                 ResultValue.NotEvaluated -> throw ScriptEvaluationException("An unknown error has occured while evaluating script $identifier")
             }
         }
+
         is ResultWithDiagnostics.Failure -> {
             LOGGER.logResultErrors(eval)
             throw ScriptEvaluationException("Failed to evaluate script $identifier. See the log for more information")
@@ -141,7 +141,7 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
 
     override val resultField: Pair<String, KotlinType>?
         get() = getScriptOrFail().resultField
-    
+
     private fun createScriptMemoryClassLoader(parent: ClassLoader?): ClassLoader {
         val entries: Map<String, ByteArray> = path.inputStream()
             .use { istream -> JarInputStream(istream).use(JarInputStream::readEntries) }

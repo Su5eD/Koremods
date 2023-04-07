@@ -29,10 +29,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.LoggerConfig
-import wtf.gofancy.koremods.KoremodsLoader
-import wtf.gofancy.koremods.LoaderMode
-import wtf.gofancy.koremods.parseMainConfig
-import wtf.gofancy.koremods.prelaunch.KoremodsBlackboard
+import wtf.gofancy.koremods.*
 import wtf.gofancy.koremods.splash.KoremodsSplashScreen
 import java.nio.file.Path
 import java.util.*
@@ -43,12 +40,12 @@ import kotlin.io.path.div
  */
 @Suppress("unused")
 object KoremodsLaunch {
-    private val LOGGER: Logger = KoremodsBlackboard.createLogger("Launch")
+    private val LOGGER: Logger = createLogger("Launch")
 
     /**
      * [KoremodsLoader] instance created by [launch].
      * Upon success, loaded script packs will be accessible by frontends by this property.
-     * 
+     *
      * @see KoremodsLoader
      */
     var LOADER: KoremodsLoader? = null
@@ -86,12 +83,12 @@ object KoremodsLaunch {
      */
     fun launch(loaderMode: LoaderMode, configDir: Path, discoveryDir: Path?, discoveryPaths: Iterable<Path>) {
         if (LOADER != null) throw IllegalStateException("Koremods has already been launched")
-        
+
         LOGGER.info("Launching Koremods instance")
 
         scriptContextClassLoader = javaClass.classLoader
 
-        val configPath = configDir / KoremodsBlackboard.CONFIG_FILE
+        val configPath = configDir / CONFIG_FILE
         val config = parseMainConfig(configPath)
         val splash: KoremodsSplashScreen?
         val contexts = mutableSetOf(
@@ -154,7 +151,7 @@ internal fun injectKoremodsLogAppender(context: LoggerContext, callback: (Level,
         "true", emptyArray(), null, config, null
     )
     loggerConfig.addAppender(appender, Level.ALL, null)
-    config.addLogger(KoremodsBlackboard.LOGGER_GROUP, loggerConfig)
+    config.addLogger(LOGGER_GROUP, loggerConfig)
 
     context.updateLoggers()
 }
@@ -164,6 +161,6 @@ private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
 }
 
 private fun createSplashScreen(): KoremodsSplashScreen {
-    val logger = KoremodsBlackboard.createLogger("Splash")
+    val logger = createLogger("Splash")
     return KoremodsSplashScreen(logger)
 }

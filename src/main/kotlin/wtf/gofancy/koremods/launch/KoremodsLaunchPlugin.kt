@@ -59,7 +59,7 @@ interface KoremodsLaunchPlugin {
      * @param level The logging Level
      * @param message the message string to be logger
      *
-     * @see wtf.gofancy.koremods.prelaunch.KoremodsBlackboard.createLogger
+     * @see wtf.gofancy.koremods.createLogger
      */
     fun appendLogMessage(level: Level, message: String)
 

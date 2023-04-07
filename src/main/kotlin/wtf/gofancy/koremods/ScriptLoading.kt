@@ -44,6 +44,7 @@ data class Identifier internal constructor(val namespace: String, val name: Stri
          * - Be max. 64 characters long
          */
         val NAMESPACE_PATTERN = "^[a-z][a-z0-9_]{1,63}\$".toRegex()
+
         /**
          * Identifier [name]s follow a camelCase format, and must:
          * - Start with a lowercase letter
@@ -52,7 +53,7 @@ data class Identifier internal constructor(val namespace: String, val name: Stri
          */
         val NAME_PATTERN = "^[a-z][a-zA-Z0-9]{1,63}\$".toRegex()
     }
-    
+
     init {
         if (!namespace.matches(NAMESPACE_PATTERN)) {
             throw IllegalArgumentException("Identifier namespace '$namespace' does not match the pattern /$NAMESPACE_PATTERN/")
@@ -61,7 +62,7 @@ data class Identifier internal constructor(val namespace: String, val name: Stri
             throw IllegalArgumentException("Identifier name '$name' does not match the pattern /$NAME_PATTERN/")
         }
     }
-    
+
     override fun toString(): String = "$namespace:$name"
 }
 

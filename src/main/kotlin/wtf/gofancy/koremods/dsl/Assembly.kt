@@ -62,10 +62,10 @@ class SharedLabelRegistry(private val labels: MutableMap<String, LabelNode>, pri
  * Used for manipulating bytecode around a target sequence of bytecode instructions in an [InsnList].
  * Because ASM's instruction classes don't implement `equals`, a custom method is used for matching instructions,
  * which currently supports most of them. See [insnEquals] for a full list.
- * 
+ *
  * Provides a shared label registry through [TargetedAssembly] for sharing labels across insertions
  * within the same target.
- * 
+ *
  * Use [InsnList.findTarget] or one of its overloaded functions to create
  * an appropriate implementation of this interface.
  *
@@ -101,7 +101,7 @@ class SharedLabelRegistry(private val labels: MutableMap<String, LabelNode>, pri
 sealed interface InsnTarget {
     /**
      * Insert instructions before the target.
-     * 
+     *
      * @param offset offset the insertion target node index
      * @param block bytecode assembly routine
      */
@@ -125,14 +125,14 @@ sealed interface InsnTarget {
 
     /**
      * Find an insn node in this target at a specific index
-     * 
+     *
      * @param index the relating index of the insn node to find
      */
     fun find(index: Int): AbstractInsnNode
-    
+
     class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
         private val labels: MutableMap<String, LabelNode> = mutableMapOf()
-        
+
         override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {
             insert(first, offset, block, origin::insertBefore)
         }
@@ -156,7 +156,7 @@ sealed interface InsnTarget {
             action(target, assembly.instructions)
         }
     }
-    
+
     object NotFound : InsnTarget {
         override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {}
 
@@ -183,12 +183,12 @@ fun InsnList.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() 
  * @param failIfNotFound throw an exception if the target can not be found
  * @return an operational implementation of [InsnTarget], or a NOOP implementation
  * if the target can not be found and failIfNotFound is `false`
- * 
+ *
  * @see InsnTarget
  */
 fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTarget {
     return locateTargetOrNull(insns)
-        ?: if (failIfNotFound) throw RuntimeException("Target not found") 
+        ?: if (failIfNotFound) throw RuntimeException("Target not found")
         else InsnTarget.NotFound
 }
 
@@ -196,7 +196,7 @@ fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTa
  * Used as a replacement for ASM's missing `equals` implementation on [AbstractInsnNode] and its subclasses.
  * This is used along with [InsnTarget] to match bytecode instructions in lists, and therefore only supports
  * necessary attributes. [LabelNode]s, [LineNumberNode]s and [FrameNode]s are not supported.
- * 
+ *
  * Full list of supported attributes:
  * - All Opcodes
  * - [FieldInsnNode] - Matches all attributes
@@ -218,6 +218,7 @@ fun InsnList.findTarget(insns: InsnList, failIfNotFound: Boolean = true): InsnTa
  */
 // Improved by Mini's instructionsEqual function
 // https://git.sleeping.town/unascribed/NilLoader/src/commit/49ee5be0c24a21f5a31e256994ba5bf2bfc02172/src/main/java/nilloader/api/lib/mini/PatchContext.java#L407
+// @formatter:off
 fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
     return this == other || opcode == other.opcode && when(this) {
         is FieldInsnNode -> {
@@ -293,16 +294,17 @@ fun AbstractInsnNode.insnEquals(other: AbstractInsnNode): Boolean {
         else -> true
     }
 }
+// @formatter:on
 
 /**
  * Find a sequence of bytecode instructions matching [list] in this InsnList
- * 
+ *
  * @return if found, an InsnTarget ranging from the first to last matching insn node, otherwise null
  */
 fun InsnList.locateTargetOrNull(list: InsnList): InsnTarget? {
-    outer@for (primary in this) {
+    outer@ for (primary in this) {
         if (primary is LabelNode || primary is LineNumberNode || primary is FrameNode) continue
-        
+
         var current: AbstractInsnNode? = primary
         for (secondary in list) {
             while (current is LabelNode || current is LineNumberNode || current is FrameNode) current = current.next

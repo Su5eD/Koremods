@@ -168,9 +168,29 @@ sealed interface InsnTarget {
     }
 }
 
+/**
+ * Find a sequence of instructions matching the assembly returned by [block] in this method's instructions.
+ *
+ * @param failIfNotFound throw an exception if the target can not be found
+ * @param block the instruction assembly
+ * @return an operational implementation of [InsnTarget], or a NOOP implementation
+ * if the target can not be found and failIfNotFound is `false`
+ *
+ * @see InsnTarget
+ */
 fun MethodNode.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() -> Unit): InsnTarget =
     instructions.findTarget(failIfNotFound, block)
 
+/**
+ * Find a sequence of instructions matching the assembly returned by [block] in this InsnList.
+ *
+ * @param failIfNotFound throw an exception if the target can not be found
+ * @param block the instruction assembly
+ * @return an operational implementation of [InsnTarget], or a NOOP implementation
+ * if the target can not be found and failIfNotFound is `false`
+ *
+ * @see InsnTarget
+ */
 fun InsnList.findTarget(failIfNotFound: Boolean = true, block: BlockAssembly.() -> Unit): InsnTarget {
     val assembly = assemble(block)
     return findTarget(assembly, failIfNotFound)

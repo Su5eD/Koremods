@@ -35,12 +35,26 @@ import kotlin.io.path.*
 private val LOGGER: Logger = createLogger("Discovery")
 private val SCRIPT_SCAN: Marker = MarkerManager.getMarker("SCRIPT_SCAN")
 
+/**
+ * Search for Koremods Script Packs in the specified paths
+ * 
+ * @param paths the paths to search
+ * @param scriptExtension expected script extension
+ * @return the located script packs in path form
+ */
 fun scanPaths(paths: Iterable<Path>, scriptExtension: String): List<RawScriptPack<Path>> {
     LOGGER.debug("Scanning paths for Koremods script packs")
 
     return paths.mapNotNull { path -> scanPath(path, scriptExtension) }
 }
 
+/**
+ * Search for a Koremods Script Pack in the specified path
+ * 
+ * @param path the path to search
+ * @param scriptExtension expected script extension
+ * @return the located script pack in path form
+ */
 fun scanPath(path: Path, scriptExtension: String = KOREMODS_SCRIPT_EXTENSION): RawScriptPack<Path>? {
     var pack: RawScriptPack<Path>? = null
 
@@ -66,6 +80,15 @@ fun scanPath(path: Path, scriptExtension: String = KOREMODS_SCRIPT_EXTENSION): R
     }
 }
 
+/**
+ * Read the contents of a Koremods Script Pack at the specified path
+ * 
+ * @param parent path to the pack's containing file
+ * @param configPath path to the pack's configuration file
+ * @param rootPath root path of the script pack
+ * @param extension expected script extension
+ * @return the parsed script pack in path form, or null if it contains no scripts
+ */
 internal fun readScriptPack(parent: Path, configPath: Path, rootPath: Path, extension: String): RawScriptPack<Path>? {
     val config: KoremodsPackConfig = configPath.bufferedReader().use(::parseConfig)
     LOGGER.info("Loading scripts for pack ${config.namespace}")
@@ -80,6 +103,15 @@ internal fun readScriptPack(parent: Path, configPath: Path, rootPath: Path, exte
     return if (scripts.isNotEmpty()) RawScriptPack(config.namespace, parent, scripts) else null
 }
 
+/**
+ * Locate defined scripts within a script pack at the given path
+ * 
+ * @param namespace the script pack's configured namespace
+ * @param scripts list of script paths relative to the pack's root
+ * @param rootPath root path of the script pack
+ * @param scriptExt expected script extension
+ * @return a list of located scripts in path form
+ */
 internal fun locateScripts(namespace: String, scripts: List<String>, rootPath: Path, scriptExt: String): List<RawScript<Path>> {
     return scripts
         .map { script ->

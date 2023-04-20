@@ -130,6 +130,13 @@ sealed interface InsnTarget {
      */
     fun find(index: Int): AbstractInsnNode
 
+    /**
+     * An acitve implementation of [InsnTarget] used for successfully located targets.
+     * 
+     * @property origin the "haystack" list in which we searched
+     * @property first the first matching instruction node
+     * @property last the last matching instruction node
+     */
     class Found(private val origin: InsnList, private val first: AbstractInsnNode, private val last: AbstractInsnNode) : InsnTarget {
         private val labels: MutableMap<String, LabelNode> = mutableMapOf()
 
@@ -157,6 +164,9 @@ sealed interface InsnTarget {
         }
     }
 
+    /**
+     * A dummy NO-OP implementation of [InsnTarget] used when the searched target was not found.
+     */
     object NotFound : InsnTarget {
         override fun insertBefore(offset: Int, block: TargetedAssembly.() -> Unit) {}
 

@@ -29,7 +29,10 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.LoggerConfig
-import wtf.gofancy.koremods.*
+import wtf.gofancy.koremods.KoremodsLoader
+import wtf.gofancy.koremods.LOGGER_GROUP
+import wtf.gofancy.koremods.LoaderMode
+import wtf.gofancy.koremods.createLogger
 import java.nio.file.Path
 import java.util.*
 
@@ -125,6 +128,13 @@ internal fun injectKoremodsLogAppender(context: LoggerContext, callback: (Level,
     context.updateLoggers()
 }
 
+/**
+ * Create a new [org.apache.logging.log4j.spi.LoggerContext] for the given classloader
+ * and cast it to its implementation [LoggerContext] type.
+ * 
+ * @param classLoader the context owner
+ * @return the newly created logger context cast to the implementation type
+ */
 private fun getLoggerContext(classLoader: ClassLoader): LoggerContext {
     return LogManager.getContext(classLoader, false) as LoggerContext
 }

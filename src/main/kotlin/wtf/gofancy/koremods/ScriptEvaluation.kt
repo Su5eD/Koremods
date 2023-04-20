@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.Logger
 import wtf.gofancy.koremods.dsl.TransformerHandler
 import wtf.gofancy.koremods.launch.KoremodsLaunch
+import wtf.gofancy.koremods.launch.KoremodsLaunchPlugin
 import wtf.gofancy.koremods.script.KoremodsKtsScript
 import java.io.InputStream
 import java.nio.file.Path
@@ -46,8 +47,21 @@ import kotlin.script.experimental.jvmhost.createJvmEvaluationConfigurationFromTe
 
 private val LOGGER: Logger = createLogger("ScriptCompilation")
 
+/**
+ * An exception thrown when an error is encountered during the script evaluation process.
+ * 
+ * @param msg the detail message
+ * @param cause the cause (A `null` value is permitted, and indicates that the cause is nonexistent or unknown.)
+ */
 class ScriptEvaluationException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)
 
+/**
+ * Evaluate a set of raw, compiled koremods scripts by loading their classes into the JVM
+ * and retrieving their list of transformers.
+ * 
+ * @param compiledPacks the script packs to evaluate
+ * @return a list of evaluated koremods script packs
+ */
 internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScript>>): List<KoremodsScriptPack> {
     return compiledPacks.map { pack ->
         val processed = pack.scripts.map { script ->
@@ -58,6 +72,15 @@ internal fun evalScriptPacks(compiledPacks: Collection<RawScriptPack<CompiledScr
     }
 }
 
+/**
+ * Evaluate a compiled script by loading its classes and retrieving its defined transformers.
+ * Ensures the list of transformers is not empty, otherwise throwing an exception.
+ * 
+ * @param identifier the unique identified of the script
+ * @param script the compiled script to evaluate
+ * @return the script's [TransformerHandler] containing its transformers
+ * @throws RuntimeException if the script defines no transformers 
+ */
 private fun evalTransformers(identifier: Identifier, script: CompiledScript): TransformerHandler {
     val handler = LOGGER.measureMillis(Level.DEBUG, "Evaluating script $identifier") {
         val engineLogger = createLogger("${identifier.namespace}/${identifier.name}")
@@ -67,6 +90,13 @@ private fun evalTransformers(identifier: Identifier, script: CompiledScript): Tr
     else throw RuntimeException("Script $identifier does not define any transformers")
 }
 
+/**
+ * Evaluate a compiled script by loading its classes and retrieving its defined transformers.
+ * 
+ * @param identifier the unique identified of the script
+ * @param script the compiled script to evaluate
+ * @return the script's [TransformerHandler] containing its transformers
+ */
 fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Logger): TransformerHandler {
     when (val eval = evalScript(identifier, script, logger)) {
         is ResultWithDiagnostics.Success -> {
@@ -86,7 +116,14 @@ fun evalTransformers(identifier: Identifier, script: CompiledScript, logger: Log
     }
 }
 
-
+/**
+ * Evaluate a compiled script by loading its classes and return the evaluation result.
+ * 
+ * @param identifier the unique identified of the script
+ * @param script the compiled script to evaluate
+ * @param logger logger object to supply to the script instance
+ * @return the script evaluation result
+ */
 @Suppress("DEPRECATION_ERROR")
 fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): ResultWithDiagnostics<EvaluationResult> {
     LOGGER.info("Evaluating script $identifier")
@@ -98,6 +135,12 @@ fun evalScript(identifier: Identifier, script: CompiledScript, logger: Logger): 
     return internalScriptingRunSuspend { BasicJvmScriptEvaluator().invoke(script, evaluationConfiguration) }
 }
 
+/**
+ * Load a compiled script from a [Path] that points to a valid jar file.
+ * 
+ * @receiver a [Path] that points to a valid jar file.
+ * @return an instance of the loaded script
+ */
 fun Path.loadScriptFromJar(): CompiledScript {
     val className = inputStream().use { istream ->
         JarInputStream(istream).use jistream@{
@@ -108,11 +151,23 @@ fun Path.loadScriptFromJar(): CompiledScript {
     return KJvmCompiledScriptLoadedFromJar(className, this)
 }
 
+/**
+ * Read the byte contents of all entries in a [JarInputStream].
+ * 
+ * @return a map of name to byte contents of all JIS entries
+ */
 fun JarInputStream.readEntries(): Map<String, ByteArray> {
     return generateSequence(::getNextJarEntry)
         .associate { Pair(it.name, readAllBytes()) }
 }
 
+/**
+ * Represents a [CompiledScript] loaded from a [Path]. The script will prefer the [ClassLoader] created by the
+ * active [KoremodsLaunchPlugin] if available.
+ * 
+ * @property scriptClassFQName the fully qualified name of the script's class
+ * @property path path to the compiled script jar
+ */
 internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: String, private val path: Path) : CompiledScript {
     private var loadedScript: KJvmCompiledScript? = null
 
@@ -149,6 +204,12 @@ internal class KJvmCompiledScriptLoadedFromJar(private val scriptClassFQName: St
     }
 }
 
+/**
+ * Loads classes from bytes stored in program memory. Used by [KJvmCompiledScriptLoadedFromJar] to load compiled script classes.
+ * 
+ * @property resources a map of jar entry paths to entry byte contents
+ * @param parent optional parent [ClassLoader]
+ */
 internal class MemoryClassLoader(private val resources: Map<String, ByteArray>, parent: ClassLoader?) : ClassLoader(parent) {
     override fun findClass(name: String): Class<*> {
         val resource = name.replace('.', '/') + ".class"
